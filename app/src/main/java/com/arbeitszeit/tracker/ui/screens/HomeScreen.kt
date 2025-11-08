@@ -29,7 +29,8 @@ fun HomeScreen(
     val todayEntry by viewModel.todayEntry.collectAsState()
     val userSettings by viewModel.userSettings.collectAsState()
     val weekEntries by viewModel.weekEntries.collectAsState()
-    
+    val selectedWeekDate by viewModel.selectedWeekDate.collectAsState()
+
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showPauseDialog by remember { mutableStateOf(false) }
@@ -61,15 +62,92 @@ fun HomeScreen(
             }
             
             item {
-                Text("Diese Woche", style = MaterialTheme.typography.titleMedium)
+                WeekNavigationHeader(
+                    selectedWeekDate = selectedWeekDate,
+                    isCurrentWeek = viewModel.isCurrentWeek(),
+                    onPreviousWeek = { viewModel.previousWeek() },
+                    onNextWeek = { viewModel.nextWeek() },
+                    onGoToCurrentWeek = { viewModel.goToCurrentWeek() }
+                )
             }
-            
+
             items(weekEntries) { entry ->
                 WeekEntryCard(entry = entry)
             }
             
             item {
                 WeekSummaryCard(summary = viewModel.getWeekSummary())
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekNavigationHeader(
+    selectedWeekDate: LocalDate,
+    isCurrentWeek: Boolean,
+    onPreviousWeek: () -> Unit,
+    onNextWeek: () -> Unit,
+    onGoToCurrentWeek: () -> Unit
+) {
+    val weekDays = DateUtils.getDaysOfWeek(selectedWeekDate)
+    val weekStart = weekDays.first()
+    val weekEnd = weekDays.last()
+    val weekNumber = DateUtils.getWeekOfYear(selectedWeekDate)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isCurrentWeek) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onPreviousWeek) {
+                    Icon(Icons.Default.KeyboardArrowLeft, "Vorherige Woche")
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "KW $weekNumber",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${weekStart.dayOfMonth}.${weekStart.monthValue}. - ${weekEnd.dayOfMonth}.${weekEnd.monthValue}.${weekEnd.year}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                IconButton(onClick = onNextWeek) {
+                    Icon(Icons.Default.KeyboardArrowRight, "Nächste Woche")
+                }
+            }
+
+            if (!isCurrentWeek) {
+                Button(
+                    onClick = onGoToCurrentWeek,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Zur aktuellen Woche")
+                }
             }
         }
     }
