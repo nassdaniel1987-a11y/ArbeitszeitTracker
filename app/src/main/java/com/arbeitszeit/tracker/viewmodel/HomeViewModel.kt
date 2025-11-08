@@ -21,24 +21,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     // UI State
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-    
+
+    // Ausgewählte Woche (Referenzdatum)
+    private val _selectedWeekDate = MutableStateFlow(LocalDate.now())
+    val selectedWeekDate: StateFlow<LocalDate> = _selectedWeekDate.asStateFlow()
+
     // Settings
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-    
+
     // Heutiger Eintrag
     private val todayDate = DateUtils.today()
     val todayEntry: StateFlow<TimeEntry?> = timeEntryDao.getEntryByDateFlow(todayDate)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-    
-    // Letzte 7 Tage
-    val weekEntries: StateFlow<List<TimeEntry>> = flow {
-        val today = LocalDate.now()
-        val weekDays = DateUtils.getDaysOfWeek(today)
+
+    // Einträge der ausgewählten Woche
+    val weekEntries: StateFlow<List<TimeEntry>> = _selectedWeekDate.flatMapLatest { weekDate ->
+        val weekDays = DateUtils.getDaysOfWeek(weekDate)
         val startDate = DateUtils.dateToString(weekDays.first())
         val endDate = DateUtils.dateToString(weekDays.last())
-        
-        emitAll(timeEntryDao.getEntriesByDateRangeFlow(startDate, endDate))
+
+        timeEntryDao.getEntriesByDateRangeFlow(startDate, endDate)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     
     init {
@@ -210,11 +213,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun getWeekSummary(): WeekSummary {
         val entries = weekEntries.value
-        
+
         val totalSoll = entries.sumOf { it.sollMinuten }
         val totalIst = entries.sumOf { it.getIstMinuten() }
         val totalDifferenz = totalIst - totalSoll
-        
+
         return WeekSummary(
             sollMinuten = totalSoll,
             istMinuten = totalIst,
@@ -222,6 +225,39 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             completedDays = entries.count { it.isComplete() },
             totalDays = entries.size
         )
+    }
+
+    /**
+     * Navigiert zur vorherigen Woche
+     */
+    fun previousWeek() {
+        _selectedWeekDate.value = _selectedWeekDate.value.minusWeeks(1)
+    }
+
+    /**
+     * Navigiert zur nächsten Woche
+     */
+    fun nextWeek() {
+        _selectedWeekDate.value = _selectedWeekDate.value.plusWeeks(1)
+    }
+
+    /**
+     * Springt zurück zur aktuellen Woche
+     */
+    fun goToCurrentWeek() {
+        _selectedWeekDate.value = LocalDate.now()
+    }
+
+    /**
+     * Prüft ob die aktuelle Woche angezeigt wird
+     */
+    fun isCurrentWeek(): Boolean {
+        val selectedWeek = DateUtils.getWeekOfYear(_selectedWeekDate.value)
+        val selectedYear = DateUtils.getWeekBasedYear(_selectedWeekDate.value)
+        val currentWeek = DateUtils.getWeekOfYear(LocalDate.now())
+        val currentYear = DateUtils.getWeekBasedYear(LocalDate.now())
+
+        return selectedWeek == currentWeek && selectedYear == currentYear
     }
 }
 

@@ -42,6 +42,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     var sonntagH by remember { mutableStateOf("") }
     var sonntagM by remember { mutableStateOf("") }
 
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(settings) {
         settings?.let {
             name = it.name
@@ -258,6 +260,68 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         ) {
             Text("Speichern")
         }
+
+        Divider()
+
+        // Gefahrenbereich
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Gefahrenbereich",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    "Diese Aktion kann nicht rückgängig gemacht werden!",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Button(
+                    onClick = { showDeleteConfirmDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text("Alle Daten löschen")
+                }
+            }
+        }
+    }
+
+    // Bestätigungsdialog
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Alle Daten löschen?") },
+            text = { Text("Möchtest du wirklich ALLE Zeiteinträge und Einstellungen löschen? Diese Aktion kann nicht rückgängig gemacht werden!") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteAllTimeEntries()
+                        showDeleteConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text("Löschen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
     }
 }
 
