@@ -50,7 +50,10 @@ class ExcelExportManager(private val context: Context) {
             
             // 4. Fülle Zeiteinträge
             fillTimeEntries(sheet, entries, startKW, endKW)
-            
+
+            // 4.5. Formeln zur Neuberechnung markieren
+            workbook.setForceFormulaRecalculation(true)
+
             // 5. Speichere Datei
             val outputFile = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
@@ -137,10 +140,16 @@ class ExcelExportManager(private val context: Context) {
         // Woche 4: Zeile 29-35 (Index 28-34)
         val weekStartRows = listOf(7, 14, 21, 28)
         
-        entriesByWeek.entries.forEachIndexed weekLoop@{ weekIndex, (kw, weekEntries) ->
-            if (weekIndex >= weekStartRows.size) return@weekLoop
+        entriesByWeek.entries.forEach weekLoop@{ (kw, weekEntries) ->
+            // Berechne die Position der Woche im 4-Wochen-Block
+            // KW 25 in Block "KW 25-28" -> Position 0 -> Zeile 7
+            // KW 26 in Block "KW 25-28" -> Position 1 -> Zeile 14
+            // KW 27 in Block "KW 25-28" -> Position 2 -> Zeile 21
+            // KW 28 in Block "KW 25-28" -> Position 3 -> Zeile 28
+            val weekPosition = kw - startKW
+            if (weekPosition < 0 || weekPosition >= weekStartRows.size) return@weekLoop
 
-            val startRow = weekStartRows[weekIndex]
+            val startRow = weekStartRows[weekPosition]
 
             // KW-Nummer in Spalte A der Summenzeile (Zeile startRow + 6)
             val sumRowIndex = startRow + 6
