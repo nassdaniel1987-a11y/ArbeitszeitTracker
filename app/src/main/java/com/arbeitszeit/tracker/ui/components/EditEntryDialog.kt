@@ -1,14 +1,19 @@
 package com.arbeitszeit.tracker.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.utils.TimeUtils
+import java.util.Calendar
 
 /**
  * Dialog zum Bearbeiten von Zeiteinträgen
@@ -21,24 +26,19 @@ fun EditEntryDialog(
     onDismiss: () -> Unit,
     onSave: (startZeit: Int?, endZeit: Int?, pauseMinuten: Int, typ: String, notiz: String) -> Unit
 ) {
-    var startZeitStr by remember {
-        mutableStateOf(
-            if (entry?.startZeit != null) TimeUtils.minutesToTimeString(entry.startZeit) else ""
-        )
-    }
-    var endZeitStr by remember {
-        mutableStateOf(
-            if (entry?.endZeit != null) TimeUtils.minutesToTimeString(entry.endZeit) else ""
-        )
-    }
+    // Zeit als Minuten speichern
+    var startZeitMinuten by remember { mutableStateOf(entry?.startZeit) }
+    var endZeitMinuten by remember { mutableStateOf(entry?.endZeit) }
+
     var pauseStr by remember {
         mutableStateOf(if (entry?.pauseMinuten ?: 0 > 0) entry!!.pauseMinuten.toString() else "")
     }
     var selectedTyp by remember { mutableStateOf(entry?.typ ?: TimeEntry.TYP_NORMAL) }
     var notiz by remember { mutableStateOf(entry?.notiz ?: "") }
 
-    var showStartError by remember { mutableStateOf(false) }
-    var showEndError by remember { mutableStateOf(false) }
+    // Dialog-States für TimePicker
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -91,38 +91,22 @@ fun EditEntryDialog(
                 if (selectedTyp == TimeEntry.TYP_NORMAL) {
                     Divider()
 
-                    // Start-Zeit
-                    OutlinedTextField(
-                        value = startZeitStr,
-                        onValueChange = {
-                            startZeitStr = it
-                            showStartError = it.isNotEmpty() && !TimeUtils.isValidTimeString(it)
-                        },
-                        label = { Text("Start (HH:MM)") },
-                        placeholder = { Text("08:00") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        isError = showStartError,
-                        supportingText = if (showStartError) {
-                            { Text("Ungültiges Format (HH:MM)") }
-                        } else null,
-                        modifier = Modifier.fillMaxWidth()
+                    // Start-Zeit mit TimePicker
+                    Text("Startzeit:", style = MaterialTheme.typography.labelMedium)
+                    TimePickerButton(
+                        label = "Start",
+                        timeMinutes = startZeitMinuten,
+                        onTimeSelected = { startZeitMinuten = it },
+                        onClear = { startZeitMinuten = null }
                     )
 
-                    // End-Zeit
-                    OutlinedTextField(
-                        value = endZeitStr,
-                        onValueChange = {
-                            endZeitStr = it
-                            showEndError = it.isNotEmpty() && !TimeUtils.isValidTimeString(it)
-                        },
-                        label = { Text("Ende (HH:MM)") },
-                        placeholder = { Text("16:00") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        isError = showEndError,
-                        supportingText = if (showEndError) {
-                            { Text("Ungültiges Format (HH:MM)") }
-                        } else null,
-                        modifier = Modifier.fillMaxWidth()
+                    // End-Zeit mit TimePicker
+                    Text("Endzeit:", style = MaterialTheme.typography.labelMedium)
+                    TimePickerButton(
+                        label = "Ende",
+                        timeMinutes = endZeitMinuten,
+                        onTimeSelected = { endZeitMinuten = it },
+                        onClear = { endZeitMinuten = null }
                     )
 
                     // Pause
@@ -152,32 +136,11 @@ fun EditEntryDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    // Validierung
-                    if (selectedTyp == TimeEntry.TYP_NORMAL) {
-                        if (startZeitStr.isNotEmpty() && !TimeUtils.isValidTimeString(startZeitStr)) {
-                            showStartError = true
-                            return@Button
-                        }
-                        if (endZeitStr.isNotEmpty() && !TimeUtils.isValidTimeString(endZeitStr)) {
-                            showEndError = true
-                            return@Button
-                        }
-                    }
-
-                    // Konvertiere Werte
-                    val startZeit = if (selectedTyp == TimeEntry.TYP_NORMAL && startZeitStr.isNotEmpty()) {
-                        TimeUtils.timeStringToMinutes(startZeitStr)
-                    } else null
-
-                    val endZeit = if (selectedTyp == TimeEntry.TYP_NORMAL && endZeitStr.isNotEmpty()) {
-                        TimeUtils.timeStringToMinutes(endZeitStr)
-                    } else null
-
                     val pauseMinuten = if (selectedTyp == TimeEntry.TYP_NORMAL) {
                         pauseStr.toIntOrNull() ?: 0
                     } else 0
 
-                    onSave(startZeit, endZeit, pauseMinuten, selectedTyp, notiz)
+                    onSave(startZeitMinuten, endZeitMinuten, pauseMinuten, selectedTyp, notiz)
                 }
             ) {
                 Text("Speichern")
@@ -188,5 +151,91 @@ fun EditEntryDialog(
                 Text("Abbrechen")
             }
         }
+    )
+}
+
+/**
+ * Button mit TimePicker für Zeitauswahl
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerButton(
+    label: String,
+    timeMinutes: Int?,
+    onTimeSelected: (Int) -> Unit,
+    onClear: () -> Unit
+) {
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    // TimePicker State
+    val timePickerState = rememberTimePickerState(
+        initialHour = timeMinutes?.let { it / 60 } ?: 8,
+        initialMinute = timeMinutes?.let { it % 60 } ?: 0,
+        is24Hour = true
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedButton(
+            onClick = { showTimePicker = true },
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = if (timeMinutes != null) {
+                    TimeUtils.minutesToTimeString(timeMinutes)
+                } else {
+                    "--:--"
+                },
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+        if (timeMinutes != null) {
+            IconButton(onClick = onClear) {
+                Icon(Icons.Default.Clear, contentDescription = "Löschen")
+            }
+        }
+    }
+
+    // TimePicker Dialog
+    if (showTimePicker) {
+        TimePickerDialog(
+            onDismiss = { showTimePicker = false },
+            onConfirm = {
+                val minutes = timePickerState.hour * 60 + timePickerState.minute
+                onTimeSelected(minutes)
+                showTimePicker = false
+            }
+        ) {
+            TimePicker(state = timePickerState)
+        }
+    }
+}
+
+/**
+ * Dialog für TimePicker
+ */
+@Composable
+private fun TimePickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("OK")
+            }
+        },
+        text = { content() }
     )
 }
