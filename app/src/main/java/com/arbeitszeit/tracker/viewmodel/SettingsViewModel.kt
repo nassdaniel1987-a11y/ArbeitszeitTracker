@@ -128,7 +128,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
      */
     fun deleteAllTimeEntries() {
         viewModelScope.launch {
-            database.clearAllTables()
+            timeEntryDao.deleteAllEntries()
         }
     }
 }

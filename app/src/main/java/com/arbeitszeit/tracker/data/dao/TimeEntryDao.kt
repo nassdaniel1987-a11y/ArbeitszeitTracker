@@ -48,7 +48,10 @@ interface TimeEntryDao {
     
     @Query("DELETE FROM time_entries WHERE datum = :date")
     suspend fun deleteByDate(date: String)
-    
+
+    @Query("DELETE FROM time_entries")
+    suspend fun deleteAllEntries()
+
     @Query("SELECT COUNT(*) FROM time_entries WHERE jahr = :year")
     suspend fun getEntryCountByYear(year: Int): Int
 }
