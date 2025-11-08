@@ -314,6 +314,10 @@ private fun AddWorkLocationDialog(
     var latitude by remember { mutableStateOf("") }
     var longitude by remember { mutableStateOf("") }
     var radius by remember { mutableStateOf("100") }
+    var useCurrentLocation by remember { mutableStateOf(false) }
+
+    // TODO: Location Manager für aktuellen Standort
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -327,16 +331,80 @@ private fun AddWorkLocationDialog(
                     placeholder = { Text("z.B. Hauptbüro") },
                     singleLine = true
                 )
+
+                Button(
+                    onClick = {
+                        // Versuche aktuellen Standort zu ermitteln
+                        try {
+                            val locationManager = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+                            if (android.content.pm.PackageManager.PERMISSION_GRANTED ==
+                                androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context,
+                                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                                )
+                            ) {
+                                val location = locationManager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
+                                    ?: locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
+
+                                location?.let {
+                                    latitude = String.format("%.6f", it.latitude)
+                                    longitude = String.format("%.6f", it.longitude)
+                                    useCurrentLocation = true
+                                }
+                            }
+                        } catch (e: SecurityException) {
+                            // Berechtigung fehlt
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Default.MyLocation,
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Aktuellen Standort verwenden")
+                }
+
+                if (useCurrentLocation) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text(
+                                "Standort ermittelt",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                "$latitude, $longitude",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+
+                Text("oder", style = MaterialTheme.typography.labelSmall)
+
                 OutlinedTextField(
                     value = latitude,
-                    onValueChange = { latitude = it },
+                    onValueChange = {
+                        latitude = it
+                        useCurrentLocation = false
+                    },
                     label = { Text("Breitengrad") },
                     placeholder = { Text("z.B. 48.775556") },
                     singleLine = true
                 )
                 OutlinedTextField(
                     value = longitude,
-                    onValueChange = { longitude = it },
+                    onValueChange = {
+                        longitude = it
+                        useCurrentLocation = false
+                    },
                     label = { Text("Längengrad") },
                     placeholder = { Text("z.B. 9.182778") },
                     singleLine = true
@@ -349,7 +417,7 @@ private fun AddWorkLocationDialog(
                     singleLine = true
                 )
                 Text(
-                    "Tipp: Öffne Google Maps, tippe lange auf deinen Arbeitsort und kopiere die Koordinaten.",
+                    "Tipp: Oder öffne Google Maps, tippe lange auf deinen Arbeitsort und kopiere die Koordinaten.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

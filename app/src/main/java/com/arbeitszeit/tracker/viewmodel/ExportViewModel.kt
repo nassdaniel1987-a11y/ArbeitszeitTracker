@@ -208,10 +208,29 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                     is ImportResult.Success -> {
                         // Speichere importierte Stammdaten
                         if (importStammdaten && result.userSettings != null) {
-                            settingsDao.insertOrUpdate(result.userSettings)
+                            // Lade existierende Settings um Geofencing-Einstellungen zu erhalten
+                            val existingSettings = settingsDao.getSettings()
+
+                            // Merge: Stammdaten aus Import, Geofencing-Einstellungen behalten
+                            val mergedSettings = result.userSettings.copy(
+                                geofencingEnabled = existingSettings?.geofencingEnabled ?: false,
+                                geofencingStartHour = existingSettings?.geofencingStartHour ?: 6,
+                                geofencingEndHour = existingSettings?.geofencingEndHour ?: 20,
+                                geofencingActiveDays = existingSettings?.geofencingActiveDays ?: "12345",
+                                // Individuelle Tagessoll-Zeiten auch behalten, falls nicht im Import
+                                montagSollMinuten = result.userSettings.montagSollMinuten ?: existingSettings?.montagSollMinuten,
+                                dienstagSollMinuten = result.userSettings.dienstagSollMinuten ?: existingSettings?.dienstagSollMinuten,
+                                mittwochSollMinuten = result.userSettings.mittwochSollMinuten ?: existingSettings?.mittwochSollMinuten,
+                                donnerstagSollMinuten = result.userSettings.donnerstagSollMinuten ?: existingSettings?.donnerstagSollMinuten,
+                                freitagSollMinuten = result.userSettings.freitagSollMinuten ?: existingSettings?.freitagSollMinuten,
+                                samstagSollMinuten = result.userSettings.samstagSollMinuten ?: existingSettings?.samstagSollMinuten,
+                                sonntagSollMinuten = result.userSettings.sonntagSollMinuten ?: existingSettings?.sonntagSollMinuten
+                            )
+
+                            settingsDao.insertOrUpdate(mergedSettings)
 
                             // Aktualisiere sollMinuten für alle bestehenden Einträge basierend auf neuen Stammdaten
-                            updateSollMinutenForAllEntries(result.userSettings)
+                            updateSollMinutenForAllEntries(mergedSettings)
                         }
 
                         // Speichere importierte Zeiteinträge
