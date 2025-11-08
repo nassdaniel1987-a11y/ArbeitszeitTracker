@@ -153,7 +153,11 @@ class ExcelExportManager(private val context: Context) {
 
             // KW-Nummer in Spalte A der Summenzeile (Zeile startRow + 6)
             val sumRowIndex = startRow + 6
-            sheet.getRow(sumRowIndex)?.getCell(0)?.setCellValue(kw.toDouble())
+            val sumRow = sheet.getRow(sumRowIndex)
+            if (sumRow != null) {
+                val kwCell = sumRow.getCell(0) ?: sumRow.createCell(0)
+                kwCell.setCellValue(kw.toDouble())
+            }
 
             // Sortiere Einträge nach Datum
             weekEntries.sortedBy { it.datum }.forEach { entry ->
@@ -166,44 +170,48 @@ class ExcelExportManager(private val context: Context) {
                 }
 
                 val rowIndex = startRow + dayOffset
-                val row = sheet.getRow(rowIndex)
+                val row = sheet.getRow(rowIndex) ?: return@forEach
 
-                if (row != null) {
-                    // Spalte C (Index 2): Soll-Zeit
-                    if (entry.sollMinuten > 0) {
-                        row.getCell(2)?.setCellValue(TimeUtils.minutesToExcelTime(entry.sollMinuten))
-                    }
-
-                    // Spalte D (Index 3): Von (Start)
-                    if (entry.startZeit != null) {
-                        row.getCell(3)?.setCellValue(TimeUtils.minutesToExcelTime(entry.startZeit))
-                    }
-
-                    // Spalte E (Index 4): Bis (Ende)
-                    if (entry.endZeit != null) {
-                        row.getCell(4)?.setCellValue(TimeUtils.minutesToExcelTime(entry.endZeit))
-                    }
-
-                    // Spalte F (Index 5): Pause
-                    if (entry.pauseMinuten > 0) {
-                        row.getCell(5)?.setCellValue(TimeUtils.minutesToExcelTime(entry.pauseMinuten))
-                    }
-
-                    // Spalte G (Index 6): Ist - wird von Excel-Formel berechnet!
-                    // NICHT überschreiben!
-
-                    // Spalte H (Index 7): Typ (U/K/F/AB)
-                    if (entry.typ != TimeEntry.TYP_NORMAL) {
-                        row.getCell(7)?.setCellValue(entry.typ)
-                    }
+                // Spalte C (Index 2): Soll-Zeit
+                if (entry.sollMinuten > 0) {
+                    val cell = row.getCell(2) ?: row.createCell(2)
+                    cell.setCellValue(TimeUtils.minutesToExcelTime(entry.sollMinuten))
                 }
-                
+
+                // Spalte D (Index 3): Von (Start)
+                if (entry.startZeit != null) {
+                    val cell = row.getCell(3) ?: row.createCell(3)
+                    cell.setCellValue(TimeUtils.minutesToExcelTime(entry.startZeit))
+                }
+
+                // Spalte E (Index 4): Bis (Ende)
+                if (entry.endZeit != null) {
+                    val cell = row.getCell(4) ?: row.createCell(4)
+                    cell.setCellValue(TimeUtils.minutesToExcelTime(entry.endZeit))
+                }
+
+                // Spalte F (Index 5): Pause
+                if (entry.pauseMinuten > 0) {
+                    val cell = row.getCell(5) ?: row.createCell(5)
+                    cell.setCellValue(TimeUtils.minutesToExcelTime(entry.pauseMinuten))
+                }
+
+                // Spalte G (Index 6): Ist - wird von Excel-Formel berechnet!
+                // NICHT überschreiben, Formel bleibt erhalten!
+
+                // Spalte H (Index 7): Typ (U/K/F/AB)
+                if (entry.typ != TimeEntry.TYP_NORMAL) {
+                    val cell = row.getCell(7) ?: row.createCell(7)
+                    cell.setCellValue(entry.typ)
+                }
+
                 // Spalte I (Index 8): Differenz - wird von Excel-Formel berechnet!
-                // NICHT überschreiben!
-                
+                // NICHT überschreiben, Formel bleibt erhalten!
+
                 // Spalte J (Index 9): AZ aus Bereitschaft
                 if (entry.arbeitszeitBereitschaft > 0) {
-                    row.getCell(9)?.setCellValue(TimeUtils.minutesToExcelTime(entry.arbeitszeitBereitschaft))
+                    val cell = row.getCell(9) ?: row.createCell(9)
+                    cell.setCellValue(TimeUtils.minutesToExcelTime(entry.arbeitszeitBereitschaft))
                 }
             }
         }
