@@ -23,6 +23,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     var minuten by remember { mutableStateOf("00") }
     var arbeitsTage by remember { mutableStateOf(settings?.arbeitsTageProWoche?.toString() ?: "5") }
     var ferienbetreuung by remember { mutableStateOf(settings?.ferienbetreuung ?: false) }
+    var ersterMontag by remember { mutableStateOf("") } // Format: TT.MM.JJJJ
 
     // Individuelle Tages-Soll-Zeiten
     var useIndividualDays by remember { mutableStateOf(false) }
@@ -53,6 +54,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             minuten = (it.wochenStundenMinuten % 60).toString().padStart(2, '0')
             arbeitsTage = it.arbeitsTageProWoche.toString()
             ferienbetreuung = it.ferienbetreuung
+
+            // Erster Montag laden und konvertieren (yyyy-MM-dd -> TT.MM.JJJJ)
+            it.ersterMontagImJahr?.let { datum ->
+                val parts = datum.split("-")
+                if (parts.size == 3) {
+                    ersterMontag = "${parts[2]}.${parts[1]}.${parts[0]}"
+                }
+            }
 
             // Individuelle Tages-Zeiten laden
             useIndividualDays = it.hasIndividualDailyHours()
@@ -151,6 +160,15 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             Switch(checked = ferienbetreuung, onCheckedChange = { ferienbetreuung = it })
         }
 
+        OutlinedTextField(
+            value = ersterMontag,
+            onValueChange = { ersterMontag = it },
+            label = { Text("Erster Montag im Jahr (für KW-Berechnung)") },
+            placeholder = { Text("z.B. 06.01.2025") },
+            supportingText = { Text("Format: TT.MM.JJJJ - Leer lassen für ISO 8601") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
         Divider()
 
         // Individuelle Tages-Soll-Zeiten
@@ -239,6 +257,17 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     (sonntagH.toIntOrNull() ?: 0) * 60 + (sonntagM.toIntOrNull() ?: 0)
                 } else null
 
+                // Konvertiere erster Montag von TT.MM.JJJJ zu yyyy-MM-dd
+                val ersterMontagFormatted = if (ersterMontag.isNotBlank()) {
+                    val parts = ersterMontag.split(".")
+                    if (parts.size == 3) {
+                        val tag = parts[0].padStart(2, '0')
+                        val monat = parts[1].padStart(2, '0')
+                        val jahr = parts[2]
+                        "$jahr-$monat-$tag"
+                    } else null
+                } else null
+
                 viewModel.updateSettings(
                     name = name,
                     einrichtung = einrichtung,
@@ -247,6 +276,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     arbeitsTageProWoche = arbeitsTage.toIntOrNull() ?: 5,
                     ferienbetreuung = ferienbetreuung,
                     ueberstundenVorjahrMinuten = 0,
+                    ersterMontagImJahr = ersterMontagFormatted,
                     montagSollMinuten = montagMin,
                     dienstagSollMinuten = dienstagMin,
                     mittwochSollMinuten = mittwochMin,

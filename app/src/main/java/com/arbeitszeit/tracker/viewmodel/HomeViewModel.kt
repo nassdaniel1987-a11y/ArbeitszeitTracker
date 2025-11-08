@@ -59,19 +59,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (existing == null) {
             val today = LocalDate.now()
             val settings = settingsDao.getSettings()
-            
+
             val entry = TimeEntry(
                 datum = todayDate,
                 wochentag = DateUtils.getWeekdayShort(today),
-                kalenderwoche = DateUtils.getWeekOfYear(today),
-                jahr = DateUtils.getWeekBasedYear(today),
+                kalenderwoche = DateUtils.getCustomWeekOfYear(today, settings?.ersterMontagImJahr),
+                jahr = DateUtils.getCustomWeekBasedYear(today, settings?.ersterMontagImJahr),
                 startZeit = null,
                 endZeit = null,
                 pauseMinuten = 0,
                 sollMinuten = calculateSollMinuten(today, settings),
                 typ = TimeEntry.TYP_NORMAL
             )
-            
+
             timeEntryDao.insert(entry)
         }
     }
@@ -252,10 +252,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      * Prüft ob die aktuelle Woche angezeigt wird
      */
     fun isCurrentWeek(): Boolean {
-        val selectedWeek = DateUtils.getWeekOfYear(_selectedWeekDate.value)
-        val selectedYear = DateUtils.getWeekBasedYear(_selectedWeekDate.value)
-        val currentWeek = DateUtils.getWeekOfYear(LocalDate.now())
-        val currentYear = DateUtils.getWeekBasedYear(LocalDate.now())
+        val settings = userSettings.value
+        val firstMonday = settings?.ersterMontagImJahr
+
+        val selectedWeek = DateUtils.getCustomWeekOfYear(_selectedWeekDate.value, firstMonday)
+        val selectedYear = DateUtils.getCustomWeekBasedYear(_selectedWeekDate.value, firstMonday)
+        val currentWeek = DateUtils.getCustomWeekOfYear(LocalDate.now(), firstMonday)
+        val currentYear = DateUtils.getCustomWeekBasedYear(LocalDate.now(), firstMonday)
 
         return selectedWeek == currentWeek && selectedYear == currentYear
     }

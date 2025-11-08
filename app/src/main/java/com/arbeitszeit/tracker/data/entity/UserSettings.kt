@@ -14,6 +14,7 @@ data class UserSettings(
     val ferienbetreuung: Boolean = true,
     val ueberstundenVorjahrMinuten: Int,     // Übertrag, kann negativ sein
     val letzterUebertragMinuten: Int = 0,    // Übertrag aus letzter 4-Wochen-Periode
+    val ersterMontagImJahr: String? = null,  // Erster Montag für KW-Berechnung (yyyy-MM-dd)
     // Individuelle Soll-Arbeitszeiten pro Wochentag (in Minuten, null = Standard verwenden)
     val montagSollMinuten: Int? = null,
     val dienstagSollMinuten: Int? = null,
