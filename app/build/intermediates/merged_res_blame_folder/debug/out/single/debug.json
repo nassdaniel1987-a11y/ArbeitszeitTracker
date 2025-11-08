@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "com.arbeitszeit.tracker.app-merged_res-63:/xml_data_extraction_rules.xml.flat",
+        "source": "com.arbeitszeit.tracker.app-main-65:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.arbeitszeit.tracker.app-merged_res-63:/drawable_ic_notification.xml.flat",
+        "source": "com.arbeitszeit.tracker.app-main-65:/drawable/ic_notification.xml"
+    },
+    {
+        "merged": "com.arbeitszeit.tracker.app-merged_res-63:/xml_backup_rules.xml.flat",
+        "source": "com.arbeitszeit.tracker.app-main-65:/xml/backup_rules.xml"
+    }
+]

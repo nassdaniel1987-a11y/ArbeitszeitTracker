@@ -1,0 +1,66 @@
+package com.arbeitszeit.tracker.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.arbeitszeit.tracker.data.database.AppDatabase
+import com.arbeitszeit.tracker.data.entity.UserSettings
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+    
+    private val database = AppDatabase.getDatabase(application)
+    private val settingsDao = database.userSettingsDao()
+    
+    val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    
+    /**
+     * Aktualisiert oder erstellt Benutzereinstellungen
+     */
+    fun updateSettings(
+        name: String,
+        einrichtung: String,
+        arbeitsumfangProzent: Int,
+        wochenStundenMinuten: Int,
+        arbeitsTageProWoche: Int,
+        ferienbetreuung: Boolean,
+        ueberstundenVorjahrMinuten: Int
+    ) {
+        viewModelScope.launch {
+            val existing = settingsDao.getSettings()
+            
+            val settings = UserSettings(
+                id = 1,
+                name = name,
+                einrichtung = einrichtung,
+                arbeitsumfangProzent = arbeitsumfangProzent,
+                wochenStundenMinuten = wochenStundenMinuten,
+                arbeitsTageProWoche = arbeitsTageProWoche,
+                ferienbetreuung = ferienbetreuung,
+                ueberstundenVorjahrMinuten = ueberstundenVorjahrMinuten,
+                letzterUebertragMinuten = existing?.letzterUebertragMinuten ?: 0,
+                createdAt = existing?.createdAt ?: System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis()
+            )
+            
+            settingsDao.insertOrUpdate(settings)
+        }
+    }
+    
+    /**
+     * Aktualisiert nur den Übertrag vom letzten Blatt
+     */
+    fun updateLetzterUebertrag(minuten: Int) {
+        viewModelScope.launch {
+            val settings = settingsDao.getSettings() ?: return@launch
+            settingsDao.update(settings.copy(
+                letzterUebertragMinuten = minuten,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+}
