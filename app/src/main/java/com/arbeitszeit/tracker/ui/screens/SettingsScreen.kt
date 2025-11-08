@@ -149,7 +149,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             Switch(checked = ferienbetreuung, onCheckedChange = { ferienbetreuung = it })
         }
 
-        HorizontalDivider()
+        Divider()
 
         // Individuelle Tages-Soll-Zeiten
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
