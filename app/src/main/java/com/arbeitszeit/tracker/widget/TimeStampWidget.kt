@@ -1,5 +1,6 @@
 package com.arbeitszeit.tracker.widget
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -13,6 +14,7 @@ import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 /**
  * Widget für schnelles Zeit-Stempeln ohne App zu öffnen
@@ -23,6 +25,8 @@ class TimeStampWidget : AppWidgetProvider() {
         const val ACTION_START = "com.arbeitszeit.tracker.ACTION_START"
         const val ACTION_END = "com.arbeitszeit.tracker.ACTION_END"
         const val ACTION_REFRESH = "com.arbeitszeit.tracker.ACTION_REFRESH"
+        const val ACTION_MIDNIGHT_RESET = "com.arbeitszeit.tracker.ACTION_MIDNIGHT_RESET"
+        private const val MIDNIGHT_ALARM_REQUEST_CODE = 1001
     }
 
     override fun onUpdate(
@@ -30,9 +34,24 @@ class TimeStampWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        // Schedule midnight reset (in case it wasn't set up or got cancelled)
+        scheduleMidnightReset(context)
+
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
+    }
+
+    override fun onEnabled(context: Context) {
+        // Called when the first widget is added
+        super.onEnabled(context)
+        scheduleMidnightReset(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        // Called when the last widget is removed
+        super.onDisabled(context)
+        cancelMidnightReset(context)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -47,6 +66,12 @@ class TimeStampWidget : AppWidgetProvider() {
             }
             ACTION_REFRESH -> {
                 refreshWidget(context)
+            }
+            ACTION_MIDNIGHT_RESET -> {
+                // Reset widget for new day
+                refreshWidget(context)
+                // Schedule next midnight reset
+                scheduleMidnightReset(context)
             }
         }
     }
@@ -144,5 +169,60 @@ class TimeStampWidget : AppWidgetProvider() {
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
+    }
+
+    /**
+     * Schedules a daily alarm to reset the widget at midnight
+     */
+    private fun scheduleMidnightReset(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        val intent = Intent(context, TimeStampWidget::class.java).apply {
+            action = ACTION_MIDNIGHT_RESET
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            MIDNIGHT_ALARM_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Calculate next midnight
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            // If it's already past midnight today, schedule for tomorrow
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        // Use setRepeating for daily reset at midnight
+        alarmManager.setRepeating(
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent
+        )
+    }
+
+    /**
+     * Cancels the midnight reset alarm
+     */
+    private fun cancelMidnightReset(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, TimeStampWidget::class.java).apply {
+            action = ACTION_MIDNIGHT_RESET
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            MIDNIGHT_ALARM_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
     }
 }
