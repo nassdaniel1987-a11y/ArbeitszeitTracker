@@ -28,11 +28,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         wochenStundenMinuten: Int,
         arbeitsTageProWoche: Int,
         ferienbetreuung: Boolean,
-        ueberstundenVorjahrMinuten: Int
+        ueberstundenVorjahrMinuten: Int,
+        montagSollMinuten: Int? = null,
+        dienstagSollMinuten: Int? = null,
+        mittwochSollMinuten: Int? = null,
+        donnerstagSollMinuten: Int? = null,
+        freitagSollMinuten: Int? = null,
+        samstagSollMinuten: Int? = null,
+        sonntagSollMinuten: Int? = null
     ) {
         viewModelScope.launch {
             val existing = settingsDao.getSettings()
-            
+
             val settings = UserSettings(
                 id = 1,
                 name = name,
@@ -43,10 +50,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 ferienbetreuung = ferienbetreuung,
                 ueberstundenVorjahrMinuten = ueberstundenVorjahrMinuten,
                 letzterUebertragMinuten = existing?.letzterUebertragMinuten ?: 0,
+                montagSollMinuten = montagSollMinuten,
+                dienstagSollMinuten = dienstagSollMinuten,
+                mittwochSollMinuten = mittwochSollMinuten,
+                donnerstagSollMinuten = donnerstagSollMinuten,
+                freitagSollMinuten = freitagSollMinuten,
+                samstagSollMinuten = samstagSollMinuten,
+                sonntagSollMinuten = sonntagSollMinuten,
                 createdAt = existing?.createdAt ?: System.currentTimeMillis(),
                 updatedAt = System.currentTimeMillis()
             )
-            
+
             settingsDao.insertOrUpdate(settings)
         }
     }
