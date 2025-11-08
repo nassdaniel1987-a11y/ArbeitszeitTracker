@@ -32,7 +32,7 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
     private val timeEntryDao = database.timeEntryDao()
     private val userSettingsDao = database.userSettingsDao()
 
-    val userSettings: StateFlow<UserSettings?> = userSettingsDao.getUserSettingsFlow()
+    val userSettings: StateFlow<UserSettings?> = userSettingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     private val allEntries: StateFlow<List<TimeEntry>> = timeEntryDao.getAllEntriesFlow()
