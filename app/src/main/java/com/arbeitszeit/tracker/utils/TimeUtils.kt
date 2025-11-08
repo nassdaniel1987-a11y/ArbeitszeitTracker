@@ -62,6 +62,14 @@ object TimeUtils {
     fun minutesToExcelTime(minutes: Int): Double {
         return minutes / 1440.0
     }
+
+    /**
+     * Konvertiert Excel-Dezimalwert zu Minuten
+     * Für Excel-Import: 1.0 = 1440 Minuten (24 Stunden)
+     */
+    fun excelTimeToMinutes(excelTime: Double): Int {
+        return (excelTime * 1440.0).toInt()
+    }
     
     /**
      * Formatiert Minuten als Stunden mit 2 Dezimalstellen (z.B. "8.50h")
