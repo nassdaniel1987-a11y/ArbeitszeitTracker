@@ -43,13 +43,27 @@ class SimpleExcelExportManager(private val context: Context) {
         val timeStyle = createTimeStyle(workbook)
         val dateHeaderStyle = createDateHeaderStyle(workbook)
 
+        // Falls keine Einträge vorhanden sind, zeige Info-Meldung
+        if (entriesByWeek.isEmpty()) {
+            val infoRow = sheet.createRow(currentRow++)
+            infoRow.createCell(0).setCellValue("Keine Zeiteinträge für KW $startKW bis $endKW vorhanden")
+        }
+
         // Für jede Woche einen Block erstellen
         entriesByWeek.forEach { (kw, weekEntries) ->
             // Datumsbereich der Woche ermitteln
             val sortedEntries = weekEntries.sortedBy { it.datum }
             if (sortedEntries.isNotEmpty()) {
-                val firstDate = LocalDate.parse(sortedEntries.first().datum)
-                val lastDate = LocalDate.parse(sortedEntries.last().datum)
+                val firstDate = try {
+                    LocalDate.parse(sortedEntries.first().datum)
+                } catch (e: Exception) {
+                    LocalDate.now()
+                }
+                val lastDate = try {
+                    LocalDate.parse(sortedEntries.last().datum)
+                } catch (e: Exception) {
+                    LocalDate.now()
+                }
 
                 // Datumsbereich als Überschrift (z.B. "KW 25: 23.06.2025 - 29.06.2025")
                 val dateRangeRow = sheet.createRow(currentRow++)
@@ -123,21 +137,30 @@ class SimpleExcelExportManager(private val context: Context) {
         }
 
         // Spaltenbreiten anpassen
-        for (i in 0..6) {
-            sheet.autoSizeColumn(i)
+        try {
+            for (i in 0..6) {
+                sheet.autoSizeColumn(i)
+            }
+        } catch (e: Exception) {
+            // Ignoriere Fehler beim Auto-Sizing
         }
 
-        // Datei speichern
-        val outputFile = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "Arbeitszeiten_${year}_KW${String.format("%02d", startKW)}-${String.format("%02d", endKW)}_Einfach.xlsx"
-        )
+        // Datei speichern - verwende app-spezifisches Verzeichnis (keine Berechtigungen nötig)
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            ?: context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            ?: context.filesDir
 
-        FileOutputStream(outputFile).use { outputStream ->
-            workbook.write(outputStream)
+        val fileName = "Arbeitszeiten_${year}_KW${String.format("%02d", startKW)}-${String.format("%02d", endKW)}_Einfach.xlsx"
+        val outputFile = File(downloadsDir, fileName)
+
+        try {
+            FileOutputStream(outputFile).use { outputStream ->
+                workbook.write(outputStream)
+            }
+        } finally {
+            workbook.close()
         }
 
-        workbook.close()
         outputFile
     }
 
