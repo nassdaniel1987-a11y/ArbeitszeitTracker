@@ -1,6 +1,5 @@
 package com.arbeitszeit.tracker.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -13,7 +12,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.utils.TimeUtils
-import java.util.Calendar
 
 /**
  * Dialog zum Bearbeiten von Zeiteinträgen
