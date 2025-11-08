@@ -19,7 +19,7 @@ import java.util.Locale
 
 @Database(
     entities = [UserSettings::class, TimeEntry::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

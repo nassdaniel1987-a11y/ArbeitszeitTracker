@@ -69,7 +69,8 @@ fun HomeScreen(
                     isCurrentWeek = viewModel.isCurrentWeek(),
                     onPreviousWeek = { viewModel.previousWeek() },
                     onNextWeek = { viewModel.nextWeek() },
-                    onGoToCurrentWeek = { viewModel.goToCurrentWeek() }
+                    onGoToCurrentWeek = { viewModel.goToCurrentWeek() },
+                    firstMonday = userSettings?.ersterMontagImJahr
                 )
             }
 
@@ -90,12 +91,13 @@ private fun WeekNavigationHeader(
     isCurrentWeek: Boolean,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
-    onGoToCurrentWeek: () -> Unit
+    onGoToCurrentWeek: () -> Unit,
+    firstMonday: String? = null
 ) {
     val weekDays = DateUtils.getDaysOfWeek(selectedWeekDate)
     val weekStart = weekDays.first()
     val weekEnd = weekDays.last()
-    val weekNumber = DateUtils.getWeekOfYear(selectedWeekDate)
+    val weekNumber = DateUtils.getCustomWeekOfYear(selectedWeekDate, firstMonday)
 
     Card(
         modifier = Modifier.fillMaxWidth(),

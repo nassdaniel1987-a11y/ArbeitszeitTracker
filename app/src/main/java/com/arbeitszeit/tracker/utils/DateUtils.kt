@@ -44,26 +44,72 @@ object DateUtils {
     fun getWeekOfYear(date: LocalDate): Int {
         return date.get(weekField.weekOfWeekBasedYear())
     }
-    
+
     /**
      * Kalenderwoche für ein Datum-String
      */
     fun getWeekOfYear(dateString: String): Int {
         return getWeekOfYear(stringToDate(dateString))
     }
-    
+
     /**
      * Jahr (Wochenjahr nach ISO 8601)
      */
     fun getWeekBasedYear(date: LocalDate): Int {
         return date.get(weekField.weekBasedYear())
     }
-    
+
     /**
      * Jahr für Datum-String
      */
     fun getWeekBasedYear(dateString: String): Int {
         return getWeekBasedYear(stringToDate(dateString))
+    }
+
+    /**
+     * Berechnet Kalenderwoche basierend auf einem benutzerdefinierten ersten Montag
+     * @param date Das zu prüfende Datum
+     * @param firstMondayString Der erste Montag des Jahres (yyyy-MM-dd), null = ISO 8601
+     * @return Kalenderwoche (1-52/53)
+     */
+    fun getCustomWeekOfYear(date: LocalDate, firstMondayString: String?): Int {
+        if (firstMondayString == null) {
+            return getWeekOfYear(date)
+        }
+
+        val firstMonday = stringToDate(firstMondayString)
+        val firstMondayYear = firstMonday.year
+
+        // Wenn das Datum vor dem ersten Montag liegt, gehört es zum vorherigen Jahr
+        if (date.isBefore(firstMonday)) {
+            // Finde den ersten Montag des Vorjahres
+            val previousYearFirstMonday = firstMonday.minusYears(1)
+            return getCustomWeekOfYear(date, dateToString(previousYearFirstMonday))
+        }
+
+        // Berechne Wochendifferenz zwischen erstem Montag und dem Datum
+        val daysSinceFirstMonday = java.time.temporal.ChronoUnit.DAYS.between(firstMonday, date)
+        val weeksSinceFirstMonday = daysSinceFirstMonday / 7
+
+        return (weeksSinceFirstMonday + 1).toInt()
+    }
+
+    /**
+     * Berechnet das Jahr basierend auf einem benutzerdefinierten ersten Montag
+     */
+    fun getCustomWeekBasedYear(date: LocalDate, firstMondayString: String?): Int {
+        if (firstMondayString == null) {
+            return getWeekBasedYear(date)
+        }
+
+        val firstMonday = stringToDate(firstMondayString)
+
+        // Wenn das Datum vor dem ersten Montag liegt, gehört es zum vorherigen Jahr
+        return if (date.isBefore(firstMonday)) {
+            firstMonday.year - 1
+        } else {
+            firstMonday.year
+        }
     }
     
     /**
