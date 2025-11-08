@@ -74,7 +74,10 @@ class ExcelImportManager(private val context: Context) {
      * Liest Stammdaten aus dem Stammangaben-Sheet
      */
     private fun readStammdaten(sheet: Sheet?): UserSettings? {
-        if (sheet == null) return null
+        if (sheet == null) {
+            android.util.Log.w("ExcelImport", "Stammangaben sheet nicht gefunden!")
+            return null
+        }
 
         try {
             // B3: Name
@@ -119,7 +122,7 @@ class ExcelImportManager(private val context: Context) {
                 }
             }
 
-            return UserSettings(
+            val settings = UserSettings(
                 id = 1,
                 name = name,
                 einrichtung = einrichtung,
@@ -132,6 +135,12 @@ class ExcelImportManager(private val context: Context) {
                 ersterMontagImJahr = ersterMontagImJahr,
                 updatedAt = System.currentTimeMillis()
             )
+
+            android.util.Log.d("ExcelImport", "Stammdaten gelesen: Name=$name, Einrichtung=$einrichtung, " +
+                    "Arbeitsumfang=$arbeitsumfangProzent%, Wochenstunden=${wochenStundenMinuten}min, " +
+                    "Arbeitstage=$arbeitsTageProWoche, ErsterMontag=$ersterMontagImJahr")
+
+            return settings
 
         } catch (e: Exception) {
             return null
