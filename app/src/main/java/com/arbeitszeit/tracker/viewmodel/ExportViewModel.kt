@@ -211,6 +211,12 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                             // Lade existierende Settings um Geofencing-Einstellungen zu erhalten
                             val existingSettings = settingsDao.getSettings()
 
+                            android.util.Log.d("ExportViewModel", "Import: importStammdaten=$importStammdaten")
+                            android.util.Log.d("ExportViewModel", "Importierte Settings: name=${result.userSettings.name}, " +
+                                    "einrichtung=${result.userSettings.einrichtung}, wochenstunden=${result.userSettings.wochenStundenMinuten}")
+                            android.util.Log.d("ExportViewModel", "Existierende Settings: name=${existingSettings?.name}, " +
+                                    "einrichtung=${existingSettings?.einrichtung}, wochenstunden=${existingSettings?.wochenStundenMinuten}")
+
                             // Merge: Stammdaten aus Import, Geofencing-Einstellungen behalten
                             val mergedSettings = result.userSettings.copy(
                                 geofencingEnabled = existingSettings?.geofencingEnabled ?: false,
@@ -227,7 +233,12 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                                 sonntagSollMinuten = result.userSettings.sonntagSollMinuten ?: existingSettings?.sonntagSollMinuten
                             )
 
+                            android.util.Log.d("ExportViewModel", "Merged Settings: name=${mergedSettings.name}, " +
+                                    "einrichtung=${mergedSettings.einrichtung}, wochenstunden=${mergedSettings.wochenStundenMinuten}")
+
                             settingsDao.insertOrUpdate(mergedSettings)
+
+                            android.util.Log.d("ExportViewModel", "Settings gespeichert!")
 
                             // Aktualisiere sollMinuten für alle bestehenden Einträge basierend auf neuen Stammdaten
                             updateSollMinutenForAllEntries(mergedSettings)
