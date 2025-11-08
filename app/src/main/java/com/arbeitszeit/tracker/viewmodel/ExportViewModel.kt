@@ -100,16 +100,17 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                     lastExportedFile = file,
                     exportSuccess = true
                 )
-                
+
             } catch (e: Exception) {
+                e.printStackTrace()
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
-                    error = "Export fehlgeschlagen: ${e.message}"
+                    error = "Export fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"
                 )
             }
         }
     }
-    
+
     /**
      * Exportiert Excel als einfache Tabelle (ohne Template)
      */
@@ -157,9 +158,10 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                 )
 
             } catch (e: Exception) {
+                e.printStackTrace()
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
-                    error = "Export fehlgeschlagen: ${e.message}"
+                    error = "Export fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"
                 )
             }
         }
