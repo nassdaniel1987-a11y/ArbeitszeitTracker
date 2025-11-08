@@ -23,6 +23,13 @@ data class UserSettings(
     val freitagSollMinuten: Int? = null,
     val samstagSollMinuten: Int? = null,
     val sonntagSollMinuten: Int? = null,
+
+    // Geofencing Einstellungen
+    val geofencingEnabled: Boolean = false,
+    val geofencingStartHour: Int = 6,        // Aktiv ab 6 Uhr
+    val geofencingEndHour: Int = 20,         // Aktiv bis 20 Uhr
+    val geofencingActiveDays: String = "12345", // Mo=1, Di=2, Mi=3, Do=4, Fr=5, Sa=6, So=7
+
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
@@ -54,5 +61,16 @@ data class UserSettings(
                freitagSollMinuten != null ||
                samstagSollMinuten != null ||
                sonntagSollMinuten != null
+    }
+
+    /**
+     * Prüft ob Geofencing zu dieser Zeit aktiv sein soll
+     * @param dayOfWeek 1=Montag, 2=Dienstag, ..., 7=Sonntag
+     * @param hourOfDay 0-23
+     */
+    fun isGeofencingActiveNow(dayOfWeek: Int, hourOfDay: Int): Boolean {
+        if (!geofencingEnabled) return false
+        if (hourOfDay < geofencingStartHour || hourOfDay >= geofencingEndHour) return false
+        return geofencingActiveDays.contains(dayOfWeek.toString())
     }
 }
