@@ -47,6 +47,17 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "META-INF/*.kotlin_module"
+            // Exclude module-info files that cause jlink issues
+            excludes += "module-info.class"
+            excludes += "META-INF/versions/*/module-info.class"
+        }
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }

@@ -126,18 +126,18 @@ class ExcelExportManager(private val context: Context) {
         // Woche 4: Zeile 29-35 (Index 28-34)
         val weekStartRows = listOf(7, 14, 21, 28)
         
-        entriesByWeek.entries.forEachIndexed { weekIndex, (kw, weekEntries) ->
-            if (weekIndex >= weekStartRows.size) return@forEachIndexed
-            
+        entriesByWeek.entries.forEachIndexed weekLoop@{ weekIndex, (kw, weekEntries) ->
+            if (weekIndex >= weekStartRows.size) return@weekLoop
+
             val startRow = weekStartRows[weekIndex]
-            
+
             // KW-Nummer in Spalte A der Summenzeile (Zeile startRow + 6)
             val sumRowIndex = startRow + 6
             sheet.getRow(sumRowIndex)?.getCell(0)?.setCellValue(kw.toDouble())
-            
+
             // Sortiere Einträge nach Datum
-            weekEntries.sortedBy { it.datum }.forEachIndexed { dayIndex, entry ->
-                if (dayIndex >= 6) return@forEachIndexed // Max 6 Tage (Mo-Sa/Sonst)
+            weekEntries.sortedBy { it.datum }.forEachIndexed dayLoop@{ dayIndex, entry ->
+                if (dayIndex >= 6) return@dayLoop // Max 6 Tage (Mo-Sa/Sonst)
                 
                 val rowIndex = startRow + dayIndex
                 val row = sheet.getRow(rowIndex) ?: sheet.createRow(rowIndex)
