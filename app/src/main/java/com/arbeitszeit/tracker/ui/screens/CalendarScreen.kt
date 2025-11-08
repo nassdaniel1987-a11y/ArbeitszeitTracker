@@ -65,6 +65,17 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            // Berechne Offset für ersten Tag des Monats
+            val firstDayOfMonth = month.atDay(1)
+            val dayOfWeek = firstDayOfMonth.dayOfWeek.value // 1 = Montag, 7 = Sonntag
+            val offset = dayOfWeek - 1 // Anzahl leerer Zellen am Anfang (0-6)
+
+            // Füge leere Zellen für Tage vor dem ersten des Monats hinzu
+            items(offset) {
+                Box(modifier = Modifier.aspectRatio(1f))
+            }
+
+            // Füge die eigentlichen Tage des Monats hinzu
             items(month.lengthOfMonth()) { day ->
                 val date = month.atDay(day + 1)
                 val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
