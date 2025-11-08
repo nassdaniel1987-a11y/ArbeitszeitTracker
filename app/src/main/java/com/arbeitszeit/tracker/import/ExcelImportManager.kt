@@ -38,9 +38,27 @@ class ExcelImportManager(private val context: Context) {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 val workbook = WorkbookFactory.create(inputStream)
 
+                // Debug: Liste alle Sheets auf
+                android.util.Log.d("ExcelImport", "Excel hat ${workbook.numberOfSheets} Sheets:")
+                for (i in 0 until workbook.numberOfSheets) {
+                    android.util.Log.d("ExcelImport", "  Sheet $i: ${workbook.getSheetAt(i).sheetName}")
+                }
+
                 // 1. Lese Stammdaten wenn gewünscht (ZUERST, um ersterMontagImJahr zu haben)
                 if (importStammdaten) {
-                    userSettings = readStammdaten(workbook.getSheet("Stammangaben"))
+                    android.util.Log.d("ExcelImport", "Versuche Stammangaben-Sheet zu lesen...")
+
+                    // Suche Sheet case-insensitive (kann "Stammangaben" oder "stammangaben" sein)
+                    val stammdatenSheet = (0 until workbook.numberOfSheets)
+                        .map { workbook.getSheetAt(it) }
+                        .firstOrNull { it.sheetName.equals("stammangaben", ignoreCase = true) }
+
+                    userSettings = readStammdaten(stammdatenSheet)
+                    if (userSettings == null) {
+                        android.util.Log.w("ExcelImport", "Stammangaben konnten nicht gelesen werden!")
+                    }
+                } else {
+                    android.util.Log.d("ExcelImport", "importStammdaten=false, überspringe Stammangaben")
                 }
 
                 // 2. Lese alle KW-Sheets mit der custom week calculation
@@ -59,6 +77,8 @@ class ExcelImportManager(private val context: Context) {
                 workbook.close()
             }
 
+            android.util.Log.d("ExcelImport", "Import abgeschlossen: ${entries.size} Einträge, userSettings=${if (userSettings != null) "vorhanden" else "null"}")
+
             ImportResult.Success(
                 entries = entries,
                 userSettings = userSettings,
@@ -66,6 +86,7 @@ class ExcelImportManager(private val context: Context) {
             )
 
         } catch (e: Exception) {
+            android.util.Log.e("ExcelImport", "Import-Fehler: ${e.message}", e)
             ImportResult.Error("Import fehlgeschlagen: ${e.message}")
         }
     }
@@ -143,6 +164,7 @@ class ExcelImportManager(private val context: Context) {
             return settings
 
         } catch (e: Exception) {
+            android.util.Log.e("ExcelImport", "Fehler beim Lesen der Stammdaten: ${e.message}", e)
             return null
         }
     }

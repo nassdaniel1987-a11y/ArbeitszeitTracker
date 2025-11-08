@@ -75,7 +75,10 @@ class ExcelExportManager(private val context: Context) {
      * Füllt das Stammangaben-Sheet
      */
     private fun fillStammangaben(workbook: Workbook, settings: UserSettings) {
-        val sheet = workbook.getSheet("Stammangaben")
+        // Suche Sheet case-insensitive
+        val sheet = (0 until workbook.numberOfSheets)
+            .map { workbook.getSheetAt(it) }
+            .firstOrNull { it.sheetName.equals("stammangaben", ignoreCase = true) }
             ?: throw IllegalStateException("Sheet 'Stammangaben' nicht gefunden")
         
         // Name in B3 (Zeile 2, Index 0-basiert)
