@@ -135,11 +135,36 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                         // Speichere importierte Stammdaten
                         if (importStammdaten && result.userSettings != null) {
                             settingsDao.insertOrUpdate(result.userSettings)
+
+                            // Aktualisiere sollMinuten für alle bestehenden Einträge basierend auf neuen Stammdaten
+                            updateSollMinutenForAllEntries(result.userSettings)
                         }
 
                         // Speichere importierte Zeiteinträge
-                        result.entries.forEach { entry ->
-                            timeEntryDao.insert(entry)
+                        // Prüfe für jeden Eintrag, ob bereits einer für dieses Datum existiert
+                        result.entries.forEach { importedEntry ->
+                            val existingEntry = timeEntryDao.getEntryByDate(importedEntry.datum)
+
+                            if (existingEntry != null) {
+                                // Aktualisiere bestehenden Eintrag mit importierten Daten
+                                timeEntryDao.update(existingEntry.copy(
+                                    wochentag = importedEntry.wochentag,
+                                    kalenderwoche = importedEntry.kalenderwoche,
+                                    jahr = importedEntry.jahr,
+                                    startZeit = importedEntry.startZeit,
+                                    endZeit = importedEntry.endZeit,
+                                    pauseMinuten = importedEntry.pauseMinuten,
+                                    sollMinuten = importedEntry.sollMinuten,
+                                    typ = importedEntry.typ,
+                                    notiz = importedEntry.notiz,
+                                    arbeitszeitBereitschaft = importedEntry.arbeitszeitBereitschaft,
+                                    isManualEntry = true,
+                                    updatedAt = System.currentTimeMillis()
+                                ))
+                            } else {
+                                // Füge neuen Eintrag hinzu
+                                timeEntryDao.insert(importedEntry)
+                            }
                         }
 
                         _uiState.value = _uiState.value.copy(
@@ -176,6 +201,33 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
      */
     fun resetImportSuccess() {
         _uiState.value = _uiState.value.copy(importSuccess = false, importedEntriesCount = 0)
+    }
+
+    /**
+     * Aktualisiert sollMinuten für alle Einträge basierend auf neuen Stammdaten
+     * Wird nach Import von Stammdaten aufgerufen
+     */
+    private suspend fun updateSollMinutenForAllEntries(settings: com.arbeitszeit.tracker.data.entity.UserSettings) {
+        val year = java.time.LocalDate.now().year
+        val allEntries = timeEntryDao.getEntriesByYear(year)
+
+        allEntries.forEach { entry ->
+            // Berechne neue sollMinuten basierend auf Settings
+            val date = java.time.LocalDate.parse(entry.datum)
+            val newSollMinuten = if (DateUtils.isWeekend(date)) {
+                0
+            } else {
+                settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+            }
+
+            // Aktualisiere nur wenn sollMinuten sich geändert haben
+            if (entry.sollMinuten != newSollMinuten) {
+                timeEntryDao.update(entry.copy(
+                    sollMinuten = newSollMinuten,
+                    updatedAt = System.currentTimeMillis()
+                ))
+            }
+        }
     }
 }
 
