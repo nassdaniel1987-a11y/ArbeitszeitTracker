@@ -11,8 +11,9 @@ import com.arbeitszeit.tracker.viewmodel.*
 sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Calendar : Screen("calendar")
-    object Settings : Screen("settings")
+    object Ueberstunden : Screen("ueberstunden")
     object Export : Screen("export")
+    object Settings : Screen("settings")
 }
 
 @Composable
@@ -36,15 +37,20 @@ fun NavGraph(
             val viewModel: CalendarViewModel = viewModel()
             CalendarScreen(viewModel = viewModel)
         }
-        
-        composable(Screen.Settings.route) {
-            val viewModel: SettingsViewModel = viewModel()
-            SettingsScreen(viewModel = viewModel)
+
+        composable(Screen.Ueberstunden.route) {
+            val viewModel: UeberstundenViewModel = viewModel()
+            UeberstundenScreen(viewModel = viewModel)
         }
-        
+
         composable(Screen.Export.route) {
             val viewModel: ExportViewModel = viewModel()
             ExportScreen(viewModel = viewModel)
+        }
+
+        composable(Screen.Settings.route) {
+            val viewModel: SettingsViewModel = viewModel()
+            SettingsScreen(viewModel = viewModel)
         }
     }
 }

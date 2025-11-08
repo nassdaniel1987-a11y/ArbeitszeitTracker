@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
                             val items = listOf(
                                 Triple(Screen.Home, Icons.Default.Home, "Home"),
                                 Triple(Screen.Calendar, Icons.Default.CalendarMonth, "Kalender"),
+                                Triple(Screen.Ueberstunden, Icons.Default.Timeline, "Überstunden"),
                                 Triple(Screen.Export, Icons.Default.FileDownload, "Export"),
                                 Triple(Screen.Settings, Icons.Default.Settings, "Einstellungen")
                             )
