@@ -47,7 +47,13 @@ class ExcelImportManager(private val context: Context) {
                 // 1. Lese Stammdaten wenn gewünscht (ZUERST, um ersterMontagImJahr zu haben)
                 if (importStammdaten) {
                     android.util.Log.d("ExcelImport", "Versuche Stammangaben-Sheet zu lesen...")
-                    userSettings = readStammdaten(workbook.getSheet("Stammangaben"))
+
+                    // Suche Sheet case-insensitive (kann "Stammangaben" oder "stammangaben" sein)
+                    val stammdatenSheet = (0 until workbook.numberOfSheets)
+                        .map { workbook.getSheetAt(it) }
+                        .firstOrNull { it.sheetName.equals("stammangaben", ignoreCase = true) }
+
+                    userSettings = readStammdaten(stammdatenSheet)
                     if (userSettings == null) {
                         android.util.Log.w("ExcelImport", "Stammangaben konnten nicht gelesen werden!")
                     }
