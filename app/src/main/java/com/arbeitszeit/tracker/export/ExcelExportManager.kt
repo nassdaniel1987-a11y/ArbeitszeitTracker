@@ -13,6 +13,7 @@ import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import java.io.File
 import java.io.FileOutputStream
+import java.time.LocalDate
 
 class ExcelExportManager(private val context: Context) {
     
@@ -146,10 +147,16 @@ class ExcelExportManager(private val context: Context) {
             sheet.getRow(sumRowIndex)?.getCell(0)?.setCellValue(kw.toDouble())
 
             // Sortiere Einträge nach Datum
-            weekEntries.sortedBy { it.datum }.forEachIndexed dayLoop@{ dayIndex, entry ->
-                if (dayIndex >= 6) return@dayLoop // Max 6 Tage (Mo-Sa/Sonst)
-                
-                val rowIndex = startRow + dayIndex
+            weekEntries.sortedBy { it.datum }.forEach { entry ->
+                // Berechne tatsächlichen Wochentag aus Datum (1=Mo, 7=So)
+                val date = LocalDate.parse(entry.datum)
+                val dayOfWeek = date.dayOfWeek.value // 1=Monday, 7=Sunday
+                val dayOffset = when (dayOfWeek) {
+                    7 -> 6  // Sonntag -> Index 6 (7. Zeile)
+                    else -> dayOfWeek - 1  // Mo=0, Di=1, Mi=2, Do=3, Fr=4, Sa=5
+                }
+
+                val rowIndex = startRow + dayOffset
                 val row = sheet.getRow(rowIndex) ?: sheet.createRow(rowIndex)
                 
                 // Spalte C (Index 2): Soll-Zeit
