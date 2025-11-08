@@ -13,7 +13,10 @@ import com.arbeitszeit.tracker.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onNavigateToGeofencing: () -> Unit = {}
+) {
     val settings by viewModel.userSettings.collectAsState()
 
     var name by remember { mutableStateOf(settings?.name ?: "") }
@@ -168,6 +171,37 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             supportingText = { Text("Format: TT.MM.JJJJ - Leer lassen für ISO 8601") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        Divider()
+
+        // Geofencing / Automatische Zeiterfassung
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Automatische Zeiterfassung",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        "Starte/beende Arbeitszeit automatisch basierend auf deinem Standort",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Button(onClick = onNavigateToGeofencing) {
+                    Text("Konfigurieren")
+                }
+            }
+        }
 
         Divider()
 
