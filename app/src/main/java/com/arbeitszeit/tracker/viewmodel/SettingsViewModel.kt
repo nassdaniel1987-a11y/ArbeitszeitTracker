@@ -69,6 +69,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
             // Aktualisiere sollMinuten für alle bestehenden Einträge
             updateSollMinutenForAllEntries(settings)
+
+            // Aktualisiere Kalenderwochen, wenn sich der erste Montag geändert hat
+            updateKalenderwochenForAllEntries(settings)
         }
     }
 
@@ -112,6 +115,37 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
+    /**
+     * Aktualisiert die Kalenderwochen für alle bestehenden Zeiteinträge
+     * basierend auf der benutzerdefinierten Berechnung
+     */
+    private suspend fun updateKalenderwochenForAllEntries(settings: UserSettings) {
+        val allEntries = timeEntryDao.getAllEntriesFlow().first()
+
+        allEntries.forEach { entry ->
+            val date = java.time.LocalDate.parse(entry.datum)
+
+            // Berechne KW mit benutzerdefinierter Methode
+            val newKW = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekOfYear(
+                date,
+                settings.ersterMontagImJahr
+            )
+            val newJahr = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(
+                date,
+                settings.ersterMontagImJahr
+            )
+
+            // Aktualisiere nur, wenn sich KW oder Jahr geändert haben
+            if (entry.kalenderwoche != newKW || entry.jahr != newJahr) {
+                timeEntryDao.update(entry.copy(
+                    kalenderwoche = newKW,
+                    jahr = newJahr,
+                    updatedAt = System.currentTimeMillis()
+                ))
+            }
+        }
+    }
+
     /**
      * Aktualisiert nur den Übertrag vom letzten Blatt
      */
