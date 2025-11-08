@@ -22,6 +22,7 @@ object NotificationHelper {
     const val NOTIFICATION_ID_EVENING = 1002
     const val NOTIFICATION_ID_MISSING = 1003
     const val NOTIFICATION_ID_EXPORT = 2001
+    const val NOTIFICATION_ID_IMPORT = 2002
 
     /**
      * Erstellt alle Notification Channels
@@ -150,6 +151,23 @@ object NotificationHelper {
             .build()
 
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_EXPORT, notification)
+    }
+
+    /**
+     * Zeigt Import-Erfolg Benachrichtigung
+     */
+    fun showImportSuccess(context: Context, entriesCount: Int) {
+        if (!hasNotificationPermission(context)) return
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID_EXPORT)
+            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setContentTitle("Excel importiert")
+            .setContentText("$entriesCount Zeiteinträge importiert")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_IMPORT, notification)
     }
 
     /**

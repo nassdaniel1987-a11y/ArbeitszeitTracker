@@ -1,10 +1,13 @@
 package com.arbeitszeit.tracker.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.export.ExcelExportManager
+import com.arbeitszeit.tracker.import.ExcelImportManager
+import com.arbeitszeit.tracker.import.ImportResult
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,11 +18,12 @@ import java.io.File
 import java.time.LocalDate
 
 class ExportViewModel(application: Application) : AndroidViewModel(application) {
-    
+
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
     private val exportManager = ExcelExportManager(application)
+    private val importManager = ExcelImportManager(application)
     
     private val _uiState = MutableStateFlow(ExportUiState())
     val uiState: StateFlow<ExportUiState> = _uiState.asStateFlow()
@@ -112,11 +116,75 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     fun resetExportSuccess() {
         _uiState.value = _uiState.value.copy(exportSuccess = false)
     }
+
+    /**
+     * Importiert Excel-Datei
+     *
+     * @param uri URI der Excel-Datei
+     * @param importStammdaten Sollen Stammdaten auch importiert werden?
+     */
+    fun importExcel(uri: Uri, importStammdaten: Boolean) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isImporting = true, error = null)
+
+            try {
+                val result = importManager.importFromExcel(uri, importStammdaten)
+
+                when (result) {
+                    is ImportResult.Success -> {
+                        // Speichere importierte Stammdaten
+                        if (importStammdaten && result.userSettings != null) {
+                            settingsDao.insertOrUpdate(result.userSettings)
+                        }
+
+                        // Speichere importierte Zeiteinträge
+                        result.entries.forEach { entry ->
+                            timeEntryDao.insert(entry)
+                        }
+
+                        _uiState.value = _uiState.value.copy(
+                            isImporting = false,
+                            importSuccess = true,
+                            importedEntriesCount = result.entriesCount
+                        )
+
+                        NotificationHelper.showImportSuccess(
+                            getApplication(),
+                            result.entriesCount
+                        )
+                    }
+
+                    is ImportResult.Error -> {
+                        _uiState.value = _uiState.value.copy(
+                            isImporting = false,
+                            error = result.message
+                        )
+                    }
+                }
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isImporting = false,
+                    error = "Import fehlgeschlagen: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Setzt Import-Erfolg zurück
+     */
+    fun resetImportSuccess() {
+        _uiState.value = _uiState.value.copy(importSuccess = false, importedEntriesCount = 0)
+    }
 }
 
 data class ExportUiState(
     val isExporting: Boolean = false,
+    val isImporting: Boolean = false,
     val lastExportedFile: File? = null,
     val exportSuccess: Boolean = false,
+    val importSuccess: Boolean = false,
+    val importedEntriesCount: Int = 0,
     val error: String? = null
 )
