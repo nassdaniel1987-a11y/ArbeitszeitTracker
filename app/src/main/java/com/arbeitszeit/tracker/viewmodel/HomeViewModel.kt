@@ -78,11 +78,23 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun calculateSollMinuten(date: LocalDate, settings: UserSettings?): Int {
         if (settings == null) return 0
-        
-        // Wochenende = 0
-        if (DateUtils.isWeekend(date)) return 0
-        
-        // Wochenstunden / Arbeitstage
+
+        // Wochenende = 0 (außer individuelle Zeiten sind gesetzt)
+        if (DateUtils.isWeekend(date)) {
+            val dayOfWeek = date.dayOfWeek.value
+            return settings.getSollMinutenForDay(dayOfWeek) ?: 0
+        }
+
+        // Prüfe ob individuelle Tages-Soll-Zeiten definiert sind
+        val dayOfWeek = date.dayOfWeek.value
+        val individualSollMinuten = settings.getSollMinutenForDay(dayOfWeek)
+
+        // Wenn individuelle Zeit vorhanden, verwende diese
+        if (individualSollMinuten != null) {
+            return individualSollMinuten
+        }
+
+        // Sonst: Wochenstunden / Arbeitstage
         return settings.wochenStundenMinuten / settings.arbeitsTageProWoche
     }
     

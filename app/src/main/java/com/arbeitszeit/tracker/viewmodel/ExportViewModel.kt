@@ -214,10 +214,15 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
         allEntries.forEach { entry ->
             // Berechne neue sollMinuten basierend auf Settings
             val date = java.time.LocalDate.parse(entry.datum)
+            val dayOfWeek = date.dayOfWeek.value
+
             val newSollMinuten = if (DateUtils.isWeekend(date)) {
-                0
+                // Wochenende: Prüfe individuelle Zeiten
+                settings.getSollMinutenForDay(dayOfWeek) ?: 0
             } else {
-                settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+                // Werktag: Individuelle Zeit oder Standard
+                settings.getSollMinutenForDay(dayOfWeek)
+                    ?: (settings.wochenStundenMinuten / settings.arbeitsTageProWoche)
             }
 
             // Aktualisiere nur wenn sollMinuten sich geändert haben

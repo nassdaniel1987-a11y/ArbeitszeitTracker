@@ -19,18 +19,18 @@ import java.util.Locale
 
 @Database(
     entities = [UserSettings::class, TimeEntry::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    
+
     abstract fun userSettingsDao(): UserSettingsDao
     abstract fun timeEntryDao(): TimeEntryDao
-    
+
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
-        
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -39,6 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "arbeitszeit_database"
                 )
                     .addCallback(DatabaseCallback(context))
+                    .fallbackToDestructiveMigration() // Für Entwicklung: DB wird bei Schema-Änderung neu erstellt
                     .build()
                 INSTANCE = instance
                 instance
