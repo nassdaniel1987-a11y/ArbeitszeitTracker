@@ -141,33 +141,27 @@ class SimpleExcelExportManager(private val context: Context) {
         outputFile
     }
 
-    private fun createHeaderStyle(workbook: Workbook): CellStyle {
-        val style = workbook.createCellStyle()
+    private fun createHeaderStyle(workbook: XSSFWorkbook) = workbook.createCellStyle().apply {
         val font = workbook.createFont()
         font.bold = true
-        style.setFont(font)
-        style.fillForegroundColor = IndexedColors.GREY_25_PERCENT.index
-        style.fillPattern = FillPatternType.SOLID_FOREGROUND
-        style.borderBottom = BorderStyle.THIN
-        style.borderTop = BorderStyle.THIN
-        style.borderLeft = BorderStyle.THIN
-        style.borderRight = BorderStyle.THIN
-        return style
+        setFont(font)
+        fillForegroundColor = IndexedColors.GREY_25_PERCENT.index
+        fillPattern = FillPatternType.SOLID_FOREGROUND
+        borderBottom = BorderStyle.THIN
+        borderTop = BorderStyle.THIN
+        borderLeft = BorderStyle.THIN
+        borderRight = BorderStyle.THIN
     }
 
-    private fun createDateHeaderStyle(workbook: Workbook): CellStyle {
-        val style = workbook.createCellStyle()
+    private fun createDateHeaderStyle(workbook: XSSFWorkbook) = workbook.createCellStyle().apply {
         val font = workbook.createFont()
         font.bold = true
         font.fontHeightInPoints = 12
-        style.setFont(font)
-        return style
+        setFont(font)
     }
 
-    private fun createTimeStyle(workbook: Workbook): CellStyle {
-        val style = workbook.createCellStyle()
-        style.alignment = HorizontalAlignment.RIGHT
-        return style
+    private fun createTimeStyle(workbook: XSSFWorkbook) = workbook.createCellStyle().apply {
+        alignment = HorizontalAlignment.RIGHT
     }
 
     /**
