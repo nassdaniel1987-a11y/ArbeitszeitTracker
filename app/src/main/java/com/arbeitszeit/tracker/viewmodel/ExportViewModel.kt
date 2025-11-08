@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.export.ExcelExportManager
+import com.arbeitszeit.tracker.export.SimpleExcelExportManager
 import com.arbeitszeit.tracker.import.ExcelImportManager
 import com.arbeitszeit.tracker.import.ImportResult
 import com.arbeitszeit.tracker.utils.DateUtils
@@ -23,6 +24,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
     private val exportManager = ExcelExportManager(application)
+    private val simpleExportManager = SimpleExcelExportManager(application)
     private val importManager = ExcelImportManager(application)
     
     private val _uiState = MutableStateFlow(ExportUiState())
@@ -108,6 +110,61 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
+    /**
+     * Exportiert Excel als einfache Tabelle (ohne Template)
+     */
+    fun exportSimpleExcel() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isExporting = true, error = null)
+
+            try {
+                val kw = _selectedKW.value
+                val (startKW, endKW) = DateUtils.getWeekRangeForSheet(kw)
+                val year = LocalDate.now().year
+
+                // Lade Settings
+                val settings = settingsDao.getSettings()
+                if (settings == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isExporting = false,
+                        error = "Bitte erst Einstellungen ausfüllen"
+                    )
+                    return@launch
+                }
+
+                // Lade alle Einträge für den Zeitraum
+                val entries = timeEntryDao.getEntriesByWeekRange(year, startKW, endKW)
+
+                // Exportiere als einfache Tabelle
+                val file = simpleExportManager.exportToSimpleExcel(
+                    userSettings = settings,
+                    entries = entries,
+                    startKW = startKW,
+                    endKW = endKW,
+                    year = year
+                )
+
+                // Zeige Erfolg
+                NotificationHelper.showExportSuccess(
+                    getApplication(),
+                    file.name
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    isExporting = false,
+                    lastExportedFile = file,
+                    exportSuccess = true
+                )
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isExporting = false,
+                    error = "Export fehlgeschlagen: ${e.message}"
+                )
+            }
+        }
+    }
+
     /**
      * Prüft ob Template verfügbar ist
      */

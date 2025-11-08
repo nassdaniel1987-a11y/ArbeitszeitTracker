@@ -197,4 +197,12 @@ object DateUtils {
         val endKW = startKW + 3
         return Pair(startKW, endKW)
     }
+
+    /**
+     * Konvertiert LocalDate zu deutschem Format (dd.MM.yyyy)
+     */
+    fun dateToGermanString(date: LocalDate): String {
+        val germanFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+        return date.format(germanFormatter)
+    }
 }

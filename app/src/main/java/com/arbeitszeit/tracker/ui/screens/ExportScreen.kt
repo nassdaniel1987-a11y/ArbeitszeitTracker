@@ -69,8 +69,21 @@ fun ExportScreen(viewModel: ExportViewModel) {
             } else {
                 Icon(Icons.Default.FileDownload, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Excel exportieren")
+                Text("Excel exportieren (Template)")
             }
+        }
+
+        Button(
+            onClick = { viewModel.exportSimpleExcel() },
+            enabled = !uiState.isExporting && !uiState.isImporting,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary
+            )
+        ) {
+            Icon(Icons.Default.FileDownload, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Einfacher Export (Wochenblöcke)")
         }
 
         if (uiState.exportSuccess) {
