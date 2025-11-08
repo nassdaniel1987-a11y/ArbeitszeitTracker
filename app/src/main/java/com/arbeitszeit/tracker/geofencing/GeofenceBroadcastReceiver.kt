@@ -3,7 +3,9 @@ package com.arbeitszeit.tracker.geofencing
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -11,6 +13,9 @@ import androidx.core.app.NotificationCompat
 import com.arbeitszeit.tracker.MainActivity
 import com.arbeitszeit.tracker.R
 import com.arbeitszeit.tracker.data.database.AppDatabase
+import com.arbeitszeit.tracker.utils.DateUtils
+import com.arbeitszeit.tracker.utils.TimeUtils
+import com.arbeitszeit.tracker.widget.TimeStampWidget
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import kotlinx.coroutines.CoroutineScope
@@ -85,28 +90,67 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
     }
 
     private fun handleStartWork(context: Context) {
-        // TODO: Implementiere Arbeitszeit-Start-Logik
-        // Dies würde den TimeStamp in der Datenbank setzen
+        CoroutineScope(Dispatchers.IO).launch {
+            val database = AppDatabase.getDatabase(context)
+            val timeEntryDao = database.timeEntryDao()
 
+            val today = DateUtils.today()
+            val entry = timeEntryDao.getEntryByDate(today)
+            val currentTime = TimeUtils.currentTimeInMinutes()
+
+            if (entry != null) {
+                timeEntryDao.update(entry.copy(
+                    startZeit = currentTime,
+                    updatedAt = System.currentTimeMillis()
+                ))
+            }
+
+            // Widget aktualisieren
+            refreshWidget(context)
+        }
+
+        // Benachrichtigung schließen
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(1)
 
-        // Öffne die App
-        val appIntent = Intent(context, MainActivity::class.java)
-        appIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        context.startActivity(appIntent)
+        // Erfolgs-Benachrichtigung anzeigen
+        showSuccessNotification(
+            context,
+            "Arbeitszeit gestartet",
+            "Start: ${TimeUtils.currentTimeString()}"
+        )
     }
 
     private fun handleStopWork(context: Context) {
-        // TODO: Implementiere Arbeitszeit-Stop-Logik
+        CoroutineScope(Dispatchers.IO).launch {
+            val database = AppDatabase.getDatabase(context)
+            val timeEntryDao = database.timeEntryDao()
 
+            val today = DateUtils.today()
+            val entry = timeEntryDao.getEntryByDate(today)
+            val currentTime = TimeUtils.currentTimeInMinutes()
+
+            if (entry != null) {
+                timeEntryDao.update(entry.copy(
+                    endZeit = currentTime,
+                    updatedAt = System.currentTimeMillis()
+                ))
+            }
+
+            // Widget aktualisieren
+            refreshWidget(context)
+        }
+
+        // Benachrichtigung schließen
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(1)
 
-        // Öffne die App
-        val appIntent = Intent(context, MainActivity::class.java)
-        appIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        context.startActivity(appIntent)
+        // Erfolgs-Benachrichtigung anzeigen
+        showSuccessNotification(
+            context,
+            "Arbeitszeit beendet",
+            "Ende: ${TimeUtils.currentTimeString()}"
+        )
     }
 
     private fun handleDismiss(context: Context) {
@@ -156,6 +200,37 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(1, notification)
+    }
+
+    private fun refreshWidget(context: Context) {
+        val intent = Intent(context, TimeStampWidget::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(context, TimeStampWidget::class.java)
+        )
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+        context.sendBroadcast(intent)
+    }
+
+    private fun showSuccessNotification(
+        context: Context,
+        title: String,
+        message: String
+    ) {
+        createNotificationChannel(context)
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(2, notification) // Different ID than action notification
     }
 
     private fun createNotificationChannel(context: Context) {
