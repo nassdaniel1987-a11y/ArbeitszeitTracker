@@ -102,6 +102,16 @@ class ExcelExportManager(private val context: Context) {
         // automatisch aus dem vorherigen Export übernommen
         val letzterUebertragDecimal = TimeUtils.minutesToExcelTime(settings.letzterUebertragMinuten)
         sheet.getRow(10)?.getCell(2)?.setCellValue(letzterUebertragDecimal)
+
+        // Erster Montag im Jahr in C12 (für custom KW-Berechnung)
+        if (settings.ersterMontagImJahr != null) {
+            // Format: DD.MM.YYYY für Excel
+            val parts = settings.ersterMontagImJahr.split("-")
+            if (parts.size == 3) {
+                val formatted = "${parts[2]}.${parts[1]}.${parts[0]}"
+                sheet.getRow(11)?.getCell(2)?.setCellValue(formatted)
+            }
+        }
     }
     
     /**

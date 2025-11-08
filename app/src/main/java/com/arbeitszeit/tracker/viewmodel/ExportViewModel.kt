@@ -27,9 +27,24 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     
     private val _uiState = MutableStateFlow(ExportUiState())
     val uiState: StateFlow<ExportUiState> = _uiState.asStateFlow()
-    
-    private val _selectedKW = MutableStateFlow(DateUtils.getWeekOfYear(LocalDate.now()))
+
+    // Aktuelles Jahr und Settings für KW-Berechnung
+    private val currentYear = LocalDate.now().year
+
+    private val _selectedKW = MutableStateFlow(1)
     val selectedKW: StateFlow<Int> = _selectedKW.asStateFlow()
+
+    init {
+        // Initialisiere mit aktueller KW basierend auf Settings
+        viewModelScope.launch {
+            val settings = settingsDao.getSettings()
+            val currentWeek = DateUtils.getCustomWeekOfYear(
+                LocalDate.now(),
+                settings?.ersterMontagImJahr
+            )
+            _selectedKW.value = currentWeek
+        }
+    }
     
     /**
      * Wählt eine Kalenderwoche aus

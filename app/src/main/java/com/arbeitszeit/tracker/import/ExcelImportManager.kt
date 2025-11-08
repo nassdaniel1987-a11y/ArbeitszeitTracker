@@ -38,20 +38,21 @@ class ExcelImportManager(private val context: Context) {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 val workbook = WorkbookFactory.create(inputStream)
 
-                // 1. Lese Stammdaten wenn gewünscht
+                // 1. Lese Stammdaten wenn gewünscht (ZUERST, um ersterMontagImJahr zu haben)
                 if (importStammdaten) {
                     userSettings = readStammdaten(workbook.getSheet("Stammangaben"))
                 }
 
-                // 2. Lese alle KW-Sheets
+                // 2. Lese alle KW-Sheets mit der custom week calculation
                 // Sheets: "KW 01-04", "KW 05-08", "KW 09-12", etc.
+                val ersterMontag = userSettings?.ersterMontagImJahr
                 for (i in 0 until workbook.numberOfSheets) {
                     val sheet = workbook.getSheetAt(i)
                     val sheetName = sheet.sheetName
 
                     // Nur KW-Sheets verarbeiten
                     if (sheetName.startsWith("KW ")) {
-                        entries.addAll(readTimeEntriesFromSheet(sheet))
+                        entries.addAll(readTimeEntriesFromSheet(sheet, ersterMontag))
                     }
                 }
 
@@ -105,6 +106,19 @@ class ExcelImportManager(private val context: Context) {
             val letzterUebertragDecimal = sheet.getRow(10)?.getCell(2)?.numericCellValue ?: 0.0
             val letzterUebertragMinuten = TimeUtils.excelTimeToMinutes(letzterUebertragDecimal)
 
+            // C12: Erster Montag im Jahr (DD.MM.YYYY -> yyyy-MM-dd)
+            var ersterMontagImJahr: String? = null
+            val ersterMontagStr = sheet.getRow(11)?.getCell(2)?.stringCellValue
+            if (ersterMontagStr != null && ersterMontagStr.isNotBlank()) {
+                val parts = ersterMontagStr.split(".")
+                if (parts.size == 3) {
+                    val tag = parts[0].padStart(2, '0')
+                    val monat = parts[1].padStart(2, '0')
+                    val jahr = parts[2]
+                    ersterMontagImJahr = "$jahr-$monat-$tag"
+                }
+            }
+
             return UserSettings(
                 id = 1,
                 name = name,
@@ -115,6 +129,7 @@ class ExcelImportManager(private val context: Context) {
                 ferienbetreuung = ferienbetreuung,
                 ueberstundenVorjahrMinuten = ueberstundenVorjahrMinuten,
                 letzterUebertragMinuten = letzterUebertragMinuten,
+                ersterMontagImJahr = ersterMontagImJahr,
                 updatedAt = System.currentTimeMillis()
             )
 
@@ -126,7 +141,7 @@ class ExcelImportManager(private val context: Context) {
     /**
      * Liest Zeiteinträge aus einem KW-Sheet
      */
-    private fun readTimeEntriesFromSheet(sheet: Sheet): List<TimeEntry> {
+    private fun readTimeEntriesFromSheet(sheet: Sheet, ersterMondagImJahr: String?): List<TimeEntry> {
         val entries = mutableListOf<TimeEntry>()
 
         // Wochenstart-Zeilen in Excel (0-basiert)
@@ -148,7 +163,7 @@ class ExcelImportManager(private val context: Context) {
                 val row = sheet.getRow(rowIndex) ?: continue
 
                 // Berechne Datum aus KW und Wochentag
-                val entry = readTimeEntryFromRow(row, kw, dayIndex)
+                val entry = readTimeEntryFromRow(row, kw, dayIndex, ersterMondagImJahr)
                 if (entry != null) {
                     entries.add(entry)
                 }
@@ -161,11 +176,11 @@ class ExcelImportManager(private val context: Context) {
     /**
      * Liest einen einzelnen Zeiteintrag aus einer Excel-Zeile
      */
-    private fun readTimeEntryFromRow(row: Row, kw: Int, dayIndex: Int): TimeEntry? {
+    private fun readTimeEntryFromRow(row: Row, kw: Int, dayIndex: Int, ersterMondagImJahr: String?): TimeEntry? {
         try {
             // Berechne Datum aus KW und Tag
             val year = java.time.Year.now().value // TODO: Jahr aus Dateiname oder Sheet extrahieren
-            val date = getDateFromWeekAndDay(year, kw, dayIndex)
+            val date = getDateFromWeekAndDay(year, kw, dayIndex, ersterMondagImJahr)
             val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
             val weekday = getWeekdayShort(date.dayOfWeek.value)
 
@@ -229,20 +244,28 @@ class ExcelImportManager(private val context: Context) {
 
     /**
      * Berechnet Datum aus Kalenderwoche und Wochentag
+     * Verwendet custom week calculation wenn ersterMondagImJahr gesetzt ist
      */
-    private fun getDateFromWeekAndDay(year: Int, kw: Int, dayIndex: Int): LocalDate {
-        // ISO 8601: Woche beginnt am Montag
-        val firstDayOfYear = LocalDate.of(year, 1, 1)
-        val firstMonday = firstDayOfYear.with(java.time.temporal.ChronoField.DAY_OF_WEEK, 1)
-
-        // Wenn 1. Januar nach Donnerstag ist, gehört er zur letzten KW des Vorjahres
-        val adjustedFirstMonday = if (firstDayOfYear.dayOfWeek.value > 4) {
-            firstMonday.plusWeeks(1)
+    private fun getDateFromWeekAndDay(year: Int, kw: Int, dayIndex: Int, ersterMondagImJahr: String?): LocalDate {
+        if (ersterMondagImJahr != null) {
+            // Custom week calculation: KW1 beginnt am ersten Montag
+            val firstMonday = LocalDate.parse(ersterMondagImJahr)
+            // Berechne Datum: erster Montag + (kw - 1) Wochen + dayIndex Tage
+            return firstMonday.plusWeeks((kw - 1).toLong()).plusDays(dayIndex.toLong())
         } else {
-            firstMonday
-        }
+            // ISO 8601: Woche beginnt am Montag
+            val firstDayOfYear = LocalDate.of(year, 1, 1)
+            val firstMonday = firstDayOfYear.with(java.time.temporal.ChronoField.DAY_OF_WEEK, 1)
 
-        return adjustedFirstMonday.plusWeeks((kw - 1).toLong()).plusDays(dayIndex.toLong())
+            // Wenn 1. Januar nach Donnerstag ist, gehört er zur letzten KW des Vorjahres
+            val adjustedFirstMonday = if (firstDayOfYear.dayOfWeek.value > 4) {
+                firstMonday.plusWeeks(1)
+            } else {
+                firstMonday
+            }
+
+            return adjustedFirstMonday.plusWeeks((kw - 1).toLong()).plusDays(dayIndex.toLong())
+        }
     }
 
     /**
