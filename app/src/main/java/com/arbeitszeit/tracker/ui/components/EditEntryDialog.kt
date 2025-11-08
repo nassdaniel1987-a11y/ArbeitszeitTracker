@@ -100,7 +100,7 @@ fun EditEntryDialog(
                         },
                         label = { Text("Start (HH:MM)") },
                         placeholder = { Text("08:00") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         isError = showStartError,
                         supportingText = if (showStartError) {
                             { Text("Ungültiges Format (HH:MM)") }
@@ -117,7 +117,7 @@ fun EditEntryDialog(
                         },
                         label = { Text("Ende (HH:MM)") },
                         placeholder = { Text("16:00") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         isError = showEndError,
                         supportingText = if (showEndError) {
                             { Text("Ungültiges Format (HH:MM)") }
