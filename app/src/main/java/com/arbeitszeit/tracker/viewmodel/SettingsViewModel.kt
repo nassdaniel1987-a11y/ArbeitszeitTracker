@@ -7,6 +7,7 @@ import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.data.entity.UserSettings
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
