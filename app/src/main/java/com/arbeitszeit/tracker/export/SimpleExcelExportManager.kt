@@ -136,14 +136,14 @@ class SimpleExcelExportManager(private val context: Context) {
             }
         }
 
-        // Spaltenbreiten anpassen
-        try {
-            for (i in 0..6) {
-                sheet.autoSizeColumn(i)
-            }
-        } catch (e: Exception) {
-            // Ignoriere Fehler beim Auto-Sizing
-        }
+        // Spaltenbreiten manuell setzen (autoSizeColumn funktioniert nicht auf Android wegen AWT)
+        sheet.setColumnWidth(0, 12 * 256)  // Wochentag: 12 Zeichen
+        sheet.setColumnWidth(1, 8 * 256)   // Soll: 8 Zeichen
+        sheet.setColumnWidth(2, 8 * 256)   // Von: 8 Zeichen
+        sheet.setColumnWidth(3, 8 * 256)   // Bis: 8 Zeichen
+        sheet.setColumnWidth(4, 8 * 256)   // Pause: 8 Zeichen
+        sheet.setColumnWidth(5, 8 * 256)   // Ist: 8 Zeichen
+        sheet.setColumnWidth(6, 10 * 256)  // Typ: 10 Zeichen
 
         // Datei speichern - verwende app-spezifisches Verzeichnis (keine Berechtigungen nötig)
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
