@@ -3,70 +3,126 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#FFFFFF">
+    android:padding="12dp"
+    android:background="@android:color/transparent">
 
-    <TextView
-        android:id="@+id/widget_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Arbeitszeit"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:paddingBottom="8dp" />
-
-    <!-- Start Zeit -->
+    <!-- Card Container für modernes Design -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingBottom="8dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/widget_background"
+        android:padding="16dp"
+        android:elevation="4dp">
 
-        <Button
-            android:id="@+id/widget_start_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Start"
-            android:textSize="12sp" />
-
+        <!-- Header -->
         <TextView
-            android:id="@+id/widget_start_time"
-            android:layout_width="wrap_content"
+            android:id="@+id/widget_title"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="20sp"
+            android:text="⏱ Arbeitszeit"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
-    </LinearLayout>
+            android:textColor="#1976D2"
+            android:gravity="center"
+            android:paddingBottom="12dp" />
 
-    <!-- End Zeit -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        <!-- Trennlinie -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginBottom="12dp" />
 
-        <Button
-            android:id="@+id/widget_end_button"
-            android:layout_width="0dp"
+        <!-- Start Zeit Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Ende"
-            android:textSize="12sp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/widget_end_time"
-            android:layout_width="wrap_content"
+            <Button
+                android:id="@+id/widget_start_button"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="▶ Start"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/widget_button_start" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Von"
+                    android:textSize="10sp"
+                    android:textColor="#757575" />
+
+                <TextView
+                    android:id="@+id/widget_start_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--:--"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#212121" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Ende Zeit Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <Button
+                android:id="@+id/widget_end_button"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="■ Ende"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/widget_button_end" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Bis"
+                    android:textSize="10sp"
+                    android:textColor="#757575" />
+
+                <TextView
+                    android:id="@+id/widget_end_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--:--"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#212121" />
+            </LinearLayout>
+        </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>
