@@ -119,8 +119,8 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
                 val entry = TimeEntry(
                     datum = dateString,
                     wochentag = DateUtils.getWeekdayShort(date),
-                    kalenderwoche = DateUtils.getWeekOfYear(date),
-                    jahr = DateUtils.getWeekBasedYear(date),
+                    kalenderwoche = DateUtils.getCustomWeekOfYear(date, settings?.ersterMontagImJahr),
+                    jahr = DateUtils.getCustomWeekBasedYear(date, settings?.ersterMontagImJahr),
                     startZeit = null,
                     endZeit = null,
                     pauseMinuten = 0,

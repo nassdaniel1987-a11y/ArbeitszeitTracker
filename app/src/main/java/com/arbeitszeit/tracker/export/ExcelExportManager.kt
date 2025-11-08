@@ -166,34 +166,36 @@ class ExcelExportManager(private val context: Context) {
                 }
 
                 val rowIndex = startRow + dayOffset
-                val row = sheet.getRow(rowIndex) ?: sheet.createRow(rowIndex)
-                
-                // Spalte C (Index 2): Soll-Zeit
-                if (entry.sollMinuten > 0) {
-                    row.getCell(2)?.setCellValue(TimeUtils.minutesToExcelTime(entry.sollMinuten))
-                }
-                
-                // Spalte D (Index 3): Von (Start)
-                if (entry.startZeit != null) {
-                    row.getCell(3)?.setCellValue(TimeUtils.minutesToExcelTime(entry.startZeit))
-                }
-                
-                // Spalte E (Index 4): Bis (Ende)
-                if (entry.endZeit != null) {
-                    row.getCell(4)?.setCellValue(TimeUtils.minutesToExcelTime(entry.endZeit))
-                }
-                
-                // Spalte F (Index 5): Pause
-                if (entry.pauseMinuten > 0) {
-                    row.getCell(5)?.setCellValue(TimeUtils.minutesToExcelTime(entry.pauseMinuten))
-                }
-                
-                // Spalte G (Index 6): Ist - wird von Excel-Formel berechnet!
-                // NICHT überschreiben!
-                
-                // Spalte H (Index 7): Typ (U/K/F/AB)
-                if (entry.typ != TimeEntry.TYP_NORMAL) {
-                    row.getCell(7)?.setCellValue(entry.typ)
+                val row = sheet.getRow(rowIndex)
+
+                if (row != null) {
+                    // Spalte C (Index 2): Soll-Zeit
+                    if (entry.sollMinuten > 0) {
+                        row.getCell(2)?.setCellValue(TimeUtils.minutesToExcelTime(entry.sollMinuten))
+                    }
+
+                    // Spalte D (Index 3): Von (Start)
+                    if (entry.startZeit != null) {
+                        row.getCell(3)?.setCellValue(TimeUtils.minutesToExcelTime(entry.startZeit))
+                    }
+
+                    // Spalte E (Index 4): Bis (Ende)
+                    if (entry.endZeit != null) {
+                        row.getCell(4)?.setCellValue(TimeUtils.minutesToExcelTime(entry.endZeit))
+                    }
+
+                    // Spalte F (Index 5): Pause
+                    if (entry.pauseMinuten > 0) {
+                        row.getCell(5)?.setCellValue(TimeUtils.minutesToExcelTime(entry.pauseMinuten))
+                    }
+
+                    // Spalte G (Index 6): Ist - wird von Excel-Formel berechnet!
+                    // NICHT überschreiben!
+
+                    // Spalte H (Index 7): Typ (U/K/F/AB)
+                    if (entry.typ != TimeEntry.TYP_NORMAL) {
+                        row.getCell(7)?.setCellValue(entry.typ)
+                    }
                 }
                 
                 // Spalte I (Index 8): Differenz - wird von Excel-Formel berechnet!
