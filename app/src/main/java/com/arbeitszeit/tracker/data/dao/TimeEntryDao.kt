@@ -27,9 +27,12 @@ interface TimeEntryDao {
     
     @Query("SELECT * FROM time_entries WHERE datum BETWEEN :startDate AND :endDate ORDER BY datum ASC")
     fun getEntriesByDateRangeFlow(startDate: String, endDate: String): Flow<List<TimeEntry>>
-    
+
     @Query("SELECT * FROM time_entries WHERE jahr = :year AND kalenderwoche = :kw")
     fun getWeekEntriesFlow(year: Int, kw: Int): Flow<List<TimeEntry>>
+
+    @Query("SELECT * FROM time_entries ORDER BY datum DESC")
+    fun getAllEntriesFlow(): Flow<List<TimeEntry>>
     
     @Query("SELECT * FROM time_entries WHERE startZeit IS NULL AND endZeit IS NULL AND typ = 'NORMAL' AND datum <= :date ORDER BY datum DESC")
     suspend fun getIncompleteEntries(date: String): List<TimeEntry>
