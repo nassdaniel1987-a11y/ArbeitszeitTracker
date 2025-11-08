@@ -132,14 +132,34 @@ class ExcelImportManager(private val context: Context) {
 
             // C12: Erster Montag im Jahr (DD.MM.YYYY -> yyyy-MM-dd)
             var ersterMontagImJahr: String? = null
-            val ersterMontagStr = sheet.getRow(11)?.getCell(2)?.stringCellValue
-            if (ersterMontagStr != null && ersterMontagStr.isNotBlank()) {
-                val parts = ersterMontagStr.split(".")
-                if (parts.size == 3) {
-                    val tag = parts[0].padStart(2, '0')
-                    val monat = parts[1].padStart(2, '0')
-                    val jahr = parts[2]
-                    ersterMontagImJahr = "$jahr-$monat-$tag"
+            val ersterMontagCell = sheet.getRow(11)?.getCell(2)
+            if (ersterMontagCell != null) {
+                try {
+                    when (ersterMontagCell.cellType) {
+                        CellType.STRING -> {
+                            // Als String gespeichert: "01.01.2025"
+                            val ersterMontagStr = ersterMontagCell.stringCellValue
+                            if (ersterMontagStr.isNotBlank()) {
+                                val parts = ersterMontagStr.split(".")
+                                if (parts.size == 3) {
+                                    val tag = parts[0].padStart(2, '0')
+                                    val monat = parts[1].padStart(2, '0')
+                                    val jahr = parts[2]
+                                    ersterMontagImJahr = "$jahr-$monat-$tag"
+                                }
+                            }
+                        }
+                        CellType.NUMERIC -> {
+                            // Als Datum gespeichert (Excel-Datumswert)
+                            val date = ersterMontagCell.localDateTimeCellValue.toLocalDate()
+                            ersterMontagImJahr = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        }
+                        else -> {
+                            android.util.Log.w("ExcelImport", "Erster Montag hat unerwarteten Cell-Type: ${ersterMontagCell.cellType}")
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("ExcelImport", "Fehler beim Lesen des ersten Montags: ${e.message}")
                 }
             }
 
