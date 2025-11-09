@@ -459,12 +459,43 @@ private fun AddWorkLocationDialog(
                                 // Wenn es ein kurzer Code ist, versuche ihn mit einer Referenz-Koordinate zu vervollständigen
                                 if (!olc.isFull && olc.isShort) {
                                     android.util.Log.d("PlusCode", "Short code detected, recovering with reference location")
-                                    // Verwende Zentrum von Deutschland als Referenz (51.0°N, 10.5°E)
-                                    // Das funktioniert für die meisten Standorte in Deutschland
-                                    val recovered = olc.recover(
-                                        51.0,  // Referenz-Breitengrad (Mitte Deutschland)
-                                        10.5   // Referenz-Längengrad (Mitte Deutschland)
-                                    )
+
+                                    // Versuche, Stadtnamen aus dem Text zu extrahieren
+                                    val cityName = trimmedValue.replace(extractedCode, "").trim().split(",").firstOrNull()?.trim()
+                                    android.util.Log.d("PlusCode", "Extracted city name: '$cityName'")
+
+                                    var refLat = 51.0  // Default: Zentrum Deutschland
+                                    var refLng = 10.5
+
+                                    // Wenn ein Stadtname vorhanden ist, versuche Geocoding
+                                    if (!cityName.isNullOrBlank()) {
+                                        try {
+                                            val geocoder = android.location.Geocoder(context, java.util.Locale.GERMANY)
+                                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                                // Für Android 13+ müssten wir async API verwenden, was kompliziert ist
+                                                // Verwende stattdessen alte API auch hier
+                                                @Suppress("DEPRECATION")
+                                                val addresses = geocoder.getFromLocationName(cityName, 1)
+                                                if (!addresses.isNullOrEmpty()) {
+                                                    refLat = addresses[0].latitude
+                                                    refLng = addresses[0].longitude
+                                                    android.util.Log.d("PlusCode", "Found reference: $cityName at $refLat, $refLng")
+                                                }
+                                            } else {
+                                                @Suppress("DEPRECATION")
+                                                val addresses = geocoder.getFromLocationName(cityName, 1)
+                                                if (!addresses.isNullOrEmpty()) {
+                                                    refLat = addresses[0].latitude
+                                                    refLng = addresses[0].longitude
+                                                    android.util.Log.d("PlusCode", "Found reference: $cityName at $refLat, $refLng")
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            android.util.Log.w("PlusCode", "Could not geocode city: $cityName", e)
+                                        }
+                                    }
+
+                                    val recovered = olc.recover(refLat, refLng)
                                     olc = recovered
                                     android.util.Log.d("PlusCode", "Recovered full code: ${recovered.code}")
                                 }
@@ -488,7 +519,7 @@ private fun AddWorkLocationDialog(
                         }
                     },
                     label = { Text("Plus Code") },
-                    placeholder = { Text("z.B. P4M6+473 oder 8FWC9RGX+2G") },
+                    placeholder = { Text("z.B. P4M6+473 Stuttgart") },
                     singleLine = true,
                     isError = plusCodeError != null,
                     supportingText = if (plusCodeError != null) {
@@ -562,7 +593,7 @@ private fun AddWorkLocationDialog(
                     singleLine = true
                 )
                 Text(
-                    "Tipp: Öffne Google Maps, tippe auf deinen Arbeitsort und kopiere den Plus Code (z.B. \"8FWC9RGX+2G\") oder die Koordinaten.",
+                    "Tipp: Öffne Google Maps, tippe auf deinen Arbeitsort und kopiere den Plus Code mit Stadtnamen (z.B. \"P4M6+473 Stuttgart\").",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
