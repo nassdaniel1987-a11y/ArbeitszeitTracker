@@ -459,17 +459,21 @@ private fun AddWorkLocationDialog(
 
                 Text("oder", style = MaterialTheme.typography.labelSmall)
 
-                // Plus Code Eingabe
-                OutlinedTextField(
-                    value = plusCode,
-                    onValueChange = { newValue ->
-                        val trimmedValue = newValue.trim().uppercase()
-                        plusCode = trimmedValue
-                        usePlusCode = trimmedValue.isNotBlank()
-                        useCurrentLocation = false
+                // Plus Code Eingabe mit Zwischenablage-Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = plusCode,
+                        onValueChange = { newValue ->
+                            val trimmedValue = newValue.trim().uppercase()
+                            plusCode = trimmedValue
+                            usePlusCode = trimmedValue.isNotBlank()
+                            useCurrentLocation = false
 
-                        // Versuche Plus Code zu dekodieren
-                        if (trimmedValue.isNotBlank()) {
+                            // Versuche Plus Code zu dekodieren
+                            if (trimmedValue.isNotBlank()) {
                             try {
                                 // Extrahiere den Plus Code aus dem Text
                                 // Voller Code: 8 Zeichen + "+" + 2-3 Zeichen (z.B. 8FWC9RGX+2G)
@@ -547,23 +551,87 @@ private fun AddWorkLocationDialog(
                             plusCodeError = null
                         }
                     },
-                    label = { Text("Plus Code") },
-                    placeholder = { Text("z.B. P4M6+473 Stuttgart") },
-                    singleLine = true,
-                    isError = plusCodeError != null,
-                    supportingText = if (plusCodeError != null) {
-                        { Text(plusCodeError!!, color = MaterialTheme.colorScheme.error) }
-                    } else null,
-                    trailingIcon = if (usePlusCode && plusCodeError == null) {
-                        {
-                            androidx.compose.material3.Icon(
-                                androidx.compose.material.icons.Icons.Default.CheckCircle,
-                                contentDescription = "Gültig",
-                                tint = androidx.compose.ui.graphics.Color(0xFF4CAF50)
-                            )
-                        }
-                    } else null
-                )
+                        label = { Text("Plus Code") },
+                        placeholder = { Text("z.B. P4M6+473 Stuttgart") },
+                        singleLine = true,
+                        isError = plusCodeError != null,
+                        supportingText = if (plusCodeError != null) {
+                            { Text(plusCodeError!!, color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        trailingIcon = if (usePlusCode && plusCodeError == null) {
+                            {
+                                androidx.compose.material3.Icon(
+                                    androidx.compose.material.icons.Icons.Default.CheckCircle,
+                                    contentDescription = "Gültig",
+                                    tint = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                                )
+                            }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Paste Button
+                    IconButton(
+                        onClick = {
+                            val clipboardManager = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            val clipData = clipboardManager.primaryClip
+                            if (clipData != null && clipData.itemCount > 0) {
+                                val text = clipData.getItemAt(0).text?.toString() ?: ""
+                                // Trigger the onValueChange to process the pasted text
+                                val trimmedValue = text.trim().uppercase()
+                                plusCode = trimmedValue
+                                usePlusCode = trimmedValue.isNotBlank()
+                                useCurrentLocation = false
+
+                                // Copy the decode logic here
+                                if (trimmedValue.isNotBlank()) {
+                                    try {
+                                        val fullCodePattern = Regex("([23456789C][23456789CFGHJMPQRV][23456789CFGHJMPQRVWX]{6}\\+[23456789CFGHJMPQRVWX]{2,3})")
+                                        val shortCodePattern = Regex("([23456789CFGHJMPQRVWX]{4}\\+[23456789CFGHJMPQRVWX]{2,3})")
+                                        val fullMatch = fullCodePattern.find(trimmedValue)
+                                        val shortMatch = shortCodePattern.find(trimmedValue)
+                                        val extractedCode = fullMatch?.value ?: shortMatch?.value ?: trimmedValue
+                                        android.util.Log.d("PlusCode", "Pasted - Input: '$trimmedValue', Extracted: '$extractedCode'")
+                                        var olc = com.google.openlocationcode.OpenLocationCode(extractedCode)
+                                        if (!olc.isFull && olc.isShort) {
+                                            val cityName = trimmedValue.replace(extractedCode, "").trim().split(",").firstOrNull()?.trim()
+                                            var refLat = 51.0
+                                            var refLng = 10.5
+                                            if (!cityName.isNullOrBlank()) {
+                                                try {
+                                                    val geocoder = android.location.Geocoder(context, java.util.Locale.GERMANY)
+                                                    @Suppress("DEPRECATION")
+                                                    val addresses = geocoder.getFromLocationName(cityName, 1)
+                                                    if (!addresses.isNullOrEmpty()) {
+                                                        refLat = addresses[0].latitude
+                                                        refLng = addresses[0].longitude
+                                                    }
+                                                } catch (e: Exception) {
+                                                    android.util.Log.w("PlusCode", "Could not geocode city: $cityName", e)
+                                                }
+                                            }
+                                            val recovered = olc.recover(refLat, refLng)
+                                            olc = recovered
+                                        }
+                                        if (olc.isFull) {
+                                            val decoded = olc.decode()
+                                            latitude = String.format(java.util.Locale.US, "%.6f", decoded.centerLatitude)
+                                            longitude = String.format(java.util.Locale.US, "%.6f", decoded.centerLongitude)
+                                            plusCodeError = null
+                                        } else {
+                                            plusCodeError = "Plus Code ist unvollständig"
+                                        }
+                                    } catch (e: Exception) {
+                                        plusCodeError = "Ungültiger Plus Code: ${e.message}"
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    ) {
+                        Icon(Icons.Default.ContentPaste, contentDescription = "Aus Zwischenablage einfügen")
+                    }
+                }
 
                 if (usePlusCode && plusCodeError == null && latitude.isNotBlank()) {
                     Card(
