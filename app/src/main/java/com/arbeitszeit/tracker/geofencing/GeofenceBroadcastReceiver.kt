@@ -30,6 +30,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         const val ACTION_START_WORK = "com.arbeitszeit.tracker.ACTION_START_WORK"
         const val ACTION_STOP_WORK = "com.arbeitszeit.tracker.ACTION_STOP_WORK"
         const val ACTION_DISMISS = "com.arbeitszeit.tracker.ACTION_DISMISS"
+        const val ACTION_TEST_GEOFENCE_ENTER = "com.arbeitszeit.tracker.TEST_GEOFENCE_ENTER"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -37,8 +38,21 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             ACTION_START_WORK -> handleStartWork(context)
             ACTION_STOP_WORK -> handleStopWork(context)
             ACTION_DISMISS -> handleDismiss(context)
+            ACTION_TEST_GEOFENCE_ENTER -> handleTestGeofence(context, intent)
             else -> handleGeofenceEvent(context, intent)
         }
+    }
+
+    private fun handleTestGeofence(context: Context, intent: Intent) {
+        val locationName = intent.getStringExtra("location_name") ?: "Test-Arbeitsort"
+
+        // Zeige Test-Benachrichtigung
+        showNotification(
+            context,
+            "TEST: Arbeitsort erreicht - $locationName",
+            "Möchtest du die Arbeitszeit jetzt starten?",
+            ACTION_START_WORK
+        )
     }
 
     private fun handleGeofenceEvent(context: Context, intent: Intent) {

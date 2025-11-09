@@ -23,6 +23,7 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
     val workLocations by viewModel.workLocations.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val permissionStatus = remember { viewModel.checkPermissions() }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showPermissionInfo by remember { mutableStateOf(false) }
@@ -231,8 +232,36 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
             WorkLocationCard(
                 location = location,
                 onToggle = { viewModel.toggleWorkLocation(location) },
-                onDelete = { viewModel.deleteWorkLocation(location) }
+                onDelete = { viewModel.deleteWorkLocation(location) },
+                onTest = {
+                    // Test-Benachrichtigung für diesen Arbeitsort
+                    testGeofenceNotification(context, location)
+                }
             )
+        }
+
+        // Debug-Hinweis
+        if (workLocations.isNotEmpty()) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "Test-Funktion",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        Text(
+                            "Tippe auf das Test-Symbol beim Arbeitsort, um die Benachrichtigung zu testen.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -266,7 +295,8 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
 private fun WorkLocationCard(
     location: WorkLocation,
     onToggle: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onTest: () -> Unit
 ) {
     Card {
         Row(
@@ -293,6 +323,9 @@ private fun WorkLocationCard(
                 )
             }
             Row {
+                IconButton(onClick = onTest) {
+                    Icon(Icons.Default.BugReport, "Test", tint = MaterialTheme.colorScheme.tertiary)
+                }
                 Switch(
                     checked = location.enabled,
                     onCheckedChange = { onToggle() }
@@ -449,4 +482,12 @@ private fun AddWorkLocationDialog(
             }
         }
     )
+}
+
+// Hilfsfunktion zum Testen der Geofence-Benachrichtigung
+fun testGeofenceNotification(context: android.content.Context, location: WorkLocation) {
+    val intent = android.content.Intent(context, com.arbeitszeit.tracker.geofencing.GeofenceBroadcastReceiver::class.java)
+    intent.action = com.arbeitszeit.tracker.geofencing.GeofenceBroadcastReceiver.ACTION_TEST_GEOFENCE_ENTER
+    intent.putExtra("location_name", location.name)
+    context.sendBroadcast(intent)
 }
