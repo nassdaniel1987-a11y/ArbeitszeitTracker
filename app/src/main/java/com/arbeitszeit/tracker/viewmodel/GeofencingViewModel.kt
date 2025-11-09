@@ -80,12 +80,22 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
      * Aktiviert/Deaktiviert Geofencing global
      */
     fun toggleGeofencing(enabled: Boolean) {
+        android.util.Log.d("GeofencingViewModel", "toggleGeofencing called with enabled=$enabled")
         viewModelScope.launch {
-            val currentSettings = settingsDao.getSettings() ?: return@launch
-            settingsDao.insertOrUpdate(currentSettings.copy(
+            val currentSettings = settingsDao.getSettings()
+            android.util.Log.d("GeofencingViewModel", "Current settings before update: geofencingEnabled=${currentSettings?.geofencingEnabled}")
+
+            if (currentSettings == null) {
+                android.util.Log.e("GeofencingViewModel", "No settings found, cannot toggle geofencing")
+                return@launch
+            }
+
+            val updatedSettings = currentSettings.copy(
                 geofencingEnabled = enabled,
                 updatedAt = System.currentTimeMillis()
-            ))
+            )
+            settingsDao.insertOrUpdate(updatedSettings)
+            android.util.Log.d("GeofencingViewModel", "Settings updated: geofencingEnabled=${updatedSettings.geofencingEnabled}")
 
             if (enabled) {
                 updateGeofences()
