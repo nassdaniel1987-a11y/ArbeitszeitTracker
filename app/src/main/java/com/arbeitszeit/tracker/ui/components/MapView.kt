@@ -227,14 +227,14 @@ private fun updateMapMarkers(
 
             // Change color based on whether user is inside
             fillPaint.color = when {
-                isInsideThisLocation -> android.graphics.Color.argb(80, 76, 175, 80) // Brighter green
-                location.enabled -> android.graphics.Color.argb(50, 76, 175, 80) // Normal green
-                else -> android.graphics.Color.argb(30, 128, 128, 128) // Gray
+                isInsideThisLocation -> android.graphics.Color.argb(80, 76, 175, 80) // Bright green - Du bist DRIN
+                location.enabled -> android.graphics.Color.argb(50, 33, 150, 243) // Blue - Aktiv aber DRAUSSEN
+                else -> android.graphics.Color.argb(30, 128, 128, 128) // Gray - Deaktiviert
             }
 
             outlinePaint.color = when {
                 isInsideThisLocation -> android.graphics.Color.argb(255, 76, 175, 80) // Solid green
-                location.enabled -> android.graphics.Color.argb(200, 76, 175, 80)
+                location.enabled -> android.graphics.Color.argb(200, 33, 150, 243) // Blue outline
                 else -> android.graphics.Color.argb(150, 128, 128, 128)
             }
 
