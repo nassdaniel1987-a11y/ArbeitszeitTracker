@@ -329,8 +329,11 @@ private fun AddWorkLocationDialog(
     var name by remember { mutableStateOf("") }
     var latitude by remember { mutableStateOf("") }
     var longitude by remember { mutableStateOf("") }
+    var plusCode by remember { mutableStateOf("") }
     var radius by remember { mutableStateOf("100") }
     var useCurrentLocation by remember { mutableStateOf(false) }
+    var usePlusCode by remember { mutableStateOf(false) }
+    var plusCodeError by remember { mutableStateOf<String?>(null) }
 
     // TODO: Location Manager für aktuellen Standort
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -406,25 +409,99 @@ private fun AddWorkLocationDialog(
 
                 Text("oder", style = MaterialTheme.typography.labelSmall)
 
+                // Plus Code Eingabe
+                OutlinedTextField(
+                    value = plusCode,
+                    onValueChange = { newValue ->
+                        plusCode = newValue.uppercase()
+                        usePlusCode = newValue.isNotBlank()
+                        useCurrentLocation = false
+
+                        // Versuche Plus Code zu dekodieren
+                        if (newValue.isNotBlank()) {
+                            try {
+                                val olc = com.google.openlocationcode.OpenLocationCode(newValue)
+                                if (olc.isFull) {
+                                    val decoded = olc.decode()
+                                    latitude = String.format(java.util.Locale.US, "%.6f", decoded.centerLatitude)
+                                    longitude = String.format(java.util.Locale.US, "%.6f", decoded.centerLongitude)
+                                    plusCodeError = null
+                                } else {
+                                    plusCodeError = "Plus Code ist unvollständig"
+                                }
+                            } catch (e: Exception) {
+                                plusCodeError = "Ungültiger Plus Code"
+                            }
+                        } else {
+                            plusCodeError = null
+                        }
+                    },
+                    label = { Text("Plus Code") },
+                    placeholder = { Text("z.B. 8FWC9RGX+2G") },
+                    singleLine = true,
+                    isError = plusCodeError != null,
+                    supportingText = if (plusCodeError != null) {
+                        { Text(plusCodeError!!, color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    trailingIcon = if (usePlusCode && plusCodeError == null) {
+                        {
+                            androidx.compose.material3.Icon(
+                                androidx.compose.material.icons.Icons.Default.CheckCircle,
+                                contentDescription = "Gültig",
+                                tint = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                            )
+                        }
+                    } else null
+                )
+
+                if (usePlusCode && plusCodeError == null && latitude.isNotBlank()) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text(
+                                "Dekodierte Koordinaten",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                "$latitude, $longitude",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+
+                Text("oder", style = MaterialTheme.typography.labelSmall)
+
                 OutlinedTextField(
                     value = latitude,
                     onValueChange = {
                         latitude = it
                         useCurrentLocation = false
+                        usePlusCode = false
+                        plusCode = ""
                     },
                     label = { Text("Breitengrad") },
                     placeholder = { Text("z.B. 48.775556") },
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !usePlusCode
                 )
                 OutlinedTextField(
                     value = longitude,
                     onValueChange = {
                         longitude = it
                         useCurrentLocation = false
+                        usePlusCode = false
+                        plusCode = ""
                     },
                     label = { Text("Längengrad") },
                     placeholder = { Text("z.B. 9.182778") },
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !usePlusCode
                 )
                 OutlinedTextField(
                     value = radius,
@@ -434,7 +511,7 @@ private fun AddWorkLocationDialog(
                     singleLine = true
                 )
                 Text(
-                    "Tipp: Oder öffne Google Maps, tippe lange auf deinen Arbeitsort und kopiere die Koordinaten.",
+                    "Tipp: Öffne Google Maps, tippe auf deinen Arbeitsort und kopiere den Plus Code (z.B. \"8FWC9RGX+2G\") oder die Koordinaten.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -454,7 +531,8 @@ private fun AddWorkLocationDialog(
                 enabled = name.isNotBlank() &&
                         latitude.replace(',', '.').toDoubleOrNull() != null &&
                         longitude.replace(',', '.').toDoubleOrNull() != null &&
-                        radius.replace(',', '.').toFloatOrNull() != null
+                        radius.replace(',', '.').toFloatOrNull() != null &&
+                        (usePlusCode && plusCodeError == null || !usePlusCode)
             ) {
                 Text("Hinzufügen")
             }
