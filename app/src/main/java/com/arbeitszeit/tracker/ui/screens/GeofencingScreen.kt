@@ -284,8 +284,9 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                 var showMap by remember { mutableStateOf(true) }
                 var mapViewRef by remember { mutableStateOf<org.osmdroid.views.MapView?>(null) }
 
-                Card {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Header Card with buttons
+                    Card {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -318,29 +319,37 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                                 }
                             }
                         }
+                    }
 
-                        if (showMap) {
-                            androidx.compose.foundation.layout.Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(300.dp)
-                                    .padding(bottom = 8.dp)
-                            ) {
-                                OpenStreetMapView(
-                                    workLocations = workLocations,
-                                    modifier = Modifier.fillMaxSize(),
-                                    onCenterToMyLocation = { mapView ->
-                                        mapViewRef = mapView
-                                    }
+                    // Map Card (separate from buttons)
+                    if (showMap) {
+                        Spacer(Modifier.height(8.dp))
+
+                        Card {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                ) {
+                                    OpenStreetMapView(
+                                        workLocations = workLocations,
+                                        modifier = Modifier.fillMaxSize(),
+                                        onCenterToMyLocation = { mapView ->
+                                            mapViewRef = mapView
+                                        }
+                                    )
+                                }
+
+                                HorizontalDivider()
+
+                                Text(
+                                    "🟢 Grün = Du bist hier • 🔵 Blau = Aktiv (außerhalb) • ⚫ Grau = Deaktiviert",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(16.dp)
                                 )
                             }
-
-                            Text(
-                                "🟢 Grün = Du bist hier • 🔵 Blau = Aktiv (außerhalb) • ⚫ Grau = Deaktiviert",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                            )
                         }
                     }
                 }
