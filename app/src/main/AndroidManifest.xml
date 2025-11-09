@@ -35,7 +35,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Zeit-Stempel Widget -->
+        <!-- Zeit-Stempel Widget (Mittel 4x1) -->
         <receiver
             android:name="com.arbeitszeit.tracker.widget.TimeStampWidget"
             android:exported="true">
@@ -49,6 +49,34 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_time_stamp_info" />
+        </receiver>
+
+        <!-- Zeit-Stempel Widget Klein (2x1) -->
+        <receiver
+            android:name="com.arbeitszeit.tracker.widget.TimeStampWidgetSmall"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_QUICK_STAMP_SMALL" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_time_stamp_small_info" />
+        </receiver>
+
+        <!-- Zeit-Stempel Widget Groß (4x2) -->
+        <receiver
+            android:name="com.arbeitszeit.tracker.widget.TimeStampWidgetLarge"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_START_LARGE" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_END_LARGE" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_PAUSE_LARGE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_time_stamp_large_info" />
         </receiver>
 
         <!-- Geofencing Receiver -->

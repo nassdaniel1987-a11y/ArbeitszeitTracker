@@ -10,4 +10,6 @@
     <color name="widget_progress_background">#E0E0E0</color>
     <color name="widget_status_active">#4CAF50</color>
     <color name="widget_status_inactive">#9E9E9E</color>
+    <color name="widget_week_summary_bg">#E3F2FD</color>
+    <color name="widget_error">#F44336</color>
 </resources>
