@@ -13,18 +13,21 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = Blue700,
+    primary = BrandPrimary,
     onPrimary = Color.White,
-    primaryContainer = Blue200,
-    onPrimaryContainer = Grey900,
+    primaryContainer = BrandPrimaryLight.copy(alpha = 0.2f),
+    onPrimaryContainer = BrandPrimaryDark,
     secondary = Green700,
     onSecondary = Color.White,
     secondaryContainer = Green200,
     onSecondaryContainer = Grey900,
+    tertiary = Orange700,
+    onTertiary = Color.White,
+    tertiaryContainer = Orange500.copy(alpha = 0.2f),
     error = Red700,
     onError = Color.White,
-    errorContainer = Red500,
-    onErrorContainer = Grey900,
+    errorContainer = Red500.copy(alpha = 0.2f),
+    onErrorContainer = Red700,
     background = Grey50,
     onBackground = Grey900,
     surface = Color.White,
@@ -34,14 +37,17 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Blue500,
+    primary = BrandPrimaryLight,
     onPrimary = Grey900,
-    primaryContainer = Blue700,
-    onPrimaryContainer = Grey50,
+    primaryContainer = BrandPrimaryDark,
+    onPrimaryContainer = BrandPrimaryLight,
     secondary = Green500,
     onSecondary = Grey900,
     secondaryContainer = Green700,
     onSecondaryContainer = Grey50,
+    tertiary = Orange500,
+    onTertiary = Grey900,
+    tertiaryContainer = Orange700,
     error = Red500,
     onError = Grey900,
     errorContainer = Red700,
@@ -57,7 +63,7 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun ArbeitszeitTrackerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Disable dynamic color for custom branding
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

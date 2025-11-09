@@ -1,5 +1,9 @@
 package com.arbeitszeit.tracker.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +25,7 @@ import com.arbeitszeit.tracker.utils.TimeUtils
 import com.arbeitszeit.tracker.viewmodel.HomeViewModel
 import com.arbeitszeit.tracker.viewmodel.WeekSummary
 import java.time.LocalDate
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +42,15 @@ fun HomeScreen(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showPauseDialog by remember { mutableStateOf(false) }
-    
+
+    // Animation state for staggered fade-in
+    var itemsVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(50)
+        itemsVisible = true
+    }
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
@@ -55,39 +68,69 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                TimeEntryCard(
-                    entry = todayEntry,
-                    onStartClick = { showStartTimePicker = true },
-                    onEndClick = { showEndTimePicker = true },
-                    onPauseClick = { showPauseDialog = true },
-                    onTypChange = { viewModel.setTyp(it) }
-                )
+                AnimatedVisibility(
+                    visible = itemsVisible,
+                    enter = fadeIn(animationSpec = tween(400)) +
+                            slideInVertically(animationSpec = tween(400), initialOffsetY = { it / 4 })
+                ) {
+                    TimeEntryCard(
+                        entry = todayEntry,
+                        onStartClick = { showStartTimePicker = true },
+                        onEndClick = { showEndTimePicker = true },
+                        onPauseClick = { showPauseDialog = true },
+                        onTypChange = { viewModel.setTyp(it) }
+                    )
+                }
             }
 
             item {
-                GeofencingStatusCard(
-                    locationStatus = locationStatus,
-                    onRefresh = { viewModel.checkLocationStatus() }
-                )
+                AnimatedVisibility(
+                    visible = itemsVisible,
+                    enter = fadeIn(animationSpec = tween(400, delayMillis = 100)) +
+                            slideInVertically(animationSpec = tween(400, delayMillis = 100), initialOffsetY = { it / 4 })
+                ) {
+                    GeofencingStatusCard(
+                        locationStatus = locationStatus,
+                        onRefresh = { viewModel.checkLocationStatus() }
+                    )
+                }
             }
 
             item {
-                WeekNavigationHeader(
-                    selectedWeekDate = selectedWeekDate,
-                    isCurrentWeek = viewModel.isCurrentWeek(),
-                    onPreviousWeek = { viewModel.previousWeek() },
-                    onNextWeek = { viewModel.nextWeek() },
-                    onGoToCurrentWeek = { viewModel.goToCurrentWeek() },
-                    firstMonday = userSettings?.ersterMontagImJahr
-                )
+                AnimatedVisibility(
+                    visible = itemsVisible,
+                    enter = fadeIn(animationSpec = tween(400, delayMillis = 200)) +
+                            slideInVertically(animationSpec = tween(400, delayMillis = 200), initialOffsetY = { it / 4 })
+                ) {
+                    WeekNavigationHeader(
+                        selectedWeekDate = selectedWeekDate,
+                        isCurrentWeek = viewModel.isCurrentWeek(),
+                        onPreviousWeek = { viewModel.previousWeek() },
+                        onNextWeek = { viewModel.nextWeek() },
+                        onGoToCurrentWeek = { viewModel.goToCurrentWeek() },
+                        firstMonday = userSettings?.ersterMontagImJahr
+                    )
+                }
             }
 
             items(weekEntries) { entry ->
-                WeekEntryCard(entry = entry)
+                AnimatedVisibility(
+                    visible = itemsVisible,
+                    enter = fadeIn(animationSpec = tween(300)) +
+                            slideInVertically(animationSpec = tween(300), initialOffsetY = { it / 4 })
+                ) {
+                    WeekEntryCard(entry = entry)
+                }
             }
-            
+
             item {
-                WeekSummaryCard(summary = viewModel.getWeekSummary())
+                AnimatedVisibility(
+                    visible = itemsVisible,
+                    enter = fadeIn(animationSpec = tween(400, delayMillis = 300)) +
+                            slideInVertically(animationSpec = tween(400, delayMillis = 300), initialOffsetY = { it / 4 })
+                ) {
+                    WeekSummaryCard(summary = viewModel.getWeekSummary())
+                }
             }
         }
     }

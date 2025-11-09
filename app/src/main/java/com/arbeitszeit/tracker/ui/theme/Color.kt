@@ -2,6 +2,11 @@ package com.arbeitszeit.tracker.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// Custom Branding Colors
+val BrandPrimary = Color(0xFF0D47A1)      // Dunkles Professional Blau
+val BrandPrimaryLight = Color(0xFF5472D3) // Helles Akzent Blau
+val BrandPrimaryDark = Color(0xFF002171)  // Sehr dunkles Blau
+
 // Primary Colors
 val Blue700 = Color(0xFF1976D2)
 val Blue500 = Color(0xFF2196F3)
