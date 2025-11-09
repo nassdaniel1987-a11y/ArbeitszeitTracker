@@ -347,8 +347,9 @@ private fun AddWorkLocationDialog(
                                     ?: locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
 
                                 location?.let {
-                                    latitude = String.format("%.6f", it.latitude)
-                                    longitude = String.format("%.6f", it.longitude)
+                                    // Verwende Locale.US um immer Punkt als Dezimaltrennzeichen zu erzeugen
+                                    latitude = String.format(java.util.Locale.US, "%.6f", it.latitude)
+                                    longitude = String.format(java.util.Locale.US, "%.6f", it.longitude)
                                     useCurrentLocation = true
                                 }
                             }
@@ -426,17 +427,18 @@ private fun AddWorkLocationDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val lat = latitude.toDoubleOrNull()
-                    val lng = longitude.toDoubleOrNull()
-                    val rad = radius.toFloatOrNull()
+                    // Kommas durch Punkte ersetzen für deutsche Zahleneingaben
+                    val lat = latitude.replace(',', '.').toDoubleOrNull()
+                    val lng = longitude.replace(',', '.').toDoubleOrNull()
+                    val rad = radius.replace(',', '.').toFloatOrNull()
                     if (name.isNotBlank() && lat != null && lng != null && rad != null) {
                         onAdd(name, lat, lng, rad)
                     }
                 },
                 enabled = name.isNotBlank() &&
-                        latitude.toDoubleOrNull() != null &&
-                        longitude.toDoubleOrNull() != null &&
-                        radius.toFloatOrNull() != null
+                        latitude.replace(',', '.').toDoubleOrNull() != null &&
+                        longitude.replace(',', '.').toDoubleOrNull() != null &&
+                        radius.replace(',', '.').toFloatOrNull() != null
             ) {
                 Text("Hinzufügen")
             }
