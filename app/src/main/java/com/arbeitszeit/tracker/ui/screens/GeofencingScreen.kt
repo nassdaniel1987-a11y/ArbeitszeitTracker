@@ -25,7 +25,11 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
     val permissionStatus = remember { viewModel.checkPermissions() }
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var locationToEdit by remember { mutableStateOf<WorkLocation?>(null) }
     var showPermissionInfo by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Berechtigungsanfrage
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -34,11 +38,15 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
         // Berechtigungen wurden gewährt oder abgelehnt
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             Text(
@@ -148,6 +156,78 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
             }
         }
 
+        // Status-Anzeige
+        if (settings?.geofencingEnabled == true) {
+            item {
+                val activeLocationsCount = workLocations.count { it.enabled }
+                val hasPermissions = permissionStatus == PermissionStatus.GRANTED
+                val isFullyOperational = hasPermissions && activeLocationsCount > 0
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isFullyOperational) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (isFullyOperational) Icons.Default.CheckCircle else Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp),
+                            tint = if (isFullyOperational) {
+                                androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (isFullyOperational) "Geofencing aktiv" else "Geofencing eingeschränkt",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = if (isFullyOperational) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = buildString {
+                                    append("$activeLocationsCount aktive${if (activeLocationsCount == 1) "r" else ""} Arbeitsort${if (activeLocationsCount != 1) "e" else ""}")
+                                    if (!hasPermissions) {
+                                        append(" • Berechtigungen fehlen")
+                                    }
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isFullyOperational) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                            if (isFullyOperational) {
+                                Text(
+                                    text = "Die Zeiterfassung startet/stoppt automatisch an deinen Arbeitsorten",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Zeitfenster
         if (settings?.geofencingEnabled == true) {
             item {
@@ -247,10 +327,16 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
             WorkLocationCard(
                 location = location,
                 onToggle = { viewModel.toggleWorkLocation(location) },
+                onEdit = {
+                    locationToEdit = location
+                    showEditDialog = true
+                },
                 onDelete = { viewModel.deleteWorkLocation(location) }
             )
         }
     }
+    }
+}
 
     // Dialog zum Hinzufügen eines Arbeitsorts
     if (showAddDialog) {
@@ -259,6 +345,25 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
             onAdd = { name, lat, lng, radius ->
                 viewModel.addWorkLocation(name, lat, lng, radius)
                 showAddDialog = false
+            }
+        )
+    }
+
+    // Dialog zum Bearbeiten eines Arbeitsorts
+    if (showEditDialog && locationToEdit != null) {
+        EditWorkLocationDialog(
+            location = locationToEdit!!,
+            onDismiss = {
+                showEditDialog = false
+                locationToEdit = null
+            },
+            onSave = { newName, newRadius ->
+                viewModel.updateWorkLocation(locationToEdit!!, newName, newRadius)
+                showEditDialog = false
+                locationToEdit = null
+                scope.launch {
+                    snackbarHostState.showSnackbar("Arbeitsort erfolgreich aktualisiert")
+                }
             }
         )
     }
@@ -282,6 +387,7 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
 private fun WorkLocationCard(
     location: WorkLocation,
     onToggle: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -336,6 +442,9 @@ private fun WorkLocationCard(
                     checked = location.enabled,
                     onCheckedChange = { onToggle() }
                 )
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, "Bearbeiten")
+                }
                 IconButton(onClick = { showDeleteDialog = true }) {
                     Icon(Icons.Default.Delete, "Löschen")
                 }
@@ -714,6 +823,104 @@ private fun AddWorkLocationDialog(
                         (usePlusCode && plusCodeError == null || !usePlusCode)
             ) {
                 Text("Hinzufügen")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
+}
+
+@Composable
+private fun EditWorkLocationDialog(
+    location: WorkLocation,
+    onDismiss: () -> Unit,
+    onSave: (String, Float) -> Unit
+) {
+    var name by remember { mutableStateOf(location.name) }
+    var radius by remember { mutableStateOf(location.radiusMeters.toInt().toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Arbeitsort bearbeiten") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    placeholder = { Text("z.B. Hauptbüro") },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = radius,
+                    onValueChange = { radius = it },
+                    label = { Text("Radius (Meter)") },
+                    placeholder = { Text("100") },
+                    singleLine = true
+                )
+
+                // Zeige aktuelle Koordinaten an (nicht editierbar)
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(
+                            "Standort",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (!location.address.isNullOrBlank()) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    location.address,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Text(
+                            "${String.format("%.6f", location.latitude)}, ${String.format("%.6f", location.longitude)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    "Der Standort kann nicht geändert werden. Um einen anderen Standort zu verwenden, erstelle einen neuen Arbeitsort.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val rad = radius.replace(',', '.').toFloatOrNull()
+                    if (name.isNotBlank() && rad != null && rad > 0) {
+                        onSave(name, rad)
+                    }
+                },
+                enabled = name.isNotBlank() && radius.replace(',', '.').toFloatOrNull() != null && (radius.replace(',', '.').toFloatOrNull() ?: 0f) > 0
+            ) {
+                Text("Speichern")
             }
         },
         dismissButton = {
