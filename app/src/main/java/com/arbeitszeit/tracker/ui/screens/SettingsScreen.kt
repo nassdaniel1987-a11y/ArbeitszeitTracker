@@ -30,6 +30,7 @@ fun SettingsScreen(
         TabItem("Stammdaten", Icons.Default.Person),
         TabItem("Arbeitszeit", Icons.Default.Schedule),
         TabItem("Sollzeiten", Icons.Default.CalendarToday),
+        TabItem("Automatisch", Icons.Default.LocationOn),
         TabItem("Erweitert", Icons.Default.Settings)
     )
 
@@ -59,9 +60,10 @@ fun SettingsScreen(
             // Tab Content
             when (selectedTabIndex) {
                 0 -> StammdatenTab(viewModel, settings, snackbarHostState)
-                1 -> ArbeitszeitTab(viewModel, settings, onNavigateToGeofencing, snackbarHostState)
+                1 -> ArbeitszeitTab(viewModel, settings, snackbarHostState)
                 2 -> SollzeitenTab(viewModel, settings, snackbarHostState)
-                3 -> ErweitertTab(viewModel)
+                3 -> AutomatischTab(onNavigateToGeofencing)
+                4 -> ErweitertTab(viewModel)
             }
         }
     }
@@ -134,7 +136,6 @@ private fun StammdatenTab(
 private fun ArbeitszeitTab(
     viewModel: SettingsViewModel,
     settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
-    onNavigateToGeofencing: () -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
     var prozent by remember { mutableStateOf(settings?.arbeitsumfangProzent?.toString() ?: "100") }
@@ -280,37 +281,6 @@ private fun ArbeitszeitTab(
             supportingText = { Text("Format: TT.MM.JJJJ - Leer lassen für ISO 8601") },
             modifier = Modifier.fillMaxWidth()
         )
-
-        Divider()
-
-        // Geofencing / Automatische Zeiterfassung
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Automatische Zeiterfassung",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        "Starte/beende Arbeitszeit automatisch basierend auf deinem Standort",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Button(onClick = onNavigateToGeofencing) {
-                    Text("Konfigurieren")
-                }
-            }
-        }
 
         Spacer(Modifier.weight(1f))
 
@@ -500,6 +470,106 @@ private fun SollzeitenTab(
             enabled = useIndividualDays
         ) {
             Text("Speichern")
+        }
+    }
+}
+
+@Composable
+private fun AutomatischTab(
+    onNavigateToGeofencing: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "Automatische Zeiterfassung",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            "Konfiguriere die automatische Zeiterfassung basierend auf deinem Standort. " +
+            "Die App kann automatisch die Arbeitszeit starten und beenden, wenn du einen bestimmten Ort betrittst oder verlässt.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // Geofencing Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Standortbasierte Zeiterfassung",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            "Automatisches Starten und Stoppen basierend auf GPS-Standort",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = onNavigateToGeofencing,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Orte konfigurieren")
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // Hinweise
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Hinweise",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "• Die App benötigt Standortberechtigungen\n" +
+                    "• Die Zeiterfassung erfolgt im Hintergrund\n" +
+                    "• Du kannst mehrere Standorte definieren\n" +
+                    "• Die Genauigkeit hängt vom GPS-Signal ab",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
