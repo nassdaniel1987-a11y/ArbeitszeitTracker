@@ -4,12 +4,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.viewmodel.SettingsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,30 +22,47 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.userSettings.collectAsState()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val tabs = listOf("Stammdaten", "Arbeitszeit", "Sollzeiten", "Erweitert")
+    data class TabItem(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Tab Row
-        ScrollableTabRow(
-            selectedTabIndex = selectedTabIndex,
-            edgePadding = 0.dp
+    val tabs = listOf(
+        TabItem("Stammdaten", Icons.Default.Person),
+        TabItem("Arbeitszeit", Icons.Default.Schedule),
+        TabItem("Sollzeiten", Icons.Default.CalendarToday),
+        TabItem("Erweitert", Icons.Default.Settings)
+    )
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = { Text(title) }
-                )
+            // Tab Row
+            ScrollableTabRow(
+                selectedTabIndex = selectedTabIndex,
+                edgePadding = 0.dp
+            ) {
+                tabs.forEachIndexed { index, tab ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(tab.title) },
+                        icon = { Icon(tab.icon, contentDescription = tab.title) }
+                    )
+                }
             }
-        }
 
-        // Tab Content
-        when (selectedTabIndex) {
-            0 -> StammdatenTab(viewModel, settings)
-            1 -> ArbeitszeitTab(viewModel, settings, onNavigateToGeofencing)
-            2 -> SollzeitenTab(viewModel, settings)
-            3 -> ErweitertTab(viewModel)
+            // Tab Content
+            when (selectedTabIndex) {
+                0 -> StammdatenTab(viewModel, settings, snackbarHostState)
+                1 -> ArbeitszeitTab(viewModel, settings, onNavigateToGeofencing, snackbarHostState)
+                2 -> SollzeitenTab(viewModel, settings, snackbarHostState)
+                3 -> ErweitertTab(viewModel)
+            }
         }
     }
 }
@@ -50,10 +70,12 @@ fun SettingsScreen(
 @Composable
 private fun StammdatenTab(
     viewModel: SettingsViewModel,
-    settings: com.arbeitszeit.tracker.data.entity.UserSettings?
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    snackbarHostState: SnackbarHostState
 ) {
     var name by remember { mutableStateOf(settings?.name ?: "") }
     var einrichtung by remember { mutableStateOf(settings?.einrichtung ?: "") }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(settings) {
         settings?.let {
@@ -97,6 +119,9 @@ private fun StammdatenTab(
                     name = name,
                     einrichtung = einrichtung
                 )
+                scope.launch {
+                    snackbarHostState.showSnackbar("Stammdaten erfolgreich gespeichert")
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -109,7 +134,8 @@ private fun StammdatenTab(
 private fun ArbeitszeitTab(
     viewModel: SettingsViewModel,
     settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
-    onNavigateToGeofencing: () -> Unit
+    onNavigateToGeofencing: () -> Unit,
+    snackbarHostState: SnackbarHostState
 ) {
     var prozent by remember { mutableStateOf(settings?.arbeitsumfangProzent?.toString() ?: "100") }
     var stunden by remember { mutableStateOf("40") }
@@ -117,6 +143,7 @@ private fun ArbeitszeitTab(
     var arbeitsTage by remember { mutableStateOf(settings?.arbeitsTageProWoche?.toString() ?: "5") }
     var ferienbetreuung by remember { mutableStateOf(settings?.ferienbetreuung ?: false) }
     var ersterMontag by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(settings) {
         settings?.let {
@@ -254,6 +281,9 @@ private fun ArbeitszeitTab(
                     ferienbetreuung = ferienbetreuung,
                     ersterMontagImJahr = ersterMontagFormatted
                 )
+                scope.launch {
+                    snackbarHostState.showSnackbar("Arbeitszeiteinstellungen erfolgreich gespeichert")
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -265,7 +295,8 @@ private fun ArbeitszeitTab(
 @Composable
 private fun SollzeitenTab(
     viewModel: SettingsViewModel,
-    settings: com.arbeitszeit.tracker.data.entity.UserSettings?
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    snackbarHostState: SnackbarHostState
 ) {
     var useIndividualDays by remember { mutableStateOf(false) }
     var montagH by remember { mutableStateOf("") }
@@ -282,6 +313,7 @@ private fun SollzeitenTab(
     var samstagM by remember { mutableStateOf("") }
     var sonntagH by remember { mutableStateOf("") }
     var sonntagM by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(settings) {
         settings?.let {
@@ -405,6 +437,9 @@ private fun SollzeitenTab(
                     samstagSollMinuten = samstagMin,
                     sonntagSollMinuten = sonntagMin
                 )
+                scope.launch {
+                    snackbarHostState.showSnackbar("Sollzeiten erfolgreich gespeichert")
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = useIndividualDays

@@ -284,6 +284,8 @@ private fun WorkLocationCard(
     onToggle: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Card {
         Row(
             modifier = Modifier
@@ -334,11 +336,38 @@ private fun WorkLocationCard(
                     checked = location.enabled,
                     onCheckedChange = { onToggle() }
                 )
-                IconButton(onClick = onDelete) {
+                IconButton(onClick = { showDeleteDialog = true }) {
                     Icon(Icons.Default.Delete, "Löschen")
                 }
             }
         }
+    }
+
+    // Bestätigungsdialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Arbeitsort löschen?") },
+            text = { Text("Möchtest du den Arbeitsort \"${location.name}\" wirklich löschen?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Löschen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
     }
 }
 
