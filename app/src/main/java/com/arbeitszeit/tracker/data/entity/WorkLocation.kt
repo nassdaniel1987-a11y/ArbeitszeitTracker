@@ -18,6 +18,9 @@ data class WorkLocation(
     val latitude: Double,
     val longitude: Double,
 
+    // Formatierte Adresse (z.B. "Musterstraße 123, 70173 Stuttgart")
+    val address: String? = null,
+
     // Radius in Metern (z.B. 100)
     val radiusMeters: Float = 100f,
 
