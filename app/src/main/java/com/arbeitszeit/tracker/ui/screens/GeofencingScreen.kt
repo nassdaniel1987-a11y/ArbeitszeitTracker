@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.WorkLocation
 import com.arbeitszeit.tracker.viewmodel.GeofencingViewModel
 import com.arbeitszeit.tracker.viewmodel.PermissionStatus
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
