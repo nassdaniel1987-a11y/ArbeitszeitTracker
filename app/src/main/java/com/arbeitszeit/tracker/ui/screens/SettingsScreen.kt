@@ -145,6 +145,44 @@ private fun ArbeitszeitTab(
     var ersterMontag by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
+    // Validation states
+    val prozentValue = prozent.toIntOrNull()
+    val prozentError = when {
+        prozent.isBlank() -> "Arbeitsumfang darf nicht leer sein"
+        prozentValue == null -> "Bitte eine Zahl eingeben"
+        prozentValue < 0 -> "Arbeitsumfang darf nicht negativ sein"
+        prozentValue > 100 -> "Arbeitsumfang darf maximal 100% sein"
+        else -> null
+    }
+
+    val stundenValue = stunden.toIntOrNull()
+    val stundenError = when {
+        stunden.isBlank() -> "Stunden dürfen nicht leer sein"
+        stundenValue == null -> "Bitte eine Zahl eingeben"
+        stundenValue < 0 -> "Stunden dürfen nicht negativ sein"
+        else -> null
+    }
+
+    val minutenValue = minuten.toIntOrNull()
+    val minutenError = when {
+        minuten.isBlank() -> "Minuten dürfen nicht leer sein"
+        minutenValue == null -> "Bitte eine Zahl eingeben"
+        minutenValue < 0 -> "Minuten dürfen nicht negativ sein"
+        minutenValue > 59 -> "Minuten dürfen maximal 59 sein"
+        else -> null
+    }
+
+    val arbeitsTageValue = arbeitsTage.toIntOrNull()
+    val arbeitsTageError = when {
+        arbeitsTage.isBlank() -> "Arbeitstage dürfen nicht leer sein"
+        arbeitsTageValue == null -> "Bitte eine Zahl eingeben"
+        arbeitsTageValue < 1 -> "Mindestens 1 Arbeitstag erforderlich"
+        arbeitsTageValue > 7 -> "Maximal 7 Arbeitstage möglich"
+        else -> null
+    }
+
+    val hasErrors = prozentError != null || stundenError != null || minutenError != null || arbeitsTageError != null
+
     LaunchedEffect(settings) {
         settings?.let {
             prozent = it.arbeitsumfangProzent.toString()
@@ -180,6 +218,10 @@ private fun ArbeitszeitTab(
             onValueChange = { prozent = it },
             label = { Text("Arbeitsumfang (%)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = prozentError != null,
+            supportingText = if (prozentError != null) {
+                { Text(prozentError, color = MaterialTheme.colorScheme.error) }
+            } else null,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -190,6 +232,10 @@ private fun ArbeitszeitTab(
                 onValueChange = { stunden = it },
                 label = { Text("Stunden") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = stundenError != null,
+                supportingText = if (stundenError != null) {
+                    { Text(stundenError, color = MaterialTheme.colorScheme.error) }
+                } else null,
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
@@ -197,6 +243,10 @@ private fun ArbeitszeitTab(
                 onValueChange = { minuten = it },
                 label = { Text("Minuten") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = minutenError != null,
+                supportingText = if (minutenError != null) {
+                    { Text(minutenError, color = MaterialTheme.colorScheme.error) }
+                } else null,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -206,6 +256,10 @@ private fun ArbeitszeitTab(
             onValueChange = { arbeitsTage = it },
             label = { Text("Arbeitstage/Woche") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = arbeitsTageError != null,
+            supportingText = if (arbeitsTageError != null) {
+                { Text(arbeitsTageError, color = MaterialTheme.colorScheme.error) }
+            } else null,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -285,6 +339,7 @@ private fun ArbeitszeitTab(
                     snackbarHostState.showSnackbar("Arbeitszeiteinstellungen erfolgreich gespeichert")
                 }
             },
+            enabled = !hasErrors,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Speichern")
@@ -540,35 +595,80 @@ private fun DayTimeInput(
     onHoursChange: (String) -> Unit,
     onMinutesChange: (String) -> Unit
 ) {
-    Row(
+    // Validation
+    val hoursValue = hours.toIntOrNull()
+    val hoursError = when {
+        hours.isNotBlank() && hoursValue == null -> "Ungültig"
+        hours.isNotBlank() && hoursValue != null && hoursValue < 0 -> "Negativ"
+        else -> null
+    }
+
+    val minutesValue = minutes.toIntOrNull()
+    val minutesError = when {
+        minutes.isNotBlank() && minutesValue == null -> "Ungültig"
+        minutes.isNotBlank() && minutesValue != null && minutesValue < 0 -> "Negativ"
+        minutes.isNotBlank() && minutesValue != null && minutesValue > 59 -> "Max 59"
+        else -> null
+    }
+
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = dayName,
-            modifier = Modifier.width(80.dp),
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            Text(
+                text = dayName,
+                modifier = Modifier.width(80.dp),
+                style = MaterialTheme.typography.bodyMedium
+            )
 
-        OutlinedTextField(
-            value = hours,
-            onValueChange = onHoursChange,
-            label = { Text("h") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.weight(1f),
-            singleLine = true
-        )
+            OutlinedTextField(
+                value = hours,
+                onValueChange = onHoursChange,
+                label = { Text("h") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = hoursError != null,
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
 
-        Text(":", style = MaterialTheme.typography.bodyLarge)
+            Text(":", style = MaterialTheme.typography.bodyLarge)
 
-        OutlinedTextField(
-            value = minutes,
-            onValueChange = onMinutesChange,
-            label = { Text("m") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.weight(1f),
-            singleLine = true
-        )
+            OutlinedTextField(
+                value = minutes,
+                onValueChange = onMinutesChange,
+                label = { Text("m") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = minutesError != null,
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+        }
+
+        // Show error messages if any
+        if (hoursError != null || minutesError != null) {
+            Row(
+                modifier = Modifier.padding(start = 88.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = hoursError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = minutesError ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
     }
 }

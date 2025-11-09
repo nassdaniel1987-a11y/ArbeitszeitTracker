@@ -140,6 +140,20 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
+     * Aktualisiert einen Arbeitsort (Name, Radius)
+     */
+    fun updateWorkLocation(location: WorkLocation, newName: String, newRadius: Float) {
+        viewModelScope.launch {
+            workLocationDao.update(location.copy(
+                name = newName,
+                radiusMeters = newRadius,
+                updatedAt = System.currentTimeMillis()
+            ))
+            updateGeofences()
+        }
+    }
+
+    /**
      * Aktiviert/Deaktiviert Geofencing global
      */
     fun toggleGeofencing(enabled: Boolean) {
