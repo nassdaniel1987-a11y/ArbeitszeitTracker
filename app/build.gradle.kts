@@ -42,7 +42,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"  // Neueste stabile Version
+        kotlinCompilerExtensionVersion = "1.5.14"  // Kompatibel mit Kotlin 1.9.24
     }
     packaging {
         resources {
