@@ -336,7 +336,6 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
         }
     }
     }
-}
 
     // Dialog zum Hinzufügen eines Arbeitsorts
     if (showAddDialog) {
