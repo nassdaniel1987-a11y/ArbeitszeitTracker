@@ -81,6 +81,92 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Aktualisiert nur Stammdaten (Name, Einrichtung)
+     * Alle anderen Felder werden beibehalten
+     */
+    fun updateStammdaten(
+        name: String,
+        einrichtung: String
+    ) {
+        viewModelScope.launch {
+            val existing = settingsDao.getSettings() ?: return@launch
+
+            settingsDao.insertOrUpdate(existing.copy(
+                name = name,
+                einrichtung = einrichtung,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+
+    /**
+     * Aktualisiert nur Arbeitszeiteinstellungen
+     * Alle anderen Felder werden beibehalten
+     */
+    fun updateArbeitszeit(
+        arbeitsumfangProzent: Int,
+        wochenStundenMinuten: Int,
+        arbeitsTageProWoche: Int,
+        ferienbetreuung: Boolean,
+        ersterMontagImJahr: String?
+    ) {
+        viewModelScope.launch {
+            val existing = settingsDao.getSettings() ?: return@launch
+
+            val updated = existing.copy(
+                arbeitsumfangProzent = arbeitsumfangProzent,
+                wochenStundenMinuten = wochenStundenMinuten,
+                arbeitsTageProWoche = arbeitsTageProWoche,
+                ferienbetreuung = ferienbetreuung,
+                ersterMontagImJahr = ersterMontagImJahr,
+                updatedAt = System.currentTimeMillis()
+            )
+
+            settingsDao.insertOrUpdate(updated)
+
+            // Aktualisiere sollMinuten für alle bestehenden Einträge
+            updateSollMinutenForAllEntries(updated)
+
+            // Aktualisiere Kalenderwochen, wenn sich der erste Montag geändert hat
+            updateKalenderwochenForAllEntries(updated)
+        }
+    }
+
+    /**
+     * Aktualisiert nur individuelle Tages-Sollzeiten
+     * Alle anderen Felder werden beibehalten
+     */
+    fun updateSollzeiten(
+        montagSollMinuten: Int?,
+        dienstagSollMinuten: Int?,
+        mittwochSollMinuten: Int?,
+        donnerstagSollMinuten: Int?,
+        freitagSollMinuten: Int?,
+        samstagSollMinuten: Int?,
+        sonntagSollMinuten: Int?
+    ) {
+        viewModelScope.launch {
+            val existing = settingsDao.getSettings() ?: return@launch
+
+            val updated = existing.copy(
+                montagSollMinuten = montagSollMinuten,
+                dienstagSollMinuten = dienstagSollMinuten,
+                mittwochSollMinuten = mittwochSollMinuten,
+                donnerstagSollMinuten = donnerstagSollMinuten,
+                freitagSollMinuten = freitagSollMinuten,
+                samstagSollMinuten = samstagSollMinuten,
+                sonntagSollMinuten = sonntagSollMinuten,
+                updatedAt = System.currentTimeMillis()
+            )
+
+            settingsDao.insertOrUpdate(updated)
+
+            // Aktualisiere sollMinuten für alle bestehenden Einträge
+            updateSollMinutenForAllEntries(updated)
+        }
+    }
+
+    /**
      * Aktualisiert die SollMinuten für alle bestehenden Zeiteinträge
      * basierend auf den neuen Einstellungen
      */

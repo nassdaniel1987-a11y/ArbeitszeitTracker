@@ -18,19 +18,256 @@ fun SettingsScreen(
     onNavigateToGeofencing: () -> Unit = {}
 ) {
     val settings by viewModel.userSettings.collectAsState()
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
+    val tabs = listOf("Stammdaten", "Arbeitszeit", "Sollzeiten", "Erweitert")
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Tab Row
+        ScrollableTabRow(
+            selectedTabIndex = selectedTabIndex,
+            edgePadding = 0.dp
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = { Text(title) }
+                )
+            }
+        }
+
+        // Tab Content
+        when (selectedTabIndex) {
+            0 -> StammdatenTab(viewModel, settings)
+            1 -> ArbeitszeitTab(viewModel, settings, onNavigateToGeofencing)
+            2 -> SollzeitenTab(viewModel, settings)
+            3 -> ErweitertTab(viewModel)
+        }
+    }
+}
+
+@Composable
+private fun StammdatenTab(
+    viewModel: SettingsViewModel,
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?
+) {
     var name by remember { mutableStateOf(settings?.name ?: "") }
     var einrichtung by remember { mutableStateOf(settings?.einrichtung ?: "") }
+
+    LaunchedEffect(settings) {
+        settings?.let {
+            name = it.name
+            einrichtung = it.einrichtung
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "Persönliche Daten",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = einrichtung,
+            onValueChange = { einrichtung = it },
+            label = { Text("Einrichtung") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.weight(1f))
+
+        Button(
+            onClick = {
+                viewModel.updateStammdaten(
+                    name = name,
+                    einrichtung = einrichtung
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Speichern")
+        }
+    }
+}
+
+@Composable
+private fun ArbeitszeitTab(
+    viewModel: SettingsViewModel,
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    onNavigateToGeofencing: () -> Unit
+) {
     var prozent by remember { mutableStateOf(settings?.arbeitsumfangProzent?.toString() ?: "100") }
     var stunden by remember { mutableStateOf("40") }
     var minuten by remember { mutableStateOf("00") }
     var arbeitsTage by remember { mutableStateOf(settings?.arbeitsTageProWoche?.toString() ?: "5") }
     var ferienbetreuung by remember { mutableStateOf(settings?.ferienbetreuung ?: false) }
-    var ersterMontag by remember { mutableStateOf("") } // Format: TT.MM.JJJJ
+    var ersterMontag by remember { mutableStateOf("") }
 
-    // Individuelle Tages-Soll-Zeiten
+    LaunchedEffect(settings) {
+        settings?.let {
+            prozent = it.arbeitsumfangProzent.toString()
+            stunden = (it.wochenStundenMinuten / 60).toString()
+            minuten = (it.wochenStundenMinuten % 60).toString().padStart(2, '0')
+            arbeitsTage = it.arbeitsTageProWoche.toString()
+            ferienbetreuung = it.ferienbetreuung
+
+            it.ersterMontagImJahr?.let { datum ->
+                val parts = datum.split("-")
+                if (parts.size == 3) {
+                    ersterMontag = "${parts[2]}.${parts[1]}.${parts[0]}"
+                }
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "Arbeitszeiteinstellungen",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        OutlinedTextField(
+            value = prozent,
+            onValueChange = { prozent = it },
+            label = { Text("Arbeitsumfang (%)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Text("Wochenstunden", style = MaterialTheme.typography.labelMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = stunden,
+                onValueChange = { stunden = it },
+                label = { Text("Stunden") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+            OutlinedTextField(
+                value = minuten,
+                onValueChange = { minuten = it },
+                label = { Text("Minuten") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        OutlinedTextField(
+            value = arbeitsTage,
+            onValueChange = { arbeitsTage = it },
+            label = { Text("Arbeitstage/Woche") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text("Ferienbetreuung")
+            Spacer(Modifier.weight(1f))
+            Switch(checked = ferienbetreuung, onCheckedChange = { ferienbetreuung = it })
+        }
+
+        HorizontalDivider()
+
+        Text("Kalenderwochenberechnung", style = MaterialTheme.typography.labelMedium)
+        OutlinedTextField(
+            value = ersterMontag,
+            onValueChange = { ersterMontag = it },
+            label = { Text("Erster Montag im Jahr") },
+            placeholder = { Text("z.B. 06.01.2025") },
+            supportingText = { Text("Format: TT.MM.JJJJ - Leer lassen für ISO 8601") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        HorizontalDivider()
+
+        // Geofencing / Automatische Zeiterfassung
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Automatische Zeiterfassung",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        "Starte/beende Arbeitszeit automatisch basierend auf deinem Standort",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Button(onClick = onNavigateToGeofencing) {
+                    Text("Konfigurieren")
+                }
+            }
+        }
+
+        Spacer(Modifier.weight(1f))
+
+        Button(
+            onClick = {
+                val wochenMinuten = (stunden.toIntOrNull() ?: 0) * 60 + (minuten.toIntOrNull() ?: 0)
+
+                val ersterMontagFormatted = if (ersterMontag.isNotBlank()) {
+                    val parts = ersterMontag.split(".")
+                    if (parts.size == 3) {
+                        val tag = parts[0].padStart(2, '0')
+                        val monat = parts[1].padStart(2, '0')
+                        val jahr = parts[2]
+                        "$jahr-$monat-$tag"
+                    } else null
+                } else null
+
+                viewModel.updateArbeitszeit(
+                    arbeitsumfangProzent = prozent.toIntOrNull() ?: 100,
+                    wochenStundenMinuten = wochenMinuten,
+                    arbeitsTageProWoche = arbeitsTage.toIntOrNull() ?: 5,
+                    ferienbetreuung = ferienbetreuung,
+                    ersterMontagImJahr = ersterMontagFormatted
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Speichern")
+        }
+    }
+}
+
+@Composable
+private fun SollzeitenTab(
+    viewModel: SettingsViewModel,
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?
+) {
     var useIndividualDays by remember { mutableStateOf(false) }
-    var showIndividualDays by remember { mutableStateOf(false) }
     var montagH by remember { mutableStateOf("") }
     var montagM by remember { mutableStateOf("") }
     var dienstagH by remember { mutableStateOf("") }
@@ -46,29 +283,9 @@ fun SettingsScreen(
     var sonntagH by remember { mutableStateOf("") }
     var sonntagM by remember { mutableStateOf("") }
 
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-
     LaunchedEffect(settings) {
         settings?.let {
-            name = it.name
-            einrichtung = it.einrichtung
-            prozent = it.arbeitsumfangProzent.toString()
-            stunden = (it.wochenStundenMinuten / 60).toString()
-            minuten = (it.wochenStundenMinuten % 60).toString().padStart(2, '0')
-            arbeitsTage = it.arbeitsTageProWoche.toString()
-            ferienbetreuung = it.ferienbetreuung
-
-            // Erster Montag laden und konvertieren (yyyy-MM-dd -> TT.MM.JJJJ)
-            it.ersterMontagImJahr?.let { datum ->
-                val parts = datum.split("-")
-                if (parts.size == 3) {
-                    ersterMontag = "${parts[2]}.${parts[1]}.${parts[0]}"
-                }
-            }
-
-            // Individuelle Tages-Zeiten laden
             useIndividualDays = it.hasIndividualDailyHours()
-            showIndividualDays = useIndividualDays
 
             it.montagSollMinuten?.let { min ->
                 montagH = (min / 60).toString()
@@ -108,117 +325,26 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Einstellungen", style = MaterialTheme.typography.titleLarge)
-        
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Name") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        
-        OutlinedTextField(
-            value = einrichtung,
-            onValueChange = { einrichtung = it },
-            label = { Text("Einrichtung") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        
-        OutlinedTextField(
-            value = prozent,
-            onValueChange = { prozent = it },
-            label = { Text("Arbeitsumfang (%)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-        
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = stunden,
-                onValueChange = { stunden = it },
-                label = { Text("Stunden") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
-            )
-            OutlinedTextField(
-                value = minuten,
-                onValueChange = { minuten = it },
-                label = { Text("Minuten") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
-            )
-        }
-        
-        OutlinedTextField(
-            value = arbeitsTage,
-            onValueChange = { arbeitsTage = it },
-            label = { Text("Arbeitstage/Woche") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-        
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text("Ferienbetreuung")
-            Spacer(Modifier.weight(1f))
-            Switch(checked = ferienbetreuung, onCheckedChange = { ferienbetreuung = it })
-        }
-
-        OutlinedTextField(
-            value = ersterMontag,
-            onValueChange = { ersterMontag = it },
-            label = { Text("Erster Montag im Jahr (für KW-Berechnung)") },
-            placeholder = { Text("z.B. 06.01.2025") },
-            supportingText = { Text("Format: TT.MM.JJJJ - Leer lassen für ISO 8601") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Divider()
-
-        // Geofencing / Automatische Zeiterfassung
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Automatische Zeiterfassung",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        "Starte/beende Arbeitszeit automatisch basierend auf deinem Standort",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Button(onClick = onNavigateToGeofencing) {
-                    Text("Konfigurieren")
-                }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Individuelle Soll-Zeiten pro Tag",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Leer lassen für Standardberechnung",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        }
-
-        Divider()
-
-        // Individuelle Tages-Soll-Zeiten
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text("Individuelle Soll-Zeiten pro Tag")
-            Spacer(Modifier.weight(1f))
             Switch(
-                checked = showIndividualDays,
-                onCheckedChange = {
-                    showIndividualDays = it
-                    useIndividualDays = it
-                }
+                checked = useIndividualDays,
+                onCheckedChange = { useIndividualDays = it }
             )
         }
 
-        if (showIndividualDays) {
+        if (useIndividualDays) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -227,42 +353,21 @@ fun SettingsScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Tägliche Soll-Arbeitszeiten", style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        "Leer lassen für Standardberechnung (Wochenstunden / Arbeitstage)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    // Montag
                     DayTimeInput("Montag", montagH, montagM, { montagH = it }, { montagM = it })
-
-                    // Dienstag
                     DayTimeInput("Dienstag", dienstagH, dienstagM, { dienstagH = it }, { dienstagM = it })
-
-                    // Mittwoch
                     DayTimeInput("Mittwoch", mittwochH, mittwochM, { mittwochH = it }, { mittwochM = it })
-
-                    // Donnerstag
                     DayTimeInput("Donnerstag", donnerstagH, donnerstagM, { donnerstagH = it }, { donnerstagM = it })
-
-                    // Freitag
                     DayTimeInput("Freitag", freitagH, freitagM, { freitagH = it }, { freitagM = it })
-
-                    // Samstag
                     DayTimeInput("Samstag", samstagH, samstagM, { samstagH = it }, { samstagM = it })
-
-                    // Sonntag
                     DayTimeInput("Sonntag", sonntagH, sonntagM, { sonntagH = it }, { sonntagM = it })
                 }
             }
         }
 
+        Spacer(Modifier.weight(1f))
+
         Button(
             onClick = {
-                val wochenMinuten = (stunden.toIntOrNull() ?: 0) * 60 + (minuten.toIntOrNull() ?: 0)
-
-                // Konvertiere individuelle Tages-Zeiten (null wenn nicht verwendet oder leer)
                 val montagMin = if (useIndividualDays && montagH.isNotBlank()) {
                     (montagH.toIntOrNull() ?: 0) * 60 + (montagM.toIntOrNull() ?: 0)
                 } else null
@@ -291,26 +396,7 @@ fun SettingsScreen(
                     (sonntagH.toIntOrNull() ?: 0) * 60 + (sonntagM.toIntOrNull() ?: 0)
                 } else null
 
-                // Konvertiere erster Montag von TT.MM.JJJJ zu yyyy-MM-dd
-                val ersterMontagFormatted = if (ersterMontag.isNotBlank()) {
-                    val parts = ersterMontag.split(".")
-                    if (parts.size == 3) {
-                        val tag = parts[0].padStart(2, '0')
-                        val monat = parts[1].padStart(2, '0')
-                        val jahr = parts[2]
-                        "$jahr-$monat-$tag"
-                    } else null
-                } else null
-
-                viewModel.updateSettings(
-                    name = name,
-                    einrichtung = einrichtung,
-                    arbeitsumfangProzent = prozent.toIntOrNull() ?: 100,
-                    wochenStundenMinuten = wochenMinuten,
-                    arbeitsTageProWoche = arbeitsTage.toIntOrNull() ?: 5,
-                    ferienbetreuung = ferienbetreuung,
-                    ueberstundenVorjahrMinuten = 0,
-                    ersterMontagImJahr = ersterMontagFormatted,
+                viewModel.updateSollzeiten(
                     montagSollMinuten = montagMin,
                     dienstagSollMinuten = dienstagMin,
                     mittwochSollMinuten = mittwochMin,
@@ -320,12 +406,34 @@ fun SettingsScreen(
                     sonntagSollMinuten = sonntagMin
                 )
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = useIndividualDays
         ) {
             Text("Speichern")
         }
+    }
+}
 
-        Divider()
+@Composable
+private fun ErweitertTab(
+    viewModel: SettingsViewModel
+) {
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "Erweiterte Einstellungen",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(Modifier.weight(1f))
 
         // Gefahrenbereich
         Card(
