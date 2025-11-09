@@ -144,6 +144,10 @@ private fun ArbeitszeitTab(
     var arbeitsTage by remember { mutableStateOf(settings?.arbeitsTageProWoche?.toString() ?: "5") }
     var ferienbetreuung by remember { mutableStateOf(settings?.ferienbetreuung ?: false) }
     var ersterMontag by remember { mutableStateOf("") }
+
+    // Arbeitstage Auswahl (Mo=1, Di=2, ..., So=7)
+    var selectedWorkingDays by remember { mutableStateOf(setOf(1, 2, 3, 4, 5)) } // Default: Mo-Fr
+
     val scope = rememberCoroutineScope()
 
     // Validation states
@@ -191,6 +195,9 @@ private fun ArbeitszeitTab(
             minuten = (it.wochenStundenMinuten % 60).toString().padStart(2, '0')
             arbeitsTage = it.arbeitsTageProWoche.toString()
             ferienbetreuung = it.ferienbetreuung
+
+            // Lade Arbeitstage aus Settings
+            selectedWorkingDays = it.workingDays.map { char -> char.toString().toInt() }.toSet()
 
             it.ersterMontagImJahr?.let { datum ->
                 val parts = datum.split("-")
@@ -260,9 +267,73 @@ private fun ArbeitszeitTab(
             isError = arbeitsTageError != null,
             supportingText = if (arbeitsTageError != null) {
                 { Text(arbeitsTageError, color = MaterialTheme.colorScheme.error) }
-            } else null,
+            } else {
+                { Text("Wird automatisch aus den ausgewählten Tagen berechnet") }
+            },
+            enabled = false, // Deaktiviert, da automatisch berechnet
             modifier = Modifier.fillMaxWidth()
         )
+
+        HorizontalDivider()
+
+        // Arbeitstage Auswahl
+        Text(
+            "Welche Tage arbeitest du?",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            "Wähle deine Arbeitstage aus. Nur diese Tage werden in der Wochenansicht angezeigt.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        val daysOfWeek = listOf(
+            1 to "Mo",
+            2 to "Di",
+            3 to "Mi",
+            4 to "Do",
+            5 to "Fr",
+            6 to "Sa",
+            7 to "So"
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            daysOfWeek.forEach { (dayNum, dayName) ->
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = selectedWorkingDays.contains(dayNum),
+                        onCheckedChange = { isChecked ->
+                            selectedWorkingDays = if (isChecked) {
+                                selectedWorkingDays + dayNum
+                            } else {
+                                selectedWorkingDays - dayNum
+                            }
+                            // Update arbeitsTage count
+                            arbeitsTage = selectedWorkingDays.size.toString()
+                        }
+                    )
+                    Text(
+                        text = when (dayNum) {
+                            1 -> "Montag"
+                            2 -> "Dienstag"
+                            3 -> "Mittwoch"
+                            4 -> "Donnerstag"
+                            5 -> "Freitag"
+                            6 -> "Samstag"
+                            7 -> "Sonntag"
+                            else -> ""
+                        },
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+        }
+
+        HorizontalDivider()
 
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text("Ferienbetreuung")
@@ -298,12 +369,16 @@ private fun ArbeitszeitTab(
                     } else null
                 } else null
 
+                // Convert selectedWorkingDays to String (e.g., "12345" for Mo-Fr)
+                val workingDaysString = selectedWorkingDays.sorted().joinToString("")
+
                 viewModel.updateArbeitszeit(
                     arbeitsumfangProzent = prozent.toIntOrNull() ?: 100,
                     wochenStundenMinuten = wochenMinuten,
-                    arbeitsTageProWoche = arbeitsTage.toIntOrNull() ?: 5,
+                    arbeitsTageProWoche = selectedWorkingDays.size,
                     ferienbetreuung = ferienbetreuung,
-                    ersterMontagImJahr = ersterMontagFormatted
+                    ersterMontagImJahr = ersterMontagFormatted,
+                    workingDays = workingDaysString
                 )
                 scope.launch {
                     snackbarHostState.showSnackbar("Arbeitszeiteinstellungen erfolgreich gespeichert")

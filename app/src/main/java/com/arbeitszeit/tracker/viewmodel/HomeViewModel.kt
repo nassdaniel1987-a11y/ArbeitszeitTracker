@@ -48,13 +48,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val todayEntry: StateFlow<TimeEntry?> = timeEntryDao.getEntryByDateFlow(todayDate)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    // Einträge der ausgewählten Woche
-    val weekEntries: StateFlow<List<TimeEntry>> = _selectedWeekDate.flatMapLatest { weekDate ->
+    // Einträge der ausgewählten Woche - nur Arbeitstage
+    val weekEntries: StateFlow<List<TimeEntry>> = combine(
+        _selectedWeekDate,
+        userSettings
+    ) { weekDate, settings ->
         val weekDays = DateUtils.getDaysOfWeek(weekDate)
         val startDate = DateUtils.dateToString(weekDays.first())
         val endDate = DateUtils.dateToString(weekDays.last())
 
-        timeEntryDao.getEntriesByDateRangeFlow(startDate, endDate)
+        val entries = timeEntryDao.getEntriesByDateRange(startDate, endDate)
+
+        // Filtere nur Arbeitstage
+        if (settings != null) {
+            entries.filter { entry ->
+                val date = LocalDate.parse(entry.datum)
+                val dayOfWeek = date.dayOfWeek.value // 1=Mo, 7=So
+                settings.isWorkingDay(dayOfWeek)
+            }
+        } else {
+            entries
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     
     init {

@@ -108,7 +108,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         wochenStundenMinuten: Int,
         arbeitsTageProWoche: Int,
         ferienbetreuung: Boolean,
-        ersterMontagImJahr: String?
+        ersterMontagImJahr: String?,
+        workingDays: String = "12345"
     ) {
         viewModelScope.launch {
             val existing = settingsDao.getSettings() ?: return@launch
@@ -119,6 +120,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 arbeitsTageProWoche = arbeitsTageProWoche,
                 ferienbetreuung = ferienbetreuung,
                 ersterMontagImJahr = ersterMontagImJahr,
+                workingDays = workingDays,
                 updatedAt = System.currentTimeMillis()
             )
 
