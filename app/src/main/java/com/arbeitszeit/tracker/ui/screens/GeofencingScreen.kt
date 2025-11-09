@@ -421,15 +421,33 @@ private fun AddWorkLocationDialog(
                         // Versuche Plus Code zu dekodieren
                         if (trimmedValue.isNotBlank()) {
                             try {
-                                // Extrahiere nur den Plus Code (falls zusätzlicher Text vorhanden ist)
-                                // Format: 8 Zeichen + "+" + 2-3 Zeichen
-                                val codePattern = Regex("([23456789C][23456789CFGHJMPQRV][23456789CFGHJMPQRVWX]{6}\\+[23456789CFGHJMPQRVWX]{2,3})")
-                                val matchResult = codePattern.find(trimmedValue)
-                                val extractedCode = matchResult?.value ?: trimmedValue
+                                // Extrahiere den Plus Code aus dem Text
+                                // Voller Code: 8 Zeichen + "+" + 2-3 Zeichen (z.B. 8FWC9RGX+2G)
+                                // Kurzer Code: 4 Zeichen + "+" + 2-3 Zeichen (z.B. P4M6+473)
+                                val fullCodePattern = Regex("([23456789C][23456789CFGHJMPQRV][23456789CFGHJMPQRVWX]{6}\\+[23456789CFGHJMPQRVWX]{2,3})")
+                                val shortCodePattern = Regex("([23456789CFGHJMPQRVWX]{4}\\+[23456789CFGHJMPQRVWX]{2,3})")
+
+                                val fullMatch = fullCodePattern.find(trimmedValue)
+                                val shortMatch = shortCodePattern.find(trimmedValue)
+                                val extractedCode = fullMatch?.value ?: shortMatch?.value ?: trimmedValue
 
                                 android.util.Log.d("PlusCode", "Input: '$trimmedValue', Extracted: '$extractedCode'")
 
-                                val olc = com.google.openlocationcode.OpenLocationCode(extractedCode)
+                                var olc = com.google.openlocationcode.OpenLocationCode(extractedCode)
+
+                                // Wenn es ein kurzer Code ist, versuche ihn mit einer Referenz-Koordinate zu vervollständigen
+                                if (!olc.isFull && olc.isShort) {
+                                    android.util.Log.d("PlusCode", "Short code detected, recovering with reference location")
+                                    // Verwende Zentrum von Deutschland als Referenz (51.0°N, 10.5°E)
+                                    // Das funktioniert für die meisten Standorte in Deutschland
+                                    val recovered = com.google.openlocationcode.OpenLocationCode.recoverNearest(
+                                        extractedCode,
+                                        51.0,  // Referenz-Breitengrad (Mitte Deutschland)
+                                        10.5   // Referenz-Längengrad (Mitte Deutschland)
+                                    )
+                                    olc = com.google.openlocationcode.OpenLocationCode(recovered)
+                                    android.util.Log.d("PlusCode", "Recovered full code: $recovered")
+                                }
 
                                 if (olc.isFull) {
                                     val decoded = olc.decode()
@@ -438,7 +456,7 @@ private fun AddWorkLocationDialog(
                                     plusCodeError = null
                                     android.util.Log.d("PlusCode", "Successfully decoded: lat=$latitude, lng=$longitude")
                                 } else {
-                                    plusCodeError = "Plus Code ist unvollständig (zu kurz)"
+                                    plusCodeError = "Plus Code ist unvollständig"
                                     android.util.Log.w("PlusCode", "Code is not full: $extractedCode")
                                 }
                             } catch (e: Exception) {
@@ -450,7 +468,7 @@ private fun AddWorkLocationDialog(
                         }
                     },
                     label = { Text("Plus Code") },
-                    placeholder = { Text("z.B. 8FWC9RGX+2G") },
+                    placeholder = { Text("z.B. P4M6+473 oder 8FWC9RGX+2G") },
                     singleLine = true,
                     isError = plusCodeError != null,
                     supportingText = if (plusCodeError != null) {
