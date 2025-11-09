@@ -426,17 +426,18 @@ private fun AddWorkLocationDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val lat = latitude.toDoubleOrNull()
-                    val lng = longitude.toDoubleOrNull()
-                    val rad = radius.toFloatOrNull()
+                    // Kommas durch Punkte ersetzen für deutsche Zahleneingaben
+                    val lat = latitude.replace(',', '.').toDoubleOrNull()
+                    val lng = longitude.replace(',', '.').toDoubleOrNull()
+                    val rad = radius.replace(',', '.').toFloatOrNull()
                     if (name.isNotBlank() && lat != null && lng != null && rad != null) {
                         onAdd(name, lat, lng, rad)
                     }
                 },
                 enabled = name.isNotBlank() &&
-                        latitude.toDoubleOrNull() != null &&
-                        longitude.toDoubleOrNull() != null &&
-                        radius.toFloatOrNull() != null
+                        latitude.replace(',', '.').toDoubleOrNull() != null &&
+                        longitude.replace(',', '.').toDoubleOrNull() != null &&
+                        radius.replace(',', '.').toFloatOrNull() != null
             ) {
                 Text("Hinzufügen")
             }
