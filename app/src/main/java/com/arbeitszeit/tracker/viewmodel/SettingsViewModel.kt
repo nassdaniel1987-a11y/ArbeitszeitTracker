@@ -61,6 +61,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 freitagSollMinuten = freitagSollMinuten,
                 samstagSollMinuten = samstagSollMinuten,
                 sonntagSollMinuten = sonntagSollMinuten,
+                // WICHTIG: Geofencing-Einstellungen beibehalten!
+                geofencingEnabled = existing?.geofencingEnabled ?: false,
+                geofencingStartHour = existing?.geofencingStartHour ?: 6,
+                geofencingEndHour = existing?.geofencingEndHour ?: 20,
+                geofencingActiveDays = existing?.geofencingActiveDays ?: "12345",
                 createdAt = existing?.createdAt ?: System.currentTimeMillis(),
                 updatedAt = System.currentTimeMillis()
             )
@@ -152,7 +157,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun updateLetzterUebertrag(minuten: Int) {
         viewModelScope.launch {
             val settings = settingsDao.getSettings() ?: return@launch
-            settingsDao.update(settings.copy(
+            settingsDao.insertOrUpdate(settings.copy(
                 letzterUebertragMinuten = minuten,
                 updatedAt = System.currentTimeMillis()
             ))
