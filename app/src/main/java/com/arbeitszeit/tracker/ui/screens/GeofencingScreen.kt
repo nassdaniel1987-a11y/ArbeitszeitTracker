@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.WorkLocation
+import com.arbeitszeit.tracker.ui.components.OpenStreetMapView
 import com.arbeitszeit.tracker.viewmodel.GeofencingViewModel
 import com.arbeitszeit.tracker.viewmodel.PermissionStatus
 import kotlinx.coroutines.launch
@@ -271,6 +272,56 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                                     label = { Text(day) }
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Karte mit Arbeitsorten
+        if (workLocations.isNotEmpty()) {
+            item {
+                var showMap by remember { mutableStateOf(true) }
+
+                Card {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Karte",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            IconButton(onClick = { showMap = !showMap }) {
+                                Icon(
+                                    if (showMap) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (showMap) "Karte ausblenden" else "Karte anzeigen"
+                                )
+                            }
+                        }
+
+                        if (showMap) {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp)
+                            ) {
+                                OpenStreetMapView(
+                                    workLocations = workLocations,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            Text(
+                                "Grüne Bereiche = Aktive Orte • Graue Bereiche = Deaktivierte Orte",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
                         }
                     }
                 }
