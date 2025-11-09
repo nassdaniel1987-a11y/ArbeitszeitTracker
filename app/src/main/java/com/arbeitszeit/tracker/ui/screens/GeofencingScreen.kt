@@ -107,7 +107,7 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
             Card(
                 colors = if (isEnabled) {
                     CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = androidx.compose.ui.graphics.Color(0xFF4CAF50) // Grün
                     )
                 } else {
                     CardDefaults.cardColors()
@@ -124,13 +124,13 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                         Text(
                             "Automatische Zeiterfassung",
                             style = MaterialTheme.typography.titleMedium,
-                            color = if (isEnabled) MaterialTheme.colorScheme.onPrimaryContainer
+                            color = if (isEnabled) androidx.compose.ui.graphics.Color.White
                                    else MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             if (isEnabled) "Aktiviert" else "Deaktiviert",
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (isEnabled) MaterialTheme.colorScheme.onPrimaryContainer
+                            color = if (isEnabled) androidx.compose.ui.graphics.Color.White.copy(alpha = 0.9f)
                                    else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
