@@ -99,7 +99,16 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
 
         // Geofencing An/Aus
         item {
-            Card {
+            val isEnabled = settings?.geofencingEnabled ?: false
+            Card(
+                colors = if (isEnabled) {
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                } else {
+                    CardDefaults.cardColors()
+                }
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -110,16 +119,19 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             "Automatische Zeiterfassung",
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (isEnabled) MaterialTheme.colorScheme.onPrimaryContainer
+                                   else MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "Aktiviert",
+                            if (isEnabled) "Aktiviert" else "Deaktiviert",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isEnabled) MaterialTheme.colorScheme.onPrimaryContainer
+                                   else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Switch(
-                        checked = settings?.geofencingEnabled ?: false,
+                        checked = isEnabled,
                         onCheckedChange = { enabled ->
                             if (permissionStatus == PermissionStatus.GRANTED || !enabled) {
                                 viewModel.toggleGeofencing(enabled)

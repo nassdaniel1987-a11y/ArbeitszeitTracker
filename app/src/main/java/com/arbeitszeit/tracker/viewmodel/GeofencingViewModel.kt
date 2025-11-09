@@ -82,7 +82,7 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
     fun toggleGeofencing(enabled: Boolean) {
         viewModelScope.launch {
             val currentSettings = settingsDao.getSettings() ?: return@launch
-            settingsDao.update(currentSettings.copy(
+            settingsDao.insertOrUpdate(currentSettings.copy(
                 geofencingEnabled = enabled,
                 updatedAt = System.currentTimeMillis()
             ))
@@ -101,7 +101,7 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
     fun updateTimeWindow(startHour: Int, endHour: Int) {
         viewModelScope.launch {
             val currentSettings = settingsDao.getSettings() ?: return@launch
-            settingsDao.update(currentSettings.copy(
+            settingsDao.insertOrUpdate(currentSettings.copy(
                 geofencingStartHour = startHour,
                 geofencingEndHour = endHour,
                 updatedAt = System.currentTimeMillis()
@@ -115,7 +115,7 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
     fun updateActiveDays(days: String) {
         viewModelScope.launch {
             val currentSettings = settingsDao.getSettings() ?: return@launch
-            settingsDao.update(currentSettings.copy(
+            settingsDao.insertOrUpdate(currentSettings.copy(
                 geofencingActiveDays = days,
                 updatedAt = System.currentTimeMillis()
             ))
