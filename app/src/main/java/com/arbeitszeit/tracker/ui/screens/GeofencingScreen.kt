@@ -341,7 +341,7 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                                     )
                                 }
 
-                                HorizontalDivider()
+                                Divider()
 
                                 Text(
                                     "🟢 Grün = Du bist hier • 🔵 Blau = Aktiv (außerhalb) • ⚫ Grau = Deaktiviert",
