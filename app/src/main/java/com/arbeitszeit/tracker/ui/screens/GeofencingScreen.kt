@@ -324,6 +324,7 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(300.dp)
+                                    .padding(bottom = 8.dp)
                             ) {
                                 OpenStreetMapView(
                                     workLocations = workLocations,
@@ -335,7 +336,7 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                             }
 
                             Text(
-                                "Grüne Bereiche = Aktive Orte • Graue Bereiche = Deaktivierte Orte",
+                                "🟢 Grün = Du bist hier • 🔵 Blau = Aktiv (außerhalb) • ⚫ Grau = Deaktiviert",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
