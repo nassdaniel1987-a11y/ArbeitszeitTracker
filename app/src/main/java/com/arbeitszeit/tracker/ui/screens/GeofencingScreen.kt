@@ -347,8 +347,9 @@ private fun AddWorkLocationDialog(
                                     ?: locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
 
                                 location?.let {
-                                    latitude = String.format("%.6f", it.latitude)
-                                    longitude = String.format("%.6f", it.longitude)
+                                    // Verwende Locale.US um immer Punkt als Dezimaltrennzeichen zu erzeugen
+                                    latitude = String.format(java.util.Locale.US, "%.6f", it.latitude)
+                                    longitude = String.format(java.util.Locale.US, "%.6f", it.longitude)
                                     useCurrentLocation = true
                                 }
                             }
