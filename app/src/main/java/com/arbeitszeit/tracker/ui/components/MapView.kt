@@ -12,9 +12,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.arbeitszeit.tracker.data.entity.WorkLocation
 import com.google.android.gms.location.*
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -147,7 +144,7 @@ private fun createMapView(context: Context): MapView {
     // OSMDroid configuration
     Configuration.getInstance().load(
         context,
-        androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE)
     )
     Configuration.getInstance().userAgentValue = context.packageName
 
