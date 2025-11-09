@@ -21,7 +21,7 @@ import java.util.Locale
 
 @Database(
     entities = [UserSettings::class, TimeEntry::class, WorkLocation::class],
-    version = 5,
+    version = 6,  // Erhöht wegen workingDays Spalte
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

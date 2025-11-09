@@ -24,6 +24,10 @@ data class UserSettings(
     val samstagSollMinuten: Int? = null,
     val sonntagSollMinuten: Int? = null,
 
+    // Arbeitstage Definition (Mo=1, Di=2, Mi=3, Do=4, Fr=5, Sa=6, So=7)
+    // z.B. "12345" = Montag bis Freitag, "123456" = Montag bis Samstag
+    val workingDays: String = "12345",  // Default: Mo-Fr
+
     // Geofencing Einstellungen
     val geofencingEnabled: Boolean = false,
     val geofencingStartHour: Int = 6,        // Aktiv ab 6 Uhr
@@ -61,6 +65,21 @@ data class UserSettings(
                freitagSollMinuten != null ||
                samstagSollMinuten != null ||
                sonntagSollMinuten != null
+    }
+
+    /**
+     * Prüft ob ein Tag ein Arbeitstag ist
+     * @param dayOfWeek 1=Montag, 2=Dienstag, ..., 7=Sonntag
+     */
+    fun isWorkingDay(dayOfWeek: Int): Boolean {
+        return workingDays.contains(dayOfWeek.toString())
+    }
+
+    /**
+     * Gibt die Anzahl der definierten Arbeitstage zurück
+     */
+    fun getWorkingDaysCount(): Int {
+        return workingDays.length
     }
 
     /**
