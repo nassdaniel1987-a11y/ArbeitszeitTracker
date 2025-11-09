@@ -100,6 +100,10 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
         // Geofencing An/Aus
         item {
             val isEnabled = settings?.geofencingEnabled ?: false
+
+            // Debug logging
+            android.util.Log.d("GeofencingScreen", "Rendering card - isEnabled: $isEnabled, settings: $settings")
+
             Card(
                 colors = if (isEnabled) {
                     CardDefaults.cardColors(
