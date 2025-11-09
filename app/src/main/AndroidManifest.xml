@@ -84,6 +84,18 @@
             android:name=".geofencing.GeofenceBroadcastReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <!-- Notification Action Receiver -->
+        <receiver
+            android:name=".notification.NotificationActionReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.arbeitszeit.tracker.ACTION_STAMP_START" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_STAMP_END" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_DISMISS" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
