@@ -188,7 +188,7 @@ private fun ArbeitszeitTab(
             Switch(checked = ferienbetreuung, onCheckedChange = { ferienbetreuung = it })
         }
 
-        HorizontalDivider()
+        Divider()
 
         Text("Kalenderwochenberechnung", style = MaterialTheme.typography.labelMedium)
         OutlinedTextField(
@@ -200,7 +200,7 @@ private fun ArbeitszeitTab(
             modifier = Modifier.fillMaxWidth()
         )
 
-        HorizontalDivider()
+        Divider()
 
         // Geofencing / Automatische Zeiterfassung
         Card(
