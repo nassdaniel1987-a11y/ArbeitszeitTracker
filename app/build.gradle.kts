@@ -102,6 +102,9 @@ dependencies {
     // Google Play Services - Geofencing
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
+    // OpenStreetMap (OSMDroid) - Open Source Maps
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+
     // Google Plus Codes (Open Location Code)
     implementation("com.google.openlocationcode:openlocationcode:1.0.4")
 
