@@ -413,24 +413,37 @@ private fun AddWorkLocationDialog(
                 OutlinedTextField(
                     value = plusCode,
                     onValueChange = { newValue ->
-                        plusCode = newValue.uppercase()
-                        usePlusCode = newValue.isNotBlank()
+                        val trimmedValue = newValue.trim().uppercase()
+                        plusCode = trimmedValue
+                        usePlusCode = trimmedValue.isNotBlank()
                         useCurrentLocation = false
 
                         // Versuche Plus Code zu dekodieren
-                        if (newValue.isNotBlank()) {
+                        if (trimmedValue.isNotBlank()) {
                             try {
-                                val olc = com.google.openlocationcode.OpenLocationCode(newValue)
+                                // Extrahiere nur den Plus Code (falls zusätzlicher Text vorhanden ist)
+                                // Format: 8 Zeichen + "+" + 2-3 Zeichen
+                                val codePattern = Regex("([23456789C][23456789CFGHJMPQRV][23456789CFGHJMPQRVWX]{6}\\+[23456789CFGHJMPQRVWX]{2,3})")
+                                val matchResult = codePattern.find(trimmedValue)
+                                val extractedCode = matchResult?.value ?: trimmedValue
+
+                                android.util.Log.d("PlusCode", "Input: '$trimmedValue', Extracted: '$extractedCode'")
+
+                                val olc = com.google.openlocationcode.OpenLocationCode(extractedCode)
+
                                 if (olc.isFull) {
                                     val decoded = olc.decode()
                                     latitude = String.format(java.util.Locale.US, "%.6f", decoded.centerLatitude)
                                     longitude = String.format(java.util.Locale.US, "%.6f", decoded.centerLongitude)
                                     plusCodeError = null
+                                    android.util.Log.d("PlusCode", "Successfully decoded: lat=$latitude, lng=$longitude")
                                 } else {
-                                    plusCodeError = "Plus Code ist unvollständig"
+                                    plusCodeError = "Plus Code ist unvollständig (zu kurz)"
+                                    android.util.Log.w("PlusCode", "Code is not full: $extractedCode")
                                 }
                             } catch (e: Exception) {
-                                plusCodeError = "Ungültiger Plus Code"
+                                plusCodeError = "Ungültiger Plus Code: ${e.message}"
+                                android.util.Log.e("PlusCode", "Error decoding: '$trimmedValue'", e)
                             }
                         } else {
                             plusCodeError = null
