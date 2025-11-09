@@ -32,6 +32,7 @@ fun HomeScreen(
     val userSettings by viewModel.userSettings.collectAsState()
     val weekEntries by viewModel.weekEntries.collectAsState()
     val selectedWeekDate by viewModel.selectedWeekDate.collectAsState()
+    val locationStatus by viewModel.locationStatus.collectAsState()
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
@@ -62,7 +63,14 @@ fun HomeScreen(
                     onTypChange = { viewModel.setTyp(it) }
                 )
             }
-            
+
+            item {
+                GeofencingStatusCard(
+                    locationStatus = locationStatus,
+                    onRefresh = { viewModel.checkLocationStatus() }
+                )
+            }
+
             item {
                 WeekNavigationHeader(
                     selectedWeekDate = selectedWeekDate,

@@ -1,15 +1,22 @@
 package com.arbeitszeit.tracker.viewmodel
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
+import com.arbeitszeit.tracker.data.entity.WorkLocation
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -17,7 +24,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
-    
+    private val workLocationDao = database.workLocationDao()
+    private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
+
     // UI State
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -25,6 +34,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     // Ausgewählte Woche (Referenzdatum)
     private val _selectedWeekDate = MutableStateFlow(LocalDate.now())
     val selectedWeekDate: StateFlow<LocalDate> = _selectedWeekDate.asStateFlow()
+
+    // Geofencing Status
+    private val _locationStatus = MutableStateFlow<LocationStatus>(LocationStatus.Unknown)
+    val locationStatus: StateFlow<LocationStatus> = _locationStatus.asStateFlow()
 
     // Settings
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
@@ -48,6 +61,67 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         // Erstelle heute-Eintrag falls nicht vorhanden
         viewModelScope.launch {
             ensureTodayEntryExists()
+            checkLocationStatus()
+        }
+    }
+
+    /**
+     * Prüft ob der Nutzer an einem Arbeitsort ist
+     */
+    fun checkLocationStatus() {
+        viewModelScope.launch {
+            try {
+                val settings = settingsDao.getSettings()
+                if (settings?.geofencingEnabled != true) {
+                    _locationStatus.value = LocationStatus.GeofencingDisabled
+                    return@launch
+                }
+
+                val locations = workLocationDao.getEnabledLocations()
+                if (locations.isEmpty()) {
+                    _locationStatus.value = LocationStatus.NoLocations
+                    return@launch
+                }
+
+                // Prüfe Berechtigung
+                if (ContextCompat.checkSelfPermission(
+                        getApplication(),
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    _locationStatus.value = LocationStatus.NoPermission
+                    return@launch
+                }
+
+                // Hole aktuelle Position
+                val currentLocation = fusedLocationClient.lastLocation.await()
+                if (currentLocation == null) {
+                    _locationStatus.value = LocationStatus.LocationUnavailable
+                    return@launch
+                }
+
+                // Prüfe ob in einem Geofence
+                val atWorkLocation = locations.firstOrNull { location ->
+                    val distance = FloatArray(1)
+                    Location.distanceBetween(
+                        currentLocation.latitude,
+                        currentLocation.longitude,
+                        location.latitude,
+                        location.longitude,
+                        distance
+                    )
+                    distance[0] <= location.radiusMeters
+                }
+
+                _locationStatus.value = if (atWorkLocation != null) {
+                    LocationStatus.AtWork(atWorkLocation)
+                } else {
+                    LocationStatus.NotAtWork
+                }
+
+            } catch (e: Exception) {
+                _locationStatus.value = LocationStatus.Error(e.message ?: "Unbekannter Fehler")
+            }
         }
     }
     
@@ -276,3 +350,14 @@ data class WeekSummary(
     val completedDays: Int,
     val totalDays: Int
 )
+
+sealed class LocationStatus {
+    object Unknown : LocationStatus()
+    object GeofencingDisabled : LocationStatus()
+    object NoLocations : LocationStatus()
+    object NoPermission : LocationStatus()
+    object LocationUnavailable : LocationStatus()
+    object NotAtWork : LocationStatus()
+    data class AtWork(val location: WorkLocation) : LocationStatus()
+    data class Error(val message: String) : LocationStatus()
+}
