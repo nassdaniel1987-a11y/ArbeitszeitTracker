@@ -3,6 +3,8 @@ package com.arbeitszeit.tracker.viewmodel
 import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,6 +13,8 @@ import com.arbeitszeit.tracker.data.entity.WorkLocation
 import com.arbeitszeit.tracker.geofencing.GeofencingManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 class GeofencingViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -41,15 +45,74 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
         radiusMeters: Float
     ) {
         viewModelScope.launch {
+            // Reverse Geocoding: Koordinaten → Adresse
+            val address = getAddressFromLocation(latitude, longitude)
+
             val location = WorkLocation(
                 name = name,
                 latitude = latitude,
                 longitude = longitude,
+                address = address,
                 radiusMeters = radiusMeters,
                 enabled = true
             )
             workLocationDao.insert(location)
             updateGeofences()
+        }
+    }
+
+    /**
+     * Ermittelt die Adresse aus Koordinaten (Reverse Geocoding)
+     */
+    private suspend fun getAddressFromLocation(latitude: Double, longitude: Double): String? {
+        return try {
+            val geocoder = Geocoder(getApplication(), java.util.Locale.GERMANY)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // Android 13+ (API 33+): Neue asynchrone API
+                suspendCancellableCoroutine { continuation ->
+                    geocoder.getFromLocation(latitude, longitude, 1) { addresses ->
+                        val address = addresses.firstOrNull()?.let { addr ->
+                            buildString {
+                                // Straße + Hausnummer
+                                addr.thoroughfare?.let { street ->
+                                    append(street)
+                                    addr.subThoroughfare?.let { number ->
+                                        append(" $number")
+                                    }
+                                    append(", ")
+                                }
+                                // PLZ + Ort
+                                addr.postalCode?.let { append("$it ") }
+                                addr.locality?.let { append(it) }
+                            }.takeIf { it.isNotBlank() }
+                        }
+                        continuation.resume(address)
+                    }
+                }
+            } else {
+                // Android < 13: Alte synchrone API
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+                addresses?.firstOrNull()?.let { addr ->
+                    buildString {
+                        // Straße + Hausnummer
+                        addr.thoroughfare?.let { street ->
+                            append(street)
+                            addr.subThoroughfare?.let { number ->
+                                append(" $number")
+                            }
+                            append(", ")
+                        }
+                        // PLZ + Ort
+                        addr.postalCode?.let { append("$it ") }
+                        addr.locality?.let { append(it) }
+                    }.takeIf { it.isNotBlank() }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("GeofencingViewModel", "Error getting address", e)
+            null
         }
     }
 

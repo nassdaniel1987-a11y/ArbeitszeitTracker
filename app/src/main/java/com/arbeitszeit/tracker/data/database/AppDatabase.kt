@@ -21,7 +21,7 @@ import java.util.Locale
 
 @Database(
     entities = [UserSettings::class, TimeEntry::class, WorkLocation::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

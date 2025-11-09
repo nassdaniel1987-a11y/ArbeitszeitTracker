@@ -297,10 +297,31 @@ private fun WorkLocationCard(
                     location.name,
                     style = MaterialTheme.typography.titleMedium
                 )
+                // Adresse anzeigen, falls vorhanden
+                if (!location.address.isNullOrBlank()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            location.address,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
                 Text(
                     "Radius: ${location.radiusMeters.toInt()}m",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
                 Text(
                     "${String.format("%.6f", location.latitude)}, ${String.format("%.6f", location.longitude)}",
