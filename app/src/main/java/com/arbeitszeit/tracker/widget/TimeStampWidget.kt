@@ -164,7 +164,7 @@ class TimeStampWidget : AppWidgetProvider() {
 
             val today = DateUtils.today()
             val entry = timeEntryDao.getEntryByDate(today)
-            val settings = userSettingsDao.getUserSettings()
+            val settings = userSettingsDao.getSettings()
 
             val views = RemoteViews(context.packageName, R.layout.widget_time_stamp)
 
@@ -179,7 +179,7 @@ class TimeStampWidget : AppWidgetProvider() {
             val durationText = String.format("%d:%02dh", durationHours, durationMinutes)
 
             // Calculate progress (to Soll-Zeit)
-            val sollMinuten = entry?.getSollMinuten(settings) ?: 480 // Default 8h
+            val sollMinuten = entry?.sollMinuten ?: 480 // Default 8h
             val progress = if (sollMinuten > 0) {
                 ((istMinuten.toFloat() / sollMinuten.toFloat()) * 100).toInt().coerceIn(0, 100)
             } else 0
