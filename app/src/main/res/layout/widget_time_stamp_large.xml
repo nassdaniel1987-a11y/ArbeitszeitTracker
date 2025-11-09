@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@color/widget_background">
+
+    <!-- Header mit Status -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
+
+        <!-- Status Indikator -->
+        <TextView
+            android:id="@+id/widget_status_indicator_large"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@android:drawable/presence_offline"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:id="@+id/widget_title_large"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Arbeitszeit"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_title" />
+
+        <!-- Aktuelle Dauer -->
+        <TextView
+            android:id="@+id/widget_duration_large"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0:00h"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_primary" />
+    </LinearLayout>
+
+    <!-- Fortschrittsbalken -->
+    <ProgressBar
+        android:id="@+id/widget_progress_bar_large"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginBottom="8dp"
+        android:progress="0"
+        android:max="100"
+        android:progressTint="@color/widget_progress"
+        android:progressBackgroundTint="@color/widget_progress_background" />
+
+    <!-- Zeit Info -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏰"
+            android:textSize="14sp"
+            android:paddingEnd="4dp" />
+
+        <TextView
+            android:id="@+id/widget_start_time_large"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--:--"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" - "
+            android:textSize="14sp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp" />
+
+        <TextView
+            android:id="@+id/widget_end_time_large"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--:--"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text" />
+    </LinearLayout>
+
+    <!-- Wochenübersicht (NEU!) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/widget_week_summary_bg"
+        android:padding="8dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📊 Diese Woche"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_title"
+            android:paddingBottom="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Soll"
+                    android:textSize="10sp"
+                    android:textColor="@color/widget_text" />
+
+                <TextView
+                    android:id="@+id/widget_week_soll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="40:00h"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_primary" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ist"
+                    android:textSize="10sp"
+                    android:textColor="@color/widget_text" />
+
+                <TextView
+                    android:id="@+id/widget_week_ist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="38:30h"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_primary" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Diff"
+                    android:textSize="10sp"
+                    android:textColor="@color/widget_text" />
+
+                <TextView
+                    android:id="@+id/widget_week_diff"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-1:30h"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_error" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Button Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/widget_start_button_large"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="START"
+            android:textSize="11sp"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/widget_pause_button_large"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="PAUSE"
+            android:textSize="11sp"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/widget_end_button_large"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="ENDE"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+</LinearLayout>

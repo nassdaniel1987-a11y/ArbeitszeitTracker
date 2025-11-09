@@ -27,8 +27,13 @@ fun TimeEntryCard(
     onPauseClick: () -> Unit,
     onTypChange: (String) -> Unit
 ) {
+    // Check if time is currently running
+    val isRunning = entry?.startZeit != null && entry.endZeit == null
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .pulsing(enabled = isRunning, minScale = 0.98f, maxScale = 1.02f, duration = 2000),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
