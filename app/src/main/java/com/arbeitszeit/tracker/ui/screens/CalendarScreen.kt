@@ -174,7 +174,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                 columns = GridCells.Fixed(7),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.height(((month.lengthOfMonth() + (month.atDay(1).dayOfWeek.value - 1)) / 7 + 1) * 80.dp)
+                modifier = Modifier.height(80.dp * ((month.lengthOfMonth() + (month.atDay(1).dayOfWeek.value - 1)) / 7 + 1))
             ) {
                 // Berechne Offset für ersten Tag des Monats
                 val firstDayOfMonth = month.atDay(1)
