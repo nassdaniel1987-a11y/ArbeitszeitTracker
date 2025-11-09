@@ -461,13 +461,12 @@ private fun AddWorkLocationDialog(
                                     android.util.Log.d("PlusCode", "Short code detected, recovering with reference location")
                                     // Verwende Zentrum von Deutschland als Referenz (51.0°N, 10.5°E)
                                     // Das funktioniert für die meisten Standorte in Deutschland
-                                    val recovered = com.google.openlocationcode.OpenLocationCode.recoverNearest(
-                                        extractedCode,
+                                    val recovered = olc.recover(
                                         51.0,  // Referenz-Breitengrad (Mitte Deutschland)
                                         10.5   // Referenz-Längengrad (Mitte Deutschland)
                                     )
-                                    olc = com.google.openlocationcode.OpenLocationCode(recovered)
-                                    android.util.Log.d("PlusCode", "Recovered full code: $recovered")
+                                    olc = recovered
+                                    android.util.Log.d("PlusCode", "Recovered full code: ${recovered.code}")
                                 }
 
                                 if (olc.isFull) {
