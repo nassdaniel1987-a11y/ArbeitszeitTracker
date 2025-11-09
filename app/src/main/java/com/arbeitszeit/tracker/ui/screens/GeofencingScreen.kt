@@ -282,6 +282,7 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
         if (workLocations.isNotEmpty()) {
             item {
                 var showMap by remember { mutableStateOf(true) }
+                var mapViewRef by remember { mutableStateOf<org.osmdroid.views.MapView?>(null) }
 
                 Card {
                     Column(modifier = Modifier.fillMaxWidth()) {
@@ -296,11 +297,25 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                                 "Karte",
                                 style = MaterialTheme.typography.titleMedium
                             )
-                            IconButton(onClick = { showMap = !showMap }) {
-                                Icon(
-                                    if (showMap) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    contentDescription = if (showMap) "Karte ausblenden" else "Karte anzeigen"
-                                )
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                // Button to center on current location
+                                if (showMap) {
+                                    IconButton(onClick = {
+                                        com.arbeitszeit.tracker.ui.components.centerMapToMyLocation(mapViewRef)
+                                    }) {
+                                        Icon(
+                                            Icons.Default.MyLocation,
+                                            contentDescription = "Zu meinem Standort",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                                IconButton(onClick = { showMap = !showMap }) {
+                                    Icon(
+                                        if (showMap) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = if (showMap) "Karte ausblenden" else "Karte anzeigen"
+                                    )
+                                }
                             }
                         }
 
@@ -312,7 +327,10 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                             ) {
                                 OpenStreetMapView(
                                     workLocations = workLocations,
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier.fillMaxSize(),
+                                    onCenterToMyLocation = { mapView ->
+                                        mapViewRef = mapView
+                                    }
                                 )
                             }
 

@@ -1,6 +1,9 @@
 package com.arbeitszeit.tracker.ui.components
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -8,32 +11,59 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.arbeitszeit.tracker.data.entity.WorkLocation
+import com.google.android.gms.location.*
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 @Composable
 fun OpenStreetMapView(
     workLocations: List<WorkLocation>,
     modifier: Modifier = Modifier,
     initialZoom: Double = 15.0,
-    onMapReady: ((MapView) -> Unit)? = null
+    showCurrentLocation: Boolean = true,
+    onMapReady: ((MapView) -> Unit)? = null,
+    onCenterToMyLocation: ((MapView?) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val mapView = remember { createMapView(context) }
+    var myLocationOverlay by remember { mutableStateOf<MyLocationNewOverlay?>(null) }
+
+    // Track current location
+    val currentLocation by produceLocationUpdates(context, showCurrentLocation)
 
     DisposableEffect(Unit) {
+        // Setup location overlay
+        if (showCurrentLocation) {
+            val overlay = MyLocationNewOverlay(mapView).apply {
+                enableMyLocation()
+                enableFollowLocation()
+            }
+            myLocationOverlay = overlay
+            mapView.overlays.add(overlay)
+        }
+
         onDispose {
+            myLocationOverlay?.disableMyLocation()
             mapView.onDetach()
         }
     }
 
-    LaunchedEffect(workLocations) {
-        updateMapMarkers(mapView, workLocations, context)
+    LaunchedEffect(workLocations, currentLocation) {
+        updateMapMarkers(mapView, workLocations, currentLocation, context)
         onMapReady?.invoke(mapView)
+    }
+
+    // Expose map view for centering to current location
+    LaunchedEffect(Unit) {
+        onCenterToMyLocation?.invoke(mapView)
     }
 
     AndroidView(
@@ -41,9 +71,76 @@ fun OpenStreetMapView(
         modifier = modifier.fillMaxSize(),
         update = { map ->
             // Update map when composition changes
-            updateMapMarkers(map, workLocations, context)
+            updateMapMarkers(map, workLocations, currentLocation, context)
         }
     )
+}
+
+// Function to center map to current location
+fun centerMapToMyLocation(mapView: MapView?) {
+    mapView?.let { map ->
+        val myLocationOverlay = map.overlays.filterIsInstance<MyLocationNewOverlay>().firstOrNull()
+        myLocationOverlay?.myLocation?.let { location ->
+            map.controller.animateTo(location)
+            map.controller.setZoom(16.0)
+        }
+    }
+}
+
+@Composable
+private fun produceLocationUpdates(
+    context: Context,
+    enabled: Boolean
+): State<Location?> {
+    val locationState = remember { mutableStateOf<Location?>(null) }
+
+    DisposableEffect(enabled) {
+        if (!enabled) return@DisposableEffect onDispose { }
+
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasPermission) return@DisposableEffect onDispose { }
+
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            10000L // 10 seconds
+        ).apply {
+            setMinUpdateIntervalMillis(5000L) // 5 seconds
+            setMaxUpdateDelayMillis(15000L)
+        }.build()
+
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                locationState.value = result.lastLocation
+            }
+        }
+
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                null
+            )
+
+            // Get last known location immediately
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let { locationState.value = it }
+            }
+        } catch (e: SecurityException) {
+            // Permission not granted
+        }
+
+        onDispose {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    return locationState
 }
 
 private fun createMapView(context: Context): MapView {
@@ -68,31 +165,69 @@ private fun createMapView(context: Context): MapView {
 private fun updateMapMarkers(
     mapView: MapView,
     workLocations: List<WorkLocation>,
+    currentLocation: Location?,
     context: Context
 ) {
+    // Don't clear all overlays - preserve MyLocationOverlay
+    val myLocationOverlay = mapView.overlays.filterIsInstance<MyLocationNewOverlay>().firstOrNull()
     mapView.overlays.clear()
+    myLocationOverlay?.let { mapView.overlays.add(it) }
 
     if (workLocations.isEmpty()) {
         mapView.invalidate()
         return
     }
 
+    // Check if current location is inside any work location
+    val isInsideAnyLocation = currentLocation?.let { loc ->
+        workLocations.any { workLoc ->
+            workLoc.enabled && isLocationInsideGeofence(
+                loc.latitude,
+                loc.longitude,
+                workLoc.latitude,
+                workLoc.longitude,
+                workLoc.radiusMeters.toDouble()
+            )
+        }
+    } ?: false
+
     // Add markers and circles for each work location
     workLocations.forEach { location ->
+        // Check if current location is inside this specific location
+        val isInsideThisLocation = currentLocation?.let { loc ->
+            location.enabled && isLocationInsideGeofence(
+                loc.latitude,
+                loc.longitude,
+                location.latitude,
+                location.longitude,
+                location.radiusMeters.toDouble()
+            )
+        } ?: false
+
         // Add marker
         val marker = Marker(mapView).apply {
             position = GeoPoint(location.latitude, location.longitude)
-            title = location.name
-            snippet = if (!location.address.isNullOrBlank()) {
-                location.address
-            } else {
-                "Radius: ${location.radiusMeters.toInt()}m"
+            title = location.name + if (isInsideThisLocation) " ✓ (Du bist hier)" else ""
+            snippet = buildString {
+                if (!location.address.isNullOrBlank()) {
+                    append(location.address)
+                    append("\n")
+                }
+                append("Radius: ${location.radiusMeters.toInt()}m")
+                if (isInsideThisLocation) {
+                    append("\n✓ Du befindest dich in diesem Bereich")
+                }
             }
             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
 
-            // Set marker color based on enabled status
-            if (location.enabled) {
+            // Set marker color based on enabled status and if user is inside
+            if (isInsideThisLocation) {
                 icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_mylocation)
+                // Marker is brighter when user is inside
+                alpha = 1.0f
+            } else if (location.enabled) {
+                icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_mylocation)
+                alpha = 0.8f
             } else {
                 icon = ContextCompat.getDrawable(context, android.R.drawable.ic_menu_mylocation)
                 alpha = 0.5f
@@ -106,17 +241,21 @@ private fun updateMapMarkers(
                 GeoPoint(location.latitude, location.longitude),
                 location.radiusMeters.toDouble()
             )
-            fillPaint.color = if (location.enabled) {
-                android.graphics.Color.argb(50, 76, 175, 80) // Green with transparency
-            } else {
-                android.graphics.Color.argb(30, 128, 128, 128) // Gray with transparency
+
+            // Change color based on whether user is inside
+            fillPaint.color = when {
+                isInsideThisLocation -> android.graphics.Color.argb(80, 76, 175, 80) // Brighter green
+                location.enabled -> android.graphics.Color.argb(50, 76, 175, 80) // Normal green
+                else -> android.graphics.Color.argb(30, 128, 128, 128) // Gray
             }
-            outlinePaint.color = if (location.enabled) {
-                android.graphics.Color.argb(200, 76, 175, 80)
-            } else {
-                android.graphics.Color.argb(150, 128, 128, 128)
+
+            outlinePaint.color = when {
+                isInsideThisLocation -> android.graphics.Color.argb(255, 76, 175, 80) // Solid green
+                location.enabled -> android.graphics.Color.argb(200, 76, 175, 80)
+                else -> android.graphics.Color.argb(150, 128, 128, 128)
             }
-            outlinePaint.strokeWidth = 3f
+
+            outlinePaint.strokeWidth = if (isInsideThisLocation) 5f else 3f
         }
         mapView.overlays.add(circle)
     }
@@ -157,4 +296,21 @@ private fun updateMapMarkers(
     }
 
     mapView.invalidate()
+}
+
+// Helper function to check if a point is inside a geofence
+private fun isLocationInsideGeofence(
+    currentLat: Double,
+    currentLng: Double,
+    geofenceLat: Double,
+    geofenceLng: Double,
+    radiusMeters: Double
+): Boolean {
+    val results = FloatArray(1)
+    android.location.Location.distanceBetween(
+        currentLat, currentLng,
+        geofenceLat, geofenceLng,
+        results
+    )
+    return results[0] <= radiusMeters
 }
