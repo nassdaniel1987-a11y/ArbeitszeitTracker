@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Default colors for API < 31 -->
+    <!-- Widget colors -->
     <color name="widget_background">#F5F5F5</color>
     <color name="widget_title">#1976D2</color>
     <color name="widget_card_background">#FFFFFF</color>
     <color name="widget_text">#000000</color>
+    <color name="widget_primary">#1976D2</color>
+    <color name="widget_progress">#4CAF50</color>
+    <color name="widget_progress_background">#E0E0E0</color>
+    <color name="widget_status_active">#4CAF50</color>
+    <color name="widget_status_inactive">#9E9E9E</color>
 </resources>

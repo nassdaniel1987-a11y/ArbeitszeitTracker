@@ -43,6 +43,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.arbeitszeit.tracker.ACTION_START" />
                 <action android:name="com.arbeitszeit.tracker.ACTION_END" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_PAUSE" />
                 <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH" />
             </intent-filter>
             <meta-data
