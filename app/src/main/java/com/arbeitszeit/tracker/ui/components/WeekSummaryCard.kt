@@ -62,14 +62,14 @@ fun WeekSummaryCard(summary: WeekSummary) {
                         Icon(
                             imageVector = Icons.Default.TrendingUp,
                             contentDescription = "Überstunden",
-                            tint = Color(0xFF4CAF50),
+                            tint = OvertimeColor,
                             modifier = Modifier.size(20.dp)
                         )
                     } else if (isUndertime) {
                         Icon(
                             imageVector = Icons.Default.TrendingDown,
                             contentDescription = "Fehlstunden",
-                            tint = Color(0xFFF44336),
+                            tint = UndertimeColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -82,8 +82,8 @@ fun WeekSummaryCard(summary: WeekSummary) {
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = when {
-                            isOvertime -> Color(0xFF4CAF50)
-                            isUndertime -> Color(0xFFF44336)
+                            isOvertime -> OvertimeColor
+                            isUndertime -> UndertimeColor
                             else -> MaterialTheme.colorScheme.onSurface
                         }
                     )
@@ -136,9 +136,9 @@ fun WeekSummaryCard(summary: WeekSummary) {
                             .height(12.dp)
                             .background(
                                 color = when {
-                                    progress >= 100 -> Color(0xFF4CAF50)
-                                    progress >= 80 -> Color(0xFFFF9800)
-                                    else -> Color(0xFFF44336)
+                                    progress >= 100 -> ProgressGood
+                                    progress >= 80 -> ProgressWarning
+                                    else -> ProgressBad
                                 },
                                 shape = RoundedCornerShape(6.dp)
                             )

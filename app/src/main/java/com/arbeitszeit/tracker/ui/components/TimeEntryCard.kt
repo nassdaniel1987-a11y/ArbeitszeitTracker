@@ -53,11 +53,11 @@ fun TimeEntryCard(
                 // Aktueller Typ-Badge
                 Surface(
                     color = when (entry?.typ) {
-                        TimeEntry.TYP_NORMAL -> MaterialTheme.colorScheme.primary
-                        TimeEntry.TYP_URLAUB -> Color(0xFF4CAF50)
-                        TimeEntry.TYP_KRANK -> Color(0xFFF44336)
-                        TimeEntry.TYP_FEIERTAG -> Color(0xFF2196F3)
-                        TimeEntry.TYP_ABWESEND -> Color(0xFF9E9E9E)
+                        TimeEntry.TYP_NORMAL -> TypeNormal
+                        TimeEntry.TYP_URLAUB -> TypeUrlaub
+                        TimeEntry.TYP_KRANK -> TypeKrank
+                        TimeEntry.TYP_FEIERTAG -> TypeFeiertag
+                        TimeEntry.TYP_ABWESEND -> TypeAbwesend
                         else -> MaterialTheme.colorScheme.secondary
                     },
                     shape = MaterialTheme.shapes.small
@@ -97,7 +97,7 @@ fun TimeEntryCard(
                     type = TimeEntry.TYP_NORMAL,
                     isSelected = entry?.typ == TimeEntry.TYP_NORMAL,
                     onClick = { onTypChange(TimeEntry.TYP_NORMAL) },
-                    color = MaterialTheme.colorScheme.primary,
+                    color = TypeNormal,
                     modifier = Modifier.weight(1f)
                 )
                 QuickTypeButton(
@@ -106,7 +106,7 @@ fun TimeEntryCard(
                     type = TimeEntry.TYP_URLAUB,
                     isSelected = entry?.typ == TimeEntry.TYP_URLAUB,
                     onClick = { onTypChange(TimeEntry.TYP_URLAUB) },
-                    color = Color(0xFF4CAF50),
+                    color = TypeUrlaub,
                     modifier = Modifier.weight(1f)
                 )
                 QuickTypeButton(
@@ -115,7 +115,7 @@ fun TimeEntryCard(
                     type = TimeEntry.TYP_KRANK,
                     isSelected = entry?.typ == TimeEntry.TYP_KRANK,
                     onClick = { onTypChange(TimeEntry.TYP_KRANK) },
-                    color = Color(0xFFF44336),
+                    color = TypeKrank,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -130,7 +130,7 @@ fun TimeEntryCard(
                     type = TimeEntry.TYP_FEIERTAG,
                     isSelected = entry?.typ == TimeEntry.TYP_FEIERTAG,
                     onClick = { onTypChange(TimeEntry.TYP_FEIERTAG) },
-                    color = Color(0xFF2196F3),
+                    color = TypeFeiertag,
                     modifier = Modifier.weight(1f)
                 )
                 QuickTypeButton(
@@ -139,7 +139,7 @@ fun TimeEntryCard(
                     type = TimeEntry.TYP_ABWESEND,
                     isSelected = entry?.typ == TimeEntry.TYP_ABWESEND,
                     onClick = { onTypChange(TimeEntry.TYP_ABWESEND) },
-                    color = Color(0xFF9E9E9E),
+                    color = TypeAbwesend,
                     modifier = Modifier.weight(1f)
                 )
             }

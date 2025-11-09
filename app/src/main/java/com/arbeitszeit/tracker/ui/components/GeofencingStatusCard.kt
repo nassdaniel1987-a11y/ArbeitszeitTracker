@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.arbeitszeit.tracker.ui.theme.*
 import com.arbeitszeit.tracker.viewmodel.LocationStatus
 
 @Composable
@@ -50,10 +51,10 @@ fun GeofencingStatusCard(
                         .size(12.dp)
                         .background(
                             color = when (locationStatus) {
-                                is LocationStatus.AtWork -> Color(0xFF4CAF50) // Green
-                                is LocationStatus.NotAtWork -> Color(0xFFFF9800) // Orange
-                                is LocationStatus.GeofencingDisabled -> Color.Gray
-                                else -> Color.Gray
+                                is LocationStatus.AtWork -> LocationAtWork
+                                is LocationStatus.NotAtWork -> LocationNotAtWork
+                                is LocationStatus.GeofencingDisabled -> LocationInactive
+                                else -> LocationInactive
                             },
                             shape = CircleShape
                         )
