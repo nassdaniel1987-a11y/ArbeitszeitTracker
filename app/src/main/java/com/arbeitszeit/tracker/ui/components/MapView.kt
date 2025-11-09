@@ -1,6 +1,7 @@
 package com.arbeitszeit.tracker.ui.components
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -85,6 +86,7 @@ fun centerMapToMyLocation(mapView: MapView?) {
 }
 
 @Composable
+@SuppressLint("MissingPermission")
 private fun produceLocationUpdates(
     context: Context,
     enabled: Boolean
@@ -117,19 +119,16 @@ private fun produceLocationUpdates(
             }
         }
 
-        try {
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                null
-            )
+        // Permission already checked above
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            null
+        )
 
-            // Get last known location immediately
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                location?.let { locationState.value = it }
-            }
-        } catch (e: SecurityException) {
-            // Permission not granted
+        // Get last known location immediately
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            location?.let { locationState.value = it }
         }
 
         onDispose {
@@ -174,19 +173,6 @@ private fun updateMapMarkers(
         mapView.invalidate()
         return
     }
-
-    // Check if current location is inside any work location
-    val isInsideAnyLocation = currentLocation?.let { loc ->
-        workLocations.any { workLoc ->
-            workLoc.enabled && isLocationInsideGeofence(
-                loc.latitude,
-                loc.longitude,
-                workLoc.latitude,
-                workLoc.longitude,
-                workLoc.radiusMeters.toDouble()
-            )
-        }
-    } ?: false
 
     // Add markers and circles for each work location
     workLocations.forEach { location ->
