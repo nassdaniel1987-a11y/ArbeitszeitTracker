@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.database.AppDatabase
+import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.data.entity.WorkLocation
 import com.arbeitszeit.tracker.geofencing.GeofencingManager
 import kotlinx.coroutines.flow.*
@@ -70,18 +71,7 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
         polygonPointsJson: String
     ) {
         viewModelScope.launch {
-            // Berechne Mittelpunkt des Polygons
-            val points = org.osmdroid.util.GeoPoint.fromDoubleString(
-                polygonPointsJson.replace("[", "")
-                    .replace("]", "")
-                    .replace("{", "")
-                    .replace("}", "")
-                    .replace("lat:", "")
-                    .replace("lng:", ""),
-                ','
-            )
-
-            // Alternativ: Parse JSON manuell
+            // Parse JSON und berechne Mittelpunkt des Polygons
             val jsonArray = org.json.JSONArray(polygonPointsJson)
             var sumLat = 0.0
             var sumLng = 0.0
@@ -208,12 +198,25 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
     fun toggleGeofencing(enabled: Boolean) {
         android.util.Log.d("GeofencingViewModel", "toggleGeofencing called with enabled=$enabled")
         viewModelScope.launch {
-            val currentSettings = settingsDao.getSettings()
+            var currentSettings = settingsDao.getSettings()
             android.util.Log.d("GeofencingViewModel", "Current settings before update: geofencingEnabled=${currentSettings?.geofencingEnabled}")
 
+            // Erstelle Standard-Settings, falls keine vorhanden
             if (currentSettings == null) {
-                android.util.Log.e("GeofencingViewModel", "No settings found, cannot toggle geofencing")
-                return@launch
+                android.util.Log.d("GeofencingViewModel", "No settings found, creating default settings")
+                currentSettings = UserSettings(
+                    arbeitsumfangProzent = 100,
+                    wochenStundenMinuten = 2400, // 40 Stunden
+                    arbeitsTageProWoche = 5,
+                    ferienbetreuung = false,
+                    ersterMontagImJahr = null,
+                    workingDays = "12345", // Mo-Fr
+                    geofencingEnabled = false,
+                    geofencingStartHour = 6,
+                    geofencingEndHour = 20,
+                    geofencingActiveDays = "12345"
+                )
+                settingsDao.insertOrUpdate(currentSettings)
             }
 
             val updatedSettings = currentSettings.copy(
