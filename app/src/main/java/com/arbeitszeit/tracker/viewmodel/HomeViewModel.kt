@@ -114,17 +114,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     return@launch
                 }
 
-                // Prüfe ob in einem Geofence
+                // Prüfe ob in einem Geofence (unterstützt Kreis und Polygon)
                 val atWorkLocation = locations.firstOrNull { location ->
-                    val distance = FloatArray(1)
-                    Location.distanceBetween(
-                        currentLocation.latitude,
-                        currentLocation.longitude,
-                        location.latitude,
-                        location.longitude,
-                        distance
-                    )
-                    distance[0] <= location.radiusMeters
+                    location.containsPoint(currentLocation.latitude, currentLocation.longitude)
                 }
 
                 _locationStatus.value = if (atWorkLocation != null) {
