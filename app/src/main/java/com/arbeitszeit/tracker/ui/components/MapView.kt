@@ -178,13 +178,7 @@ private fun updateMapMarkers(
     workLocations.forEach { location ->
         // Check if current location is inside this specific location
         val isInsideThisLocation = currentLocation?.let { loc ->
-            location.enabled && isLocationInsideGeofence(
-                loc.latitude,
-                loc.longitude,
-                location.latitude,
-                location.longitude,
-                location.radiusMeters.toDouble()
-            )
+            location.enabled && location.containsPoint(loc.latitude, loc.longitude)
         } ?: false
 
         // Add marker
@@ -196,7 +190,11 @@ private fun updateMapMarkers(
                     append(location.address)
                     append("\n")
                 }
-                append("Radius: ${location.radiusMeters.toInt()}m")
+                if (location.isPolygon()) {
+                    append("Typ: Polygon (${location.getPolygonPointsList().size} Punkte)")
+                } else {
+                    append("Radius: ${location.radiusMeters.toInt()}m")
+                }
                 if (isInsideThisLocation) {
                     append("\n✓ Du befindest dich in diesem Bereich")
                 }
@@ -218,12 +216,18 @@ private fun updateMapMarkers(
         }
         mapView.overlays.add(marker)
 
-        // Add circle for radius
-        val circle = Polygon(mapView).apply {
-            points = Polygon.pointsAsCircle(
-                GeoPoint(location.latitude, location.longitude),
-                location.radiusMeters.toDouble()
-            )
+        // Add shape (circle or polygon)
+        val shape = Polygon(mapView).apply {
+            if (location.isPolygon()) {
+                // Polygon mode
+                points = location.getPolygonPointsList()
+            } else {
+                // Circle mode
+                points = Polygon.pointsAsCircle(
+                    GeoPoint(location.latitude, location.longitude),
+                    location.radiusMeters.toDouble()
+                )
+            }
 
             // Change color based on whether user is inside
             fillPaint.color = when {
@@ -240,7 +244,7 @@ private fun updateMapMarkers(
 
             outlinePaint.strokeWidth = if (isInsideThisLocation) 5f else 3f
         }
-        mapView.overlays.add(circle)
+        mapView.overlays.add(shape)
     }
 
     // Center map on locations
