@@ -1086,19 +1086,20 @@ private fun AddPolygonWorkLocationDialog(
             dismissOnClickOutside = false
         )
     ) {
-        Card(
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(8.dp),
+            shape = MaterialTheme.shapes.large
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+                modifier = Modifier.fillMaxSize()
             ) {
-                // Header
+                // Header (fixiert)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1111,106 +1112,111 @@ private fun AddPolygonWorkLocationDialog(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
-
-                // Anleitung
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
+                // Inhalt (scrollbar)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    // Anleitung
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
                     ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                "Tippe auf die Karte, um die Eckpunkte deines Arbeitsbereichs zu markieren. Mindestens 3 Punkte erforderlich.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Status-Anzeige
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            "Tippe auf die Karte, um die Eckpunkte deines Arbeitsbereichs zu markieren. Mindestens 3 Punkte erforderlich.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            "Punkte: ${polygonPoints.size}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (polygonPoints.size >= 3) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            // Letzten Punkt entfernen
+                            IconButton(
+                                onClick = {
+                                    if (polygonPoints.isNotEmpty()) {
+                                        polygonPoints = polygonPoints.dropLast(1)
+                                    }
+                                },
+                                enabled = polygonPoints.isNotEmpty()
+                            ) {
+                                Icon(Icons.Default.Undo, "Letzten Punkt entfernen")
+                            }
+
+                            // Alle Punkte löschen
+                            IconButton(
+                                onClick = { polygonPoints = emptyList() },
+                                enabled = polygonPoints.isNotEmpty()
+                            ) {
+                                Icon(Icons.Default.Clear, "Alle Punkte löschen")
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Interaktive Karte (nimmt den verbleibenden Platz)
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        InteractivePolygonMapView(
+                            polygonPoints = polygonPoints,
+                            onPointAdded = { point ->
+                                polygonPoints = polygonPoints + point
+                            },
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
-                }
 
-                Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
 
-                // Status-Anzeige
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Punkte: ${polygonPoints.size}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (polygonPoints.size >= 3) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                    // Name eingeben
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name des Arbeitsorts") },
+                        placeholder = { Text("z.B. Schulgelände") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        // Letzten Punkt entfernen
-                        IconButton(
-                            onClick = {
-                                if (polygonPoints.isNotEmpty()) {
-                                    polygonPoints = polygonPoints.dropLast(1)
-                                }
-                            },
-                            enabled = polygonPoints.isNotEmpty()
-                        ) {
-                            Icon(Icons.Default.Undo, "Letzten Punkt entfernen")
-                        }
-
-                        // Alle Punkte löschen
-                        IconButton(
-                            onClick = { polygonPoints = emptyList() },
-                            enabled = polygonPoints.isNotEmpty()
-                        ) {
-                            Icon(Icons.Default.Clear, "Alle Punkte löschen")
-                        }
-                    }
                 }
 
-                Spacer(Modifier.height(8.dp))
-
-                // Interaktive Karte
-                Card(
+                // Buttons (fixiert am unteren Rand)
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
-                ) {
-                    InteractivePolygonMapView(
-                        polygonPoints = polygonPoints,
-                        onPointAdded = { point ->
-                            polygonPoints = polygonPoints + point
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                // Name eingeben
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name des Arbeitsorts") },
-                    placeholder = { Text("z.B. Schulgelände") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(Modifier.height(12.dp))
-
-                // Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
+                        .padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
