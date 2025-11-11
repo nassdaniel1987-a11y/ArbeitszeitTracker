@@ -27,6 +27,7 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
     val permissionStatus = remember { viewModel.checkPermissions() }
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showAddPolygonDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var locationToEdit by remember { mutableStateOf<WorkLocation?>(null) }
     var showPermissionInfo by remember { mutableStateOf(false) }
@@ -358,6 +359,8 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
 
         // Arbeitsorte
         item {
+            var showModeMenu by remember { mutableStateOf(false) }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -367,8 +370,41 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                     "Arbeitsorte",
                     style = MaterialTheme.typography.titleMedium
                 )
-                IconButton(onClick = { showAddDialog = true }) {
-                    Icon(Icons.Default.Add, "Arbeitsort hinzufügen")
+                androidx.compose.foundation.layout.Box {
+                    IconButton(onClick = { showModeMenu = true }) {
+                        Icon(Icons.Default.Add, "Arbeitsort hinzufügen")
+                    }
+                    DropdownMenu(
+                        expanded = showModeMenu,
+                        onDismissRequest = { showModeMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Circle, null, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Kreisförmiger Bereich")
+                                }
+                            },
+                            onClick = {
+                                showModeMenu = false
+                                showAddDialog = true
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Pentagon, null, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Freier Bereich (Polygon)")
+                                }
+                            },
+                            onClick = {
+                                showModeMenu = false
+                                showAddPolygonDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -417,13 +453,27 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
     }
     }
 
-    // Dialog zum Hinzufügen eines Arbeitsorts
+    // Dialog zum Hinzufügen eines Arbeitsorts (Kreis)
     if (showAddDialog) {
         AddWorkLocationDialog(
             onDismiss = { showAddDialog = false },
             onAdd = { name, lat, lng, radius ->
                 viewModel.addWorkLocation(name, lat, lng, radius)
                 showAddDialog = false
+            }
+        )
+    }
+
+    // Dialog zum Hinzufügen eines Arbeitsorts (Polygon)
+    if (showAddPolygonDialog) {
+        AddPolygonWorkLocationDialog(
+            onDismiss = { showAddPolygonDialog = false },
+            onAdd = { name, polygonJson ->
+                viewModel.addWorkLocationPolygon(name, polygonJson)
+                showAddPolygonDialog = false
+                scope.launch {
+                    snackbarHostState.showSnackbar("Polygon-Arbeitsort erstellt")
+                }
             }
         )
     }
@@ -504,8 +554,13 @@ private fun WorkLocationCard(
                         )
                     }
                 }
+                // Typ anzeigen (Kreis oder Polygon)
                 Text(
-                    "Radius: ${location.radiusMeters.toInt()}m",
+                    if (location.isPolygon()) {
+                        "Typ: Polygon (${location.getPolygonPointsList().size} Punkte)"
+                    } else {
+                        "Typ: Kreis (Radius: ${location.radiusMeters.toInt()}m)"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp)
@@ -1007,5 +1062,289 @@ private fun EditWorkLocationDialog(
                 Text("Abbrechen")
             }
         }
+    )
+}
+
+/**
+ * Dialog zum Hinzufügen eines Polygon-Arbeitsorts
+ */
+@Composable
+private fun AddPolygonWorkLocationDialog(
+    onDismiss: () -> Unit,
+    onAdd: (String, String) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var polygonPoints by remember { mutableStateOf<List<org.osmdroid.util.GeoPoint>>(emptyList()) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false
+        )
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Polygon-Bereich zeichnen",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, "Schließen")
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Anleitung
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            "Tippe auf die Karte, um die Eckpunkte deines Arbeitsbereichs zu markieren. Mindestens 3 Punkte erforderlich.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Status-Anzeige
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Punkte: ${polygonPoints.size}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (polygonPoints.size >= 3) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // Letzten Punkt entfernen
+                        IconButton(
+                            onClick = {
+                                if (polygonPoints.isNotEmpty()) {
+                                    polygonPoints = polygonPoints.dropLast(1)
+                                }
+                            },
+                            enabled = polygonPoints.isNotEmpty()
+                        ) {
+                            Icon(Icons.Default.Undo, "Letzten Punkt entfernen")
+                        }
+
+                        // Alle Punkte löschen
+                        IconButton(
+                            onClick = { polygonPoints = emptyList() },
+                            enabled = polygonPoints.isNotEmpty()
+                        ) {
+                            Icon(Icons.Default.Clear, "Alle Punkte löschen")
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Interaktive Karte
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    InteractivePolygonMapView(
+                        polygonPoints = polygonPoints,
+                        onPointAdded = { point ->
+                            polygonPoints = polygonPoints + point
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Name eingeben
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name des Arbeitsorts") },
+                    placeholder = { Text("z.B. Schulgelände") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                // Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Abbrechen")
+                    }
+                    Button(
+                        onClick = {
+                            val polygonJson = com.arbeitszeit.tracker.data.entity.WorkLocation.polygonPointsToJson(polygonPoints)
+                            onAdd(name, polygonJson)
+                        },
+                        enabled = name.isNotBlank() && polygonPoints.size >= 3,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Speichern")
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Interaktive Karte zum Zeichnen von Polygonen
+ */
+@Composable
+private fun InteractivePolygonMapView(
+    polygonPoints: List<org.osmdroid.util.GeoPoint>,
+    onPointAdded: (org.osmdroid.util.GeoPoint) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var mapView by remember { mutableStateOf<org.osmdroid.views.MapView?>(null) }
+
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        // OSMDroid Konfiguration
+        org.osmdroid.config.Configuration.getInstance().apply {
+            userAgentValue = context.packageName
+            osmdroidBasePath = context.getExternalFilesDir(null)
+            osmdroidTileCache = context.getExternalFilesDir("osmdroid/tiles")
+        }
+        onDispose { }
+    }
+
+    AndroidView(
+        factory = { ctx ->
+            org.osmdroid.views.MapView(ctx).apply {
+                setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK)
+                setMultiTouchControls(true)
+
+                // Initialer Zoom auf Deutschland/Mittelpunkt
+                controller.setZoom(15.0)
+
+                // Versuche aktuellen Standort zu ermitteln
+                try {
+                    val locationManager = ctx.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+                    if (android.content.pm.PackageManager.PERMISSION_GRANTED ==
+                        androidx.core.content.ContextCompat.checkSelfPermission(
+                            ctx,
+                            android.Manifest.permission.ACCESS_FINE_LOCATION
+                        )
+                    ) {
+                        val location = locationManager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
+                            ?: locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
+
+                        location?.let {
+                            controller.setCenter(org.osmdroid.util.GeoPoint(it.latitude, it.longitude))
+                        } ?: run {
+                            // Fallback: Stuttgart
+                            controller.setCenter(org.osmdroid.util.GeoPoint(48.7758, 9.1829))
+                        }
+                    } else {
+                        // Fallback: Stuttgart
+                        controller.setCenter(org.osmdroid.util.GeoPoint(48.7758, 9.1829))
+                    }
+                } catch (e: Exception) {
+                    // Fallback: Stuttgart
+                    controller.setCenter(org.osmdroid.util.GeoPoint(48.7758, 9.1829))
+                }
+
+                mapView = this
+
+                // Touch-Handler für Polygon-Punkte
+                overlays.add(object : org.osmdroid.views.overlay.Overlay() {
+                    override fun onSingleTapConfirmed(e: android.view.MotionEvent, mapView: org.osmdroid.views.MapView): Boolean {
+                        val projection = mapView.projection
+                        val geoPoint = projection.fromPixels(e.x.toInt(), e.y.toInt()) as org.osmdroid.util.GeoPoint
+                        onPointAdded(geoPoint)
+                        return true
+                    }
+                })
+            }
+        },
+        update = { map ->
+            // Aktualisiere Overlays
+            map.overlays.removeAll { it is org.osmdroid.views.overlay.Polygon || it is org.osmdroid.views.overlay.Marker }
+
+            // Zeichne Marker für jeden Punkt
+            polygonPoints.forEachIndexed { index, point ->
+                val marker = org.osmdroid.views.overlay.Marker(map).apply {
+                    position = point
+                    title = "Punkt ${index + 1}"
+                    setAnchor(org.osmdroid.views.overlay.Marker.ANCHOR_CENTER, org.osmdroid.views.overlay.Marker.ANCHOR_BOTTOM)
+                    icon = context.getDrawable(android.R.drawable.ic_menu_mylocation)?.apply {
+                        setTint(android.graphics.Color.RED)
+                    }
+                }
+                map.overlays.add(marker)
+            }
+
+            // Zeichne Polygon, wenn mindestens 3 Punkte vorhanden
+            if (polygonPoints.size >= 3) {
+                val polygon = org.osmdroid.views.overlay.Polygon(map).apply {
+                    points = polygonPoints
+                    fillPaint.color = android.graphics.Color.argb(80, 76, 175, 80) // Halbtransparentes Grün
+                    outlinePaint.color = android.graphics.Color.argb(255, 76, 175, 80) // Grün
+                    outlinePaint.strokeWidth = 5f
+                }
+                map.overlays.add(0, polygon) // Am Anfang hinzufügen, damit Marker darüber liegen
+            } else if (polygonPoints.size >= 2) {
+                // Zeichne Linie für 2 Punkte
+                val line = org.osmdroid.views.overlay.Polyline(map).apply {
+                    setPoints(polygonPoints)
+                    outlinePaint.color = android.graphics.Color.argb(200, 76, 175, 80)
+                    outlinePaint.strokeWidth = 5f
+                }
+                map.overlays.add(0, line)
+            }
+
+            map.invalidate()
+        },
+        modifier = modifier
     )
 }
