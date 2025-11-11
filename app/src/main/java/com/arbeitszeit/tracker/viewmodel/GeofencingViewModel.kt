@@ -205,10 +205,13 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
             if (currentSettings == null) {
                 android.util.Log.d("GeofencingViewModel", "No settings found, creating default settings")
                 currentSettings = UserSettings(
+                    name = "",
+                    einrichtung = "",
                     arbeitsumfangProzent = 100,
                     wochenStundenMinuten = 2400, // 40 Stunden
                     arbeitsTageProWoche = 5,
                     ferienbetreuung = false,
+                    ueberstundenVorjahrMinuten = 0,
                     ersterMontagImJahr = null,
                     workingDays = "12345", // Mo-Fr
                     geofencingEnabled = false,
