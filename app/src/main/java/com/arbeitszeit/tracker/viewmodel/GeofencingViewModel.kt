@@ -36,7 +36,7 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /**
-     * Fügt einen neuen Arbeitsort hinzu
+     * Fügt einen neuen Arbeitsort hinzu (Kreis-Modus)
      */
     fun addWorkLocation(
         name: String,
@@ -54,6 +54,55 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
                 longitude = longitude,
                 address = address,
                 radiusMeters = radiusMeters,
+                polygonPoints = null, // Kreis-Modus
+                enabled = true
+            )
+            workLocationDao.insert(location)
+            updateGeofences()
+        }
+    }
+
+    /**
+     * Fügt einen neuen Arbeitsort hinzu (Polygon-Modus)
+     */
+    fun addWorkLocationPolygon(
+        name: String,
+        polygonPointsJson: String
+    ) {
+        viewModelScope.launch {
+            // Berechne Mittelpunkt des Polygons
+            val points = org.osmdroid.util.GeoPoint.fromDoubleString(
+                polygonPointsJson.replace("[", "")
+                    .replace("]", "")
+                    .replace("{", "")
+                    .replace("}", "")
+                    .replace("lat:", "")
+                    .replace("lng:", ""),
+                ','
+            )
+
+            // Alternativ: Parse JSON manuell
+            val jsonArray = org.json.JSONArray(polygonPointsJson)
+            var sumLat = 0.0
+            var sumLng = 0.0
+            for (i in 0 until jsonArray.length()) {
+                val point = jsonArray.getJSONObject(i)
+                sumLat += point.getDouble("lat")
+                sumLng += point.getDouble("lng")
+            }
+            val centerLat = sumLat / jsonArray.length()
+            val centerLng = sumLng / jsonArray.length()
+
+            // Reverse Geocoding: Koordinaten → Adresse
+            val address = getAddressFromLocation(centerLat, centerLng)
+
+            val location = WorkLocation(
+                name = name,
+                latitude = centerLat,
+                longitude = centerLng,
+                address = address,
+                radiusMeters = 100f, // Dummy-Wert für Polygon-Modus
+                polygonPoints = polygonPointsJson,
                 enabled = true
             )
             workLocationDao.insert(location)
