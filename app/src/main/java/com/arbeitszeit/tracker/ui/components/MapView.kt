@@ -190,11 +190,7 @@ private fun updateMapMarkers(
                     append(location.address)
                     append("\n")
                 }
-                if (location.isPolygon()) {
-                    append("Typ: Polygon (${location.getPolygonPointsList().size} Punkte)")
-                } else {
-                    append("Radius: ${location.radiusMeters.toInt()}m")
-                }
+                append("Radius: ${location.radiusMeters.toInt()}m")
                 if (isInsideThisLocation) {
                     append("\n✓ Du befindest dich in diesem Bereich")
                 }
@@ -216,18 +212,12 @@ private fun updateMapMarkers(
         }
         mapView.overlays.add(marker)
 
-        // Add shape (circle or polygon)
+        // Add circle
         val shape = Polygon(mapView).apply {
-            if (location.isPolygon()) {
-                // Polygon mode
-                points = location.getPolygonPointsList()
-            } else {
-                // Circle mode
-                points = Polygon.pointsAsCircle(
-                    GeoPoint(location.latitude, location.longitude),
-                    location.radiusMeters.toDouble()
-                )
-            }
+            points = Polygon.pointsAsCircle(
+                GeoPoint(location.latitude, location.longitude),
+                location.radiusMeters.toDouble()
+            )
 
             // Change color based on whether user is inside
             fillPaint.color = when {
