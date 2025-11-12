@@ -16,11 +16,16 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.arbeitszeit.tracker.data.database.AppDatabase
+import com.arbeitszeit.tracker.geofencing.GeofencingManager
 import com.arbeitszeit.tracker.ui.navigation.NavGraph
 import com.arbeitszeit.tracker.ui.navigation.Screen
 import com.arbeitszeit.tracker.ui.theme.ArbeitszeitTrackerTheme
 import com.arbeitszeit.tracker.utils.NotificationHelper
 import com.arbeitszeit.tracker.worker.ReminderWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -40,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
         // Notification Permission anfragen (Android 13+)
         requestNotificationPermission()
+
+        // Geofencing initialisieren (wenn aktiviert)
+        initializeGeofencing()
 
         setContent {
             ArbeitszeitTrackerTheme {
@@ -109,5 +117,21 @@ class MainActivity : ComponentActivity() {
         ReminderWorker.scheduleMorningReminder(this)
         ReminderWorker.scheduleEveningReminder(this)
         ReminderWorker.scheduleMissingEntriesCheck(this)
+    }
+
+    private fun initializeGeofencing() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val database = AppDatabase.getDatabase(this@MainActivity)
+            val settings = database.userSettingsDao().getSettings()
+
+            // Nur initialisieren wenn Geofencing aktiviert ist
+            if (settings?.geofencingEnabled == true) {
+                val enabledLocations = database.workLocationDao().getEnabledLocations()
+                if (enabledLocations.isNotEmpty()) {
+                    val geofencingManager = GeofencingManager(this@MainActivity)
+                    geofencingManager.startGeofencing(enabledLocations)
+                }
+            }
+        }
     }
 }

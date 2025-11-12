@@ -7,7 +7,10 @@ import org.osmdroid.util.GeoPoint
 
 /**
  * Arbeitsort für Geofencing
- * Unterstützt zwei Modi: Kreis (Radius) oder Polygon (freie Bereichsmarkierung)
+ *
+ * HINWEIS: Nur kreisförmige Bereiche werden für automatische Benachrichtigungen unterstützt.
+ * Die Android Geofencing API unterstützt keine Polygone.
+ * Polygon-Felder werden aus Kompatibilitätsgründen beibehalten, sollten aber nicht mehr verwendet werden.
  */
 @Entity(tableName = "work_locations")
 data class WorkLocation(
@@ -40,12 +43,16 @@ data class WorkLocation(
 ) {
     /**
      * Prüft ob dieser Ort ein Polygon ist (statt Kreis)
+     * @deprecated Polygone werden nicht mehr für Geofencing unterstützt
      */
+    @Deprecated("Polygone werden nicht mehr für Geofencing unterstützt")
     fun isPolygon(): Boolean = !polygonPoints.isNullOrEmpty()
 
     /**
      * Gibt die Polygon-Punkte als Liste zurück
+     * @deprecated Polygone werden nicht mehr für Geofencing unterstützt
      */
+    @Deprecated("Polygone werden nicht mehr für Geofencing unterstützt")
     fun getPolygonPointsList(): List<GeoPoint> {
         if (polygonPoints.isNullOrEmpty()) return emptyList()
 
@@ -108,7 +115,9 @@ data class WorkLocation(
     companion object {
         /**
          * Erstellt einen JSON String aus einer Liste von GeoPoints
+         * @deprecated Polygone werden nicht mehr für Geofencing unterstützt
          */
+        @Deprecated("Polygone werden nicht mehr für Geofencing unterstützt")
         fun polygonPointsToJson(points: List<GeoPoint>): String {
             val jsonArray = JSONArray()
             points.forEach { point ->

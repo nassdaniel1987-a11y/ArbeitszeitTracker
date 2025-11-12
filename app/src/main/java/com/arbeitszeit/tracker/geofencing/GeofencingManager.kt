@@ -28,13 +28,19 @@ class GeofencingManager(private val context: Context) {
 
     /**
      * Aktiviert Geofencing für alle aktivierten Arbeitsorte
+     * HINWEIS: Nur kreisförmige Bereiche werden unterstützt.
+     * Polygon-Arbeitsorte werden ignoriert, da die Android Geofencing API nur Kreise unterstützt.
      */
     fun startGeofencing(locations: List<WorkLocation>) {
         if (!hasLocationPermission()) {
             return
         }
 
-        val geofences = locations.map { location ->
+        // Filter nur kreisförmige Arbeitsorte (keine Polygone)
+        // Die Android Geofencing API unterstützt nur kreisförmige Regionen
+        val circularLocations = locations.filter { !it.isPolygon() }
+
+        val geofences = circularLocations.map { location ->
             Geofence.Builder()
                 .setRequestId(location.id.toString())
                 .setCircularRegion(
