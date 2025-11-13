@@ -45,14 +45,14 @@ fun ExportScreen(viewModel: ExportViewModel) {
         // EXPORT SECTION
         Text("Export", style = MaterialTheme.typography.titleMedium)
 
-        Text("Kalenderwoche: $selectedKW")
-
-        Slider(
-            value = selectedKW.toFloat(),
-            onValueChange = { viewModel.selectKW(it.toInt()) },
-            valueRange = 1f..52f,
-            steps = 51
-        )
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+            Text(
+                "Exportiert alle Zeiteinträge des Jahres in eine Excel-Datei mit der Vorlage.",
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
 
         Button(
             onClick = { viewModel.exportExcel() },
@@ -69,7 +69,7 @@ fun ExportScreen(viewModel: ExportViewModel) {
             } else {
                 Icon(Icons.Default.FileDownload, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Excel exportieren (Template)")
+                Text("Excel exportieren (Gesamtjahr)")
             }
         }
 

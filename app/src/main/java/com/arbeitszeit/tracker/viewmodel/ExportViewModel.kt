@@ -56,17 +56,15 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     /**
-     * Exportiert Excel für die ausgewählte KW
+     * Exportiert Excel für das gesamte Jahr
      */
     fun exportExcel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isExporting = true, error = null)
-            
+
             try {
-                val kw = _selectedKW.value
-                val (startKW, endKW) = DateUtils.getWeekRangeForSheet(kw)
                 val year = LocalDate.now().year
-                
+
                 // Lade Settings
                 val settings = settingsDao.getSettings()
                 if (settings == null) {
@@ -76,25 +74,23 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                     )
                     return@launch
                 }
-                
-                // Lade alle Einträge für den Zeitraum
-                val entries = timeEntryDao.getEntriesByWeekRange(year, startKW, endKW)
-                
-                // Exportiere
+
+                // Lade ALLE Einträge des Jahres
+                val entries = timeEntryDao.getEntriesByYear(year)
+
+                // Exportiere GESAMTJAHR
                 val file = exportManager.exportToExcel(
                     userSettings = settings,
                     entries = entries,
-                    startKW = startKW,
-                    endKW = endKW,
                     year = year
                 )
-                
+
                 // Zeige Erfolg
                 NotificationHelper.showExportSuccess(
                     getApplication(),
                     file.name
                 )
-                
+
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
                     lastExportedFile = file,
@@ -178,10 +174,8 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
      * Gibt den erwarteten Dateinamen zurück
      */
     fun getExpectedFileName(): String {
-        val kw = _selectedKW.value
-        val (startKW, endKW) = DateUtils.getWeekRangeForSheet(kw)
         val year = LocalDate.now().year
-        return exportManager.getExportFileName(year, startKW, endKW)
+        return exportManager.getExportFileName(year)
     }
     
     /**
