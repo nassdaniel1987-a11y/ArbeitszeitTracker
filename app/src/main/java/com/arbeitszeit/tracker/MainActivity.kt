@@ -21,11 +21,13 @@ import com.arbeitszeit.tracker.geofencing.GeofencingManager
 import com.arbeitszeit.tracker.ui.navigation.NavGraph
 import com.arbeitszeit.tracker.ui.navigation.Screen
 import com.arbeitszeit.tracker.ui.theme.ArbeitszeitTrackerTheme
+import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.NotificationHelper
 import com.arbeitszeit.tracker.worker.ReminderWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
 
@@ -48,6 +50,9 @@ class MainActivity : ComponentActivity() {
 
         // Geofencing initialisieren (wenn aktiviert)
         initializeGeofencing()
+
+        // EINMALIG: Migriere KW-Nummern für alte Einträge
+        migrateKalenderwochen()
 
         setContent {
             ArbeitszeitTrackerTheme {
@@ -132,6 +137,57 @@ class MainActivity : ComponentActivity() {
                     geofencingManager.startGeofencing(enabledLocations)
                 }
             }
+        }
+    }
+
+    /**
+     * Migriert alle Zeiteinträge auf Custom Kalenderwochen-Berechnung
+     *
+     * Hintergrund: Alte Einträge wurden möglicherweise mit ISO 8601 KW erstellt.
+     * Diese Funktion berechnet für jeden Eintrag die korrekte Custom KW basierend
+     * auf dem Datum und den aktuellen Settings (ersterMontagImJahr).
+     *
+     * Wird nur einmalig beim App-Start ausgeführt wenn noch nicht migriert.
+     */
+    private fun migrateKalenderwochen() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val sharedPrefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+            val hasMigrated = sharedPrefs.getBoolean("kw_migration_done", false)
+
+            if (hasMigrated) {
+                return@launch // Migration wurde bereits durchgeführt
+            }
+
+            val database = AppDatabase.getDatabase(this@MainActivity)
+            val settings = database.userSettingsDao().getSettings()
+            val timeEntryDao = database.timeEntryDao()
+
+            // Lade alle Einträge
+            val allEntries = timeEntryDao.getEntriesByYear(LocalDate.now().year)
+
+            var updatedCount = 0
+            allEntries.forEach { entry ->
+                val date = LocalDate.parse(entry.datum)
+
+                // Berechne KW mit Custom-Methode
+                val newKW = DateUtils.getCustomWeekOfYear(date, settings?.ersterMontagImJahr)
+                val newJahr = DateUtils.getCustomWeekBasedYear(date, settings?.ersterMontagImJahr)
+
+                // Aktualisiere nur wenn sich KW oder Jahr geändert haben
+                if (entry.kalenderwoche != newKW || entry.jahr != newJahr) {
+                    timeEntryDao.update(entry.copy(
+                        kalenderwoche = newKW,
+                        jahr = newJahr,
+                        updatedAt = System.currentTimeMillis()
+                    ))
+                    updatedCount++
+                }
+            }
+
+            // Markiere Migration als abgeschlossen
+            sharedPrefs.edit().putBoolean("kw_migration_done", true).apply()
+
+            android.util.Log.i("MainActivity", "KW-Migration abgeschlossen: $updatedCount von ${allEntries.size} Einträgen aktualisiert")
         }
     }
 }
