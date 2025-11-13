@@ -18,52 +18,43 @@ import java.time.LocalDate
 class ExcelExportManager(private val context: Context) {
     
     /**
-     * Exportiert Zeiteinträge in Excel-Format
-     * 
+     * Exportiert Zeiteinträge in Excel-Format (GESAMTJAHR)
+     *
      * @param userSettings Benutzereinstellungen (Name, Einrichtung, etc.)
      * @param entries Alle Zeiteinträge für den Export
-     * @param startKW Start-Kalenderwoche
-     * @param endKW End-Kalenderwoche
      * @param year Jahr
      * @return Die exportierte Excel-Datei
      */
     suspend fun exportToExcel(
         userSettings: UserSettings,
         entries: List<TimeEntry>,
-        startKW: Int,
-        endKW: Int,
         year: Int
     ): File = withContext(Dispatchers.IO) {
-        
+
         // 1. Lade Template aus Assets
         val templateStream = context.assets.open("ANZ_Template.xlsx")
         val workbook = WorkbookFactory.create(templateStream)
-        
+
         try {
             // 2. Fülle Stammangaben
             fillStammangaben(workbook, userSettings)
-            
-            // 3. Bestimme welches KW-Sheet (z.B. KW 21-24)
-            val sheetName = DateUtils.getSheetNameForWeek(startKW)
-            val sheet = workbook.getSheet(sheetName)
-                ?: throw IllegalStateException("Sheet '$sheetName' nicht gefunden")
-            
-            // 4. Fülle Zeiteinträge
-            fillTimeEntries(sheet, entries, startKW, endKW)
 
-            // 4.5. Formeln zur Neuberechnung markieren
+            // 3. Fülle ALLE KW-Sheets (01-04 bis 49-52)
+            fillAllSheets(workbook, entries)
+
+            // 4. Formeln zur Neuberechnung markieren
             workbook.setForceFormulaRecalculation(true)
 
             // 5. Speichere Datei
             val outputFile = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "Arbeitszeit_${year}_KW${String.format("%02d", startKW)}-${String.format("%02d", endKW)}.xlsx"
+                "Arbeitszeit_${year}.xlsx"
             )
-            
+
             FileOutputStream(outputFile).use { outputStream ->
                 workbook.write(outputStream)
             }
-            
+
             outputFile
         } finally {
             workbook.close()
@@ -120,7 +111,40 @@ class ExcelExportManager(private val context: Context) {
             }
         }
     }
-    
+
+    /**
+     * Füllt alle KW-Sheets mit Zeiteinträgen
+     */
+    private fun fillAllSheets(workbook: Workbook, entries: List<TimeEntry>) {
+        // Alle 4-Wochen-Blöcke: KW 01-04, 05-08, ..., 49-52
+        val blocks = listOf(
+            1 to 4,
+            5 to 8,
+            9 to 12,
+            13 to 16,
+            17 to 20,
+            21 to 24,
+            25 to 28,
+            29 to 32,
+            33 to 36,
+            37 to 40,
+            41 to 44,
+            45 to 48,
+            49 to 52
+        )
+
+        blocks.forEach { (startKW, endKW) ->
+            val sheetName = "KW ${String.format("%02d", startKW)}-${String.format("%02d", endKW)}"
+            val sheet = workbook.getSheet(sheetName)
+
+            if (sheet != null) {
+                // Filtere Einträge für diesen Block
+                val blockEntries = entries.filter { it.kalenderwoche in startKW..endKW }
+                fillTimeEntries(sheet, blockEntries, startKW, endKW)
+            }
+        }
+    }
+
     /**
      * Füllt die Zeiteinträge in ein KW-Sheet
      *
@@ -247,7 +271,7 @@ class ExcelExportManager(private val context: Context) {
     /**
      * Gibt den Dateinamen für einen Export zurück
      */
-    fun getExportFileName(year: Int, startKW: Int, endKW: Int): String {
-        return "Arbeitszeit_${year}_KW${String.format("%02d", startKW)}-${String.format("%02d", endKW)}.xlsx"
+    fun getExportFileName(year: Int): String {
+        return "Arbeitszeit_${year}.xlsx"
     }
 }
