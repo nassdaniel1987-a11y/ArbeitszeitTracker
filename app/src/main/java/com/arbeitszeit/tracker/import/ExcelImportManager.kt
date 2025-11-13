@@ -191,15 +191,20 @@ class ExcelImportManager(private val context: Context) {
 
     /**
      * Liest Zeiteinträge aus einem KW-Sheet
+     *
+     * Excel-Struktur pro Woche (7 Zeilen):
+     * - Zeile 0-4: Mo-Fr (Arbeitstage)
+     * - Zeile 5: "Sonst" (für Samstag/Sonntagarbeit)
+     * - Zeile 6: Summenzeile (mit KW-Nummer in Spalte A)
      */
     private fun readTimeEntriesFromSheet(sheet: Sheet, ersterMondagImJahr: String?): List<TimeEntry> {
         val entries = mutableListOf<TimeEntry>()
 
         // Wochenstart-Zeilen in Excel (0-basiert)
-        // Woche 1: Zeile 8-14 (Index 7-13)
-        // Woche 2: Zeile 15-21 (Index 14-20)
-        // Woche 3: Zeile 22-28 (Index 21-27)
-        // Woche 4: Zeile 29-35 (Index 28-34)
+        // Woche 1: Zeilen 7-13 (Mo-Fr, Sonst, Summe)
+        // Woche 2: Zeilen 14-20 (Mo-Fr, Sonst, Summe)
+        // Woche 3: Zeilen 21-27 (Mo-Fr, Sonst, Summe)
+        // Woche 4: Zeilen 28-34 (Mo-Fr, Sonst, Summe)
         val weekStartRows = listOf(7, 14, 21, 28)
 
         for ((weekIndex, startRow) in weekStartRows.withIndex()) {
@@ -208,15 +213,26 @@ class ExcelImportManager(private val context: Context) {
             val kwRow = sheet.getRow(sumRowIndex)
             val kw = kwRow?.getCell(0)?.numericCellValue?.toInt() ?: continue
 
-            // Lese 6 Tage (Mo-Sa oder Mo-So)
+            // Lese 5 Arbeitstage (Mo-Fr) + "Sonst"-Zeile
             for (dayIndex in 0 until 6) {
                 val rowIndex = startRow + dayIndex
                 val row = sheet.getRow(rowIndex) ?: continue
 
-                // Berechne Datum aus KW und Wochentag
-                val entry = readTimeEntryFromRow(row, kw, dayIndex, ersterMondagImJahr)
-                if (entry != null) {
-                    entries.add(entry)
+                // dayIndex 0-4: Mo-Fr
+                // dayIndex 5: "Sonst" (Samstag/Sonntag)
+                if (dayIndex < 5) {
+                    // Normale Arbeitstage Mo-Fr
+                    val entry = readTimeEntryFromRow(row, kw, dayIndex, ersterMondagImJahr)
+                    if (entry != null) {
+                        entries.add(entry)
+                    }
+                } else {
+                    // "Sonst"-Zeile: Kann Samstag- oder Sonntagarbeit enthalten
+                    // Wir lesen sie als Samstag (dayIndex 5)
+                    val entry = readTimeEntryFromRow(row, kw, dayIndex, ersterMondagImJahr)
+                    if (entry != null) {
+                        entries.add(entry)
+                    }
                 }
             }
         }

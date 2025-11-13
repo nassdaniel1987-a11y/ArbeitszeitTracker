@@ -123,6 +123,11 @@ class ExcelExportManager(private val context: Context) {
     
     /**
      * Füllt die Zeiteinträge in ein KW-Sheet
+     *
+     * WICHTIG: Excel-Struktur pro Woche (7 Zeilen):
+     * - Zeile 0-4: Mo-Fr (Arbeitstage)
+     * - Zeile 5: "Sonst" (für Samstag/Sonntagarbeit)
+     * - Zeile 6: Summenzeile (mit KW-Nummer in Spalte A - FORMEL, NICHT ÜBERSCHREIBEN!)
      */
     private fun fillTimeEntries(
         sheet: Sheet,
@@ -135,41 +140,43 @@ class ExcelExportManager(private val context: Context) {
             .filter { it.kalenderwoche in startKW..endKW }
             .groupBy { it.kalenderwoche }
             .toSortedMap()
-        
+
         // Wochenstart-Zeilen in Excel (0-basiert)
-        // Woche 1: Zeile 8-14 (Index 7-13)
-        // Woche 2: Zeile 15-21 (Index 14-20)
-        // Woche 3: Zeile 22-28 (Index 21-27)
-        // Woche 4: Zeile 29-35 (Index 28-34)
+        // Woche 1: Zeilen 7-13 (Mo-Fr, Sonst, Summe)
+        // Woche 2: Zeilen 14-20 (Mo-Fr, Sonst, Summe)
+        // Woche 3: Zeilen 21-27 (Mo-Fr, Sonst, Summe)
+        // Woche 4: Zeilen 28-34 (Mo-Fr, Sonst, Summe)
         val weekStartRows = listOf(7, 14, 21, 28)
-        
+
         entriesByWeek.entries.forEach weekLoop@{ (kw, weekEntries) ->
             // Berechne die Position der Woche im 4-Wochen-Block
-            // KW 25 in Block "KW 25-28" -> Position 0 -> Zeile 7
-            // KW 26 in Block "KW 25-28" -> Position 1 -> Zeile 14
-            // KW 27 in Block "KW 25-28" -> Position 2 -> Zeile 21
-            // KW 28 in Block "KW 25-28" -> Position 3 -> Zeile 28
+            // Beispiel: KW 25 in Block "KW 25-28" -> Position 0 -> Zeile 7
             val weekPosition = kw - startKW
             if (weekPosition < 0 || weekPosition >= weekStartRows.size) return@weekLoop
 
             val startRow = weekStartRows[weekPosition]
 
-            // KW-Nummer in Spalte A der Summenzeile (Zeile startRow + 6)
-            val sumRowIndex = startRow + 6
-            val sumRow = sheet.getRow(sumRowIndex)
-            if (sumRow != null) {
-                val kwCell = sumRow.getCell(0) ?: sumRow.createCell(0)
-                kwCell.setCellValue(kw.toDouble())
-            }
+            // WICHTIG: KW-Nummer NICHT überschreiben!
+            // Die Excel-Vorlage enthält bereits Formeln für die KW-Berechnung
+            // in der Summenzeile (startRow + 6, Spalte A)
 
             // Sortiere Einträge nach Datum
             weekEntries.sortedBy { it.datum }.forEach { entry ->
                 // Berechne tatsächlichen Wochentag aus Datum (1=Mo, 7=So)
                 val date = LocalDate.parse(entry.datum)
                 val dayOfWeek = date.dayOfWeek.value // 1=Monday, 7=Sunday
+
+                // Zuordnung zu Excel-Zeilen:
+                // Mo (1) -> Zeile 0
+                // Di (2) -> Zeile 1
+                // Mi (3) -> Zeile 2
+                // Do (4) -> Zeile 3
+                // Fr (5) -> Zeile 4
+                // Sa (6) -> Zeile 5 ("Sonst"-Zeile)
+                // So (7) -> Zeile 5 ("Sonst"-Zeile)
                 val dayOffset = when (dayOfWeek) {
-                    7 -> 6  // Sonntag -> Index 6 (7. Zeile)
-                    else -> dayOfWeek - 1  // Mo=0, Di=1, Mi=2, Do=3, Fr=4, Sa=5
+                    in 1..5 -> dayOfWeek - 1  // Mo-Fr: 0-4
+                    else -> 5  // Sa/So: "Sonst"-Zeile (Index 5)
                 }
 
                 val rowIndex = startRow + dayOffset
