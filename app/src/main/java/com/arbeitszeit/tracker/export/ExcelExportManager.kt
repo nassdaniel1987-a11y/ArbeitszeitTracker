@@ -127,7 +127,7 @@ class ExcelExportManager(private val context: Context) {
      * WICHTIG: Excel-Struktur pro Woche (7 Zeilen):
      * - Zeile 0-4: Mo-Fr (Arbeitstage)
      * - Zeile 5: "Sonst" (für Samstag/Sonntagarbeit)
-     * - Zeile 6: Summenzeile (mit KW-Nummer in Spalte A - FORMEL, NICHT ÜBERSCHREIBEN!)
+     * - Zeile 6: Summenzeile (mit KW-Nummer in Spalte A)
      */
     private fun fillTimeEntries(
         sheet: Sheet,
@@ -156,9 +156,15 @@ class ExcelExportManager(private val context: Context) {
 
             val startRow = weekStartRows[weekPosition]
 
-            // WICHTIG: KW-Nummer NICHT überschreiben!
-            // Die Excel-Vorlage enthält bereits Formeln für die KW-Berechnung
-            // in der Summenzeile (startRow + 6, Spalte A)
+            // WICHTIG: KW-Nummer MUSS überschrieben werden!
+            // Die Excel-Vorlage enthält nur Platzhalter (1,2,3,4) oder Formeln
+            // Wir müssen die echte KW-Nummer basierend auf Custom Week Calculation schreiben
+            val sumRowIndex = startRow + 6
+            val sumRow = sheet.getRow(sumRowIndex)
+            if (sumRow != null) {
+                val kwCell = sumRow.getCell(0) ?: sumRow.createCell(0)
+                kwCell.setCellValue(kw.toDouble())
+            }
 
             // Sortiere Einträge nach Datum
             weekEntries.sortedBy { it.datum }.forEach { entry ->
