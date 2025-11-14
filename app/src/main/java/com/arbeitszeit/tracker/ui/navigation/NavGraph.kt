@@ -15,6 +15,7 @@ sealed class Screen(val route: String) {
     object Export : Screen("export")
     object Settings : Screen("settings")
     object Geofencing : Screen("geofencing")
+    object TemplateManagement : Screen("template_management")
 }
 
 @Composable
@@ -53,13 +54,19 @@ fun NavGraph(
             val viewModel: SettingsViewModel = viewModel()
             SettingsScreen(
                 viewModel = viewModel,
-                onNavigateToGeofencing = { navController.navigate(Screen.Geofencing.route) }
+                onNavigateToGeofencing = { navController.navigate(Screen.Geofencing.route) },
+                onNavigateToTemplateManagement = { navController.navigate(Screen.TemplateManagement.route) }
             )
         }
 
         composable(Screen.Geofencing.route) {
             val viewModel: GeofencingViewModel = viewModel()
             GeofencingScreen(viewModel = viewModel)
+        }
+
+        composable(Screen.TemplateManagement.route) {
+            val viewModel: TemplateViewModel = viewModel()
+            TemplateManagementScreen(viewModel = viewModel)
         }
     }
 }

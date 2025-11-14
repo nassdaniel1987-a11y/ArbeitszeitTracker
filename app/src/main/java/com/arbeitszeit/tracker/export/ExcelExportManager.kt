@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Environment
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
+import com.arbeitszeit.tracker.template.TemplateManager
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.Dispatchers
@@ -13,9 +14,12 @@ import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.time.LocalDate
 
 class ExcelExportManager(private val context: Context) {
+
+    private val templateManager = TemplateManager(context)
     
     /**
      * Exportiert Zeiteinträge in Excel-Format (GESAMTJAHR)
@@ -31,21 +35,27 @@ class ExcelExportManager(private val context: Context) {
         year: Int
     ): File = withContext(Dispatchers.IO) {
 
-        // 1. Lade Template aus Assets
-        val templateStream = context.assets.open("ANZ_Template.xlsx")
+        // 1. Lade Template (Custom für Jahr oder Standard aus Assets)
+        val templateStream: InputStream = templateManager.getTemplateStream(year)
+            ?: context.assets.open("ANZ_Template.xlsx")
+
         val workbook = WorkbookFactory.create(templateStream)
 
         try {
-            // 2. Fülle Stammangaben
-            fillStammangaben(workbook, userSettings)
+            // 2. Lese wichtige Werte aus der Vorlage BEVOR wir überschreiben
+            val ueberstundenVorjahr = readUeberstundenVorjahr(workbook)
+            val letzterUebertrag = readLetzterUebertrag(workbook)
 
-            // 3. Fülle ALLE KW-Sheets (01-04 bis 49-52)
+            // 3. Fülle Stammangaben (überschreibt mit App-Settings)
+            fillStammangaben(workbook, userSettings, ueberstundenVorjahr, letzterUebertrag)
+
+            // 4. Fülle ALLE KW-Sheets (01-04 bis 49-52)
             fillAllSheets(workbook, entries)
 
-            // 4. Formeln zur Neuberechnung markieren
+            // 5. Formeln zur Neuberechnung markieren
             workbook.setForceFormulaRecalculation(true)
 
-            // 5. Speichere Datei
+            // 6. Speichere Datei
             val outputFile = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                 "Arbeitszeit_${year}.xlsx"
@@ -63,9 +73,51 @@ class ExcelExportManager(private val context: Context) {
     }
     
     /**
-     * Füllt das Stammangaben-Sheet
+     * Liest Überstunden Vorjahr aus der Vorlage
      */
-    private fun fillStammangaben(workbook: Workbook, settings: UserSettings) {
+    private fun readUeberstundenVorjahr(workbook: Workbook): Int {
+        return try {
+            val sheet = (0 until workbook.numberOfSheets)
+                .map { workbook.getSheetAt(it) }
+                .firstOrNull { it.sheetName.equals("stammangaben", ignoreCase = true) }
+
+            val ueberstundenDecimal = sheet?.getRow(9)?.getCell(2)?.numericCellValue ?: 0.0
+            TimeUtils.excelTimeToMinutes(ueberstundenDecimal)
+        } catch (e: Exception) {
+            0 // Fallback wenn nicht lesbar
+        }
+    }
+
+    /**
+     * Liest Übertrag letztes Blatt aus der Vorlage
+     */
+    private fun readLetzterUebertrag(workbook: Workbook): Int {
+        return try {
+            val sheet = (0 until workbook.numberOfSheets)
+                .map { workbook.getSheetAt(it) }
+                .firstOrNull { it.sheetName.equals("stammangaben", ignoreCase = true) }
+
+            val uebertragDecimal = sheet?.getRow(10)?.getCell(2)?.numericCellValue ?: 0.0
+            TimeUtils.excelTimeToMinutes(uebertragDecimal)
+        } catch (e: Exception) {
+            0 // Fallback wenn nicht lesbar
+        }
+    }
+
+    /**
+     * Füllt das Stammangaben-Sheet
+     *
+     * @param workbook Die Excel-Arbeitsmappe
+     * @param settings Benutzereinstellungen aus der App
+     * @param ueberstundenVorjahr Überstunden aus der Vorlage (werden beibehalten!)
+     * @param letzterUebertrag Übertrag aus der Vorlage (wird beibehalten!)
+     */
+    private fun fillStammangaben(
+        workbook: Workbook,
+        settings: UserSettings,
+        ueberstundenVorjahr: Int,
+        letzterUebertrag: Int
+    ) {
         // Suche Sheet case-insensitive
         val sheet = (0 until workbook.numberOfSheets)
             .map { workbook.getSheetAt(it) }
@@ -91,14 +143,16 @@ class ExcelExportManager(private val context: Context) {
         
         // Arbeitstage/Woche in C9
         sheet.getRow(8)?.getCell(2)?.setCellValue(settings.arbeitsTageProWoche.toDouble())
-        
+
         // Überstunden Vorjahr in C10 als Excel-Zeitwert
-        val ueberstundenDecimal = TimeUtils.minutesToExcelTime(settings.ueberstundenVorjahrMinuten)
+        // WICHTIG: Wir verwenden die Werte aus der VORLAGE, nicht aus App-Settings!
+        // Grund: Beim Jahreswechsel enthält die neue Vorlage die korrekten Überstunden
+        val ueberstundenDecimal = TimeUtils.minutesToExcelTime(ueberstundenVorjahr)
         sheet.getRow(9)?.getCell(2)?.setCellValue(ueberstundenDecimal)
-        
-        // Übertrag letztes Blatt würde hier in C11 stehen, aber das wird von der App
-        // automatisch aus dem vorherigen Export übernommen
-        val letzterUebertragDecimal = TimeUtils.minutesToExcelTime(settings.letzterUebertragMinuten)
+
+        // Übertrag letztes Blatt in C11
+        // WICHTIG: Wir verwenden die Werte aus der VORLAGE, nicht aus App-Settings!
+        val letzterUebertragDecimal = TimeUtils.minutesToExcelTime(letzterUebertrag)
         sheet.getRow(10)?.getCell(2)?.setCellValue(letzterUebertragDecimal)
 
         // Erster Montag im Jahr in C12 (für custom KW-Berechnung)

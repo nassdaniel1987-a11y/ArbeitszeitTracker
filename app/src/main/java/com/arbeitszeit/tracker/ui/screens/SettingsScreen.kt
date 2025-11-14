@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onNavigateToGeofencing: () -> Unit = {}
+    onNavigateToGeofencing: () -> Unit = {},
+    onNavigateToTemplateManagement: () -> Unit = {}
 ) {
     val settings by viewModel.userSettings.collectAsState()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -63,7 +64,7 @@ fun SettingsScreen(
                 1 -> ArbeitszeitTab(viewModel, settings, snackbarHostState)
                 2 -> SollzeitenTab(viewModel, settings, snackbarHostState)
                 3 -> AutomatischTab(onNavigateToGeofencing)
-                4 -> ErweitertTab(viewModel)
+                4 -> ErweitertTab(viewModel, onNavigateToTemplateManagement)
             }
         }
     }
@@ -651,7 +652,8 @@ private fun AutomatischTab(
 
 @Composable
 private fun ErweitertTab(
-    viewModel: SettingsViewModel
+    viewModel: SettingsViewModel,
+    onNavigateToTemplateManagement: () -> Unit
 ) {
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
@@ -667,6 +669,52 @@ private fun ErweitertTab(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary
         )
+
+        // Excel-Vorlagen Verwaltung
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Description,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Excel-Vorlagen",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            "Verwalte Excel-Vorlagen für verschiedene Jahre",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = onNavigateToTemplateManagement,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Vorlagen verwalten")
+                }
+            }
+        }
 
         Spacer(Modifier.weight(1f))
 
