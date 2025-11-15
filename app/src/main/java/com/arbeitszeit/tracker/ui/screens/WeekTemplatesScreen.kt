@@ -347,6 +347,9 @@ private fun DayTimeInputRow(
     dayData: DayData,
     onDataChange: (DayData) -> Unit
 ) {
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (dayData.enabled)
@@ -377,77 +380,98 @@ private fun DayTimeInputRow(
             }
 
             if (dayData.enabled) {
+                // Start Zeit mit Picker
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Von:", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(
+                        onClick = { showStartTimePicker = true },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        val timeText = if (dayData.startHour.isNotEmpty() && dayData.startMinute.isNotEmpty()) {
+                            "${dayData.startHour.padStart(2, '0')}:${dayData.startMinute.padStart(2, '0')}"
+                        } else {
+                            "Zeit wählen"
+                        }
+                        Text(timeText)
+                    }
+                }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Start Zeit
-                Text("Von:", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    value = dayData.startHour,
-                    onValueChange = { if (it.length <= 2) onDataChange(dayData.copy(startHour = it)) },
-                    modifier = Modifier.width(60.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("08") },
-                    singleLine = true
-                )
-                Text(":")
-                OutlinedTextField(
-                    value = dayData.startMinute,
-                    onValueChange = { if (it.length <= 2) onDataChange(dayData.copy(startMinute = it)) },
-                    modifier = Modifier.width(60.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("00") },
-                    singleLine = true
-                )
-            }
+                // End Zeit mit Picker
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Bis:", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(
+                        onClick = { showEndTimePicker = true },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        val timeText = if (dayData.endHour.isNotEmpty() && dayData.endMinute.isNotEmpty()) {
+                            "${dayData.endHour.padStart(2, '0')}:${dayData.endMinute.padStart(2, '0')}"
+                        } else {
+                            "Zeit wählen"
+                        }
+                        Text(timeText)
+                    }
+                }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // End Zeit
-                Text("Bis:", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    value = dayData.endHour,
-                    onValueChange = { if (it.length <= 2) onDataChange(dayData.copy(endHour = it)) },
-                    modifier = Modifier.width(60.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("16") },
-                    singleLine = true
-                )
-                Text(":")
-                OutlinedTextField(
-                    value = dayData.endMinute,
-                    onValueChange = { if (it.length <= 2) onDataChange(dayData.copy(endMinute = it)) },
-                    modifier = Modifier.width(60.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("30") },
-                    singleLine = true
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Pause:", modifier = Modifier.width(60.dp), style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    value = dayData.pause,
-                    onValueChange = { if (it.length <= 3) onDataChange(dayData.copy(pause = it)) },
-                    modifier = Modifier.width(80.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("30") },
-                    suffix = { Text("Min", style = MaterialTheme.typography.bodySmall) },
-                    singleLine = true
-                )
-            }
+                // Pause
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Pause:", modifier = Modifier.width(60.dp), style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = dayData.pause,
+                        onValueChange = { if (it.length <= 3) onDataChange(dayData.copy(pause = it)) },
+                        modifier = Modifier.width(100.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = { Text("30") },
+                        suffix = { Text("Min", style = MaterialTheme.typography.bodySmall) },
+                        singleLine = true
+                    )
+                }
             }  // Ende if (dayData.enabled)
         }
+    }
+
+    // Time Picker Dialoge
+    if (showStartTimePicker) {
+        TimePickerDialog(
+            title = "Startzeit für $dayName",
+            initialHour = dayData.startHour.toIntOrNull() ?: 8,
+            initialMinute = dayData.startMinute.toIntOrNull() ?: 0,
+            onDismiss = { showStartTimePicker = false },
+            onConfirm = { hour, minute ->
+                onDataChange(dayData.copy(
+                    startHour = hour.toString(),
+                    startMinute = minute.toString()
+                ))
+                showStartTimePicker = false
+            }
+        )
+    }
+
+    if (showEndTimePicker) {
+        TimePickerDialog(
+            title = "Endzeit für $dayName",
+            initialHour = dayData.endHour.toIntOrNull() ?: 16,
+            initialMinute = dayData.endMinute.toIntOrNull() ?: 0,
+            onDismiss = { showEndTimePicker = false },
+            onConfirm = { hour, minute ->
+                onDataChange(dayData.copy(
+                    endHour = hour.toString(),
+                    endMinute = minute.toString()
+                ))
+                showEndTimePicker = false
+            }
+        )
     }
 }
 
@@ -500,6 +524,44 @@ private fun ApplyTemplateDialog(
         confirmButton = {
             Button(onClick = { onConfirm(currentWeekStart) }) {
                 Text("Anwenden")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialog(
+    title: String,
+    initialHour: Int,
+    initialMinute: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (hour: Int, minute: Int) -> Unit
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialHour.coerceIn(0, 23),
+        initialMinute = initialMinute.coerceIn(0, 59),
+        is24Hour = true
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            TimePicker(state = timePickerState)
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(timePickerState.hour, timePickerState.minute)
+                }
+            ) {
+                Text("OK")
             }
         },
         dismissButton = {

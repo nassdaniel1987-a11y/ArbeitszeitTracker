@@ -53,6 +53,8 @@ fun HomeScreen(
     var showPauseDialog by remember { mutableStateOf(false) }
     var showQuickActionMenu by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var entryToDelete by remember { mutableStateOf<TimeEntry?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Animation state for staggered fade-in
@@ -258,52 +260,25 @@ fun HomeScreen(
 
             items(
                 items = weekEntries,
-                key = { it.datum } // Wichtig für stabile Liste bei Swipe
+                key = { it.datum } // Wichtig für stabile Liste
             ) { entry ->
                 AnimatedVisibility(
                     visible = itemsVisible,
                     enter = fadeIn(animationSpec = tween(300)) +
                             slideInVertically(animationSpec = tween(300), initialOffsetY = { it / 4 })
                 ) {
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { dismissValue ->
-                            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
-                                viewModel.deleteEntry(entry.datum)
-                                // false zurückgeben damit Box zurückspringt (Eintrag wird geleert, nicht entfernt)
-                                false
-                            } else {
-                                false
+                    Box(
+                        modifier = Modifier.combinedClickable(
+                            onClick = { /* Normal click - nothing */ },
+                            onLongClick = {
+                                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                entryToDelete = entry
+                                showDeleteConfirmDialog = true
                             }
-                        },
-                        positionalThreshold = { totalDistance ->
-                            // User muss mindestens 70% der Breite swipen um zu löschen
-                            totalDistance * 0.7f
-                        }
-                    )
-
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        backgroundContent = {
-                            // Roter Hintergrund mit Lösch-Icon beim Wischen
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.errorContainer)
-                                    .padding(horizontal = 20.dp),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Löschen",
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                        },
-                        content = {
-                            WeekEntryCard(entry = entry)
-                        }
-                    )
+                        )
+                    ) {
+                        WeekEntryCard(entry = entry)
+                    }
                 }
             }
 
@@ -332,6 +307,55 @@ fun HomeScreen(
                 }
             )
         }
+    }
+
+    // Löschen-Bestätigungsdialog
+    if (showDeleteConfirmDialog && entryToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteConfirmDialog = false
+                entryToDelete = null
+            },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null) },
+            title = { Text("Eintrag löschen?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Möchtest du den Eintrag für ${DateUtils.formatForDisplay(LocalDate.parse(entryToDelete!!.datum))} wirklich löschen?")
+                    Text(
+                        "Alle Zeiten werden zurückgesetzt.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteEntry(entryToDelete!!.datum)
+                        showDeleteConfirmDialog = false
+                        entryToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Löschen")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        entryToDelete = null
+                    }
+                ) {
+                    Text("Abbrechen")
+                }
+            }
+        )
     }
 }
 
