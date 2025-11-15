@@ -22,7 +22,8 @@ fun EditEntryDialog(
     entry: TimeEntry?,
     datum: String,
     onDismiss: () -> Unit,
-    onSave: (startZeit: Int?, endZeit: Int?, pauseMinuten: Int, typ: String, notiz: String) -> Unit
+    onSave: (startZeit: Int?, endZeit: Int?, pauseMinuten: Int, typ: String, notiz: String) -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     // Zeit als Minuten speichern
     var startZeitMinuten by remember { mutableStateOf(entry?.startZeit) }
@@ -37,6 +38,13 @@ fun EditEntryDialog(
     // Dialog-States für TimePicker
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    // Prüfe ob Eintrag Daten hat (zum Anzeigen des Löschen-Buttons)
+    val hasData = entry?.let {
+        it.startZeit != null || it.endZeit != null || it.pauseMinuten > 0 ||
+        it.typ != TimeEntry.TYP_NORMAL || it.notiz.isNotEmpty()
+    } ?: false
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -132,16 +140,32 @@ fun EditEntryDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val pauseMinuten = if (selectedTyp == TimeEntry.TYP_NORMAL) {
-                        pauseStr.toIntOrNull() ?: 0
-                    } else 0
-
-                    onSave(startZeitMinuten, endZeitMinuten, pauseMinuten, selectedTyp, notiz)
-                }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Speichern")
+                // Löschen-Button (nur wenn Eintrag Daten hat und onDelete übergeben wurde)
+                if (hasData && onDelete != null) {
+                    TextButton(
+                        onClick = { showDeleteConfirmDialog = true },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Löschen")
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        val pauseMinuten = if (selectedTyp == TimeEntry.TYP_NORMAL) {
+                            pauseStr.toIntOrNull() ?: 0
+                        } else 0
+
+                        onSave(startZeitMinuten, endZeitMinuten, pauseMinuten, selectedTyp, notiz)
+                    }
+                ) {
+                    Text("Speichern")
+                }
             }
         },
         dismissButton = {
@@ -150,6 +174,34 @@ fun EditEntryDialog(
             }
         }
     )
+
+    // Bestätigungsdialog für Löschen
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Eintrag löschen?") },
+            text = { Text("Möchtest du diesen Eintrag wirklich löschen? Alle Zeiten und Notizen werden entfernt.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDelete?.invoke()
+                        showDeleteConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text("Löschen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
 }
 
 /**
