@@ -1,8 +1,5 @@
 package com.arbeitszeit.tracker.ui.screens
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,19 +14,6 @@ import com.arbeitszeit.tracker.viewmodel.ExportViewModel
 @Composable
 fun ExportScreen(viewModel: ExportViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    val selectedKW by viewModel.selectedKW.collectAsState()
-    var showImportDialog by remember { mutableStateOf(false) }
-    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
-
-    // File Picker für Excel-Import
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            selectedFileUri = uri
-            showImportDialog = true
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -49,7 +33,7 @@ fun ExportScreen(viewModel: ExportViewModel) {
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
-                "Excel Export & Import",
+                "Excel Export",
                 style = MaterialTheme.typography.titleLarge
             )
         }
@@ -149,78 +133,6 @@ fun ExportScreen(viewModel: ExportViewModel) {
             }
         }
 
-        HorizontalDivider()
-
-        // IMPORT SECTION als Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    "Import",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-
-                Text(
-                    "Importiere eine vorhandene Excel-Datei mit Zeiteinträgen",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                )
-
-                Button(
-                    onClick = { filePickerLauncher.launch("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") },
-                    enabled = !uiState.isExporting && !uiState.isImporting,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (uiState.isImporting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Importiere...")
-                    } else {
-                        Icon(Icons.Default.FileUpload, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Excel importieren")
-                    }
-                }
-
-                if (uiState.importSuccess) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                            Text(
-                                "Erfolgreich: ${uiState.importedEntriesCount} Einträge importiert",
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
         // ERROR MESSAGE
         uiState.error?.let {
             Card(
@@ -248,21 +160,6 @@ fun ExportScreen(viewModel: ExportViewModel) {
                 }
             }
         }
-    }
-
-    // Import Dialog mit Option für Stammdaten
-    if (showImportDialog && selectedFileUri != null) {
-        ImportConfirmationDialog(
-            onConfirm = { importStammdaten ->
-                viewModel.importExcel(selectedFileUri!!, importStammdaten)
-                showImportDialog = false
-                selectedFileUri = null
-            },
-            onDismiss = {
-                showImportDialog = false
-                selectedFileUri = null
-            }
-        )
     }
 
     // Export Vorschau Dialog
@@ -370,46 +267,6 @@ fun ExportPreviewDialog(
                 Icon(Icons.Default.FileDownload, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Jetzt exportieren")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
-            }
-        }
-    )
-}
-
-@Composable
-fun ImportConfirmationDialog(
-    onConfirm: (importStammdaten: Boolean) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var importStammdaten by remember { mutableStateOf(true) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Excel importieren") },
-        text = {
-            Column {
-                Text("Möchtest du auch die Stammdaten (Name, Einrichtung, etc.) importieren?")
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = importStammdaten,
-                        onCheckedChange = { importStammdaten = it }
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("Stammdaten importieren")
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = { onConfirm(importStammdaten) }) {
-                Text("Importieren")
             }
         },
         dismissButton = {

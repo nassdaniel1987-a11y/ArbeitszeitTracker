@@ -13,6 +13,7 @@ sealed class Screen(val route: String) {
     object Calendar : Screen("calendar")
     object Ueberstunden : Screen("ueberstunden")
     object Export : Screen("export")
+    object Import : Screen("import")
     object Settings : Screen("settings")
     object Geofencing : Screen("geofencing")
     object TemplateManagement : Screen("template_management")
@@ -52,6 +53,11 @@ fun NavGraph(
         composable(Screen.Export.route) {
             val viewModel: ExportViewModel = viewModel()
             ExportScreen(viewModel = viewModel)
+        }
+
+        composable(Screen.Import.route) {
+            val viewModel: ExportViewModel = viewModel()
+            ImportScreen(viewModel = viewModel)
         }
 
         composable(Screen.Settings.route) {
