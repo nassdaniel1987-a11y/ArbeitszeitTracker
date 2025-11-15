@@ -1,17 +1,24 @@
 package com.arbeitszeit.tracker.ui.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.arbeitszeit.tracker.ui.theme.*
 import com.arbeitszeit.tracker.viewmodel.MonthSummary
 import com.arbeitszeit.tracker.viewmodel.UeberstundenViewModel
 import java.time.format.TextStyle
@@ -112,7 +119,8 @@ private fun GesamtUeberstundenCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -161,7 +169,8 @@ private fun DetailsCard(
     viewModel: UeberstundenViewModel
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -244,8 +253,21 @@ private fun MonatCard(
     )
     val jahr = monatsSummary.yearMonth.year
 
+    // Calculate progress percentage
+    val progress = if (monatsSummary.sollMinutenGesamt > 0) {
+        (monatsSummary.istMinutenGesamt.toFloat() / monatsSummary.sollMinutenGesamt.toFloat())
+            .coerceIn(0f, 1.5f)
+    } else 0f
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 1000),
+        label = "progress"
+    )
+
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -278,26 +300,43 @@ private fun MonatCard(
                         imageVector = if (isPositive) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = if (isPositive) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.error
-                        }
+                        tint = if (isPositive) OvertimeColor else UndertimeColor
                     )
                     Text(
                         text = viewModel.minutesToHoursString(monatsSummary.differenzMinuten),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (isPositive) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.error
-                        }
+                        color = if (isPositive) OvertimeColor else UndertimeColor
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            // Progress Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(fraction = animatedProgress.coerceIn(0f, 1f))
+                        .height(12.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(
+                            when {
+                                progress >= 1.0f -> ProgressGood
+                                progress >= 0.8f -> ProgressWarning
+                                else -> ProgressBad
+                            }
+                        )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -318,6 +357,21 @@ private fun MonatCard(
                 }
 
                 Column(
+                    horizontalAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Erfüllung",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Column(
                     horizontalAlignment = Alignment.End
                 ) {
                     Text(
@@ -327,7 +381,8 @@ private fun MonatCard(
                     )
                     Text(
                         text = viewModel.minutesToHoursString(monatsSummary.istMinutenGesamt),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
