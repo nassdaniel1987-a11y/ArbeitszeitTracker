@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.arbeitszeit.tracker.ui.components.EmptyStates
 import com.arbeitszeit.tracker.ui.theme.*
 import com.arbeitszeit.tracker.viewmodel.MonthSummary
 import com.arbeitszeit.tracker.viewmodel.UeberstundenViewModel
@@ -88,12 +89,7 @@ fun UeberstundenScreen(
             // Hinweis wenn keine Daten
             if (summary.monatsSummen.isEmpty()) {
                 item {
-                    Text(
-                        text = "Keine Daten vorhanden",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    EmptyStates.NoOvertimeData()
                 }
             }
         }
