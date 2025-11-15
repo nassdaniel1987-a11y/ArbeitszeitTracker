@@ -52,6 +52,7 @@ fun HomeScreen(
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showPauseDialog by remember { mutableStateOf(false) }
     var showQuickActionMenu by remember { mutableStateOf(false) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Animation state for staggered fade-in
@@ -85,95 +86,109 @@ fun HomeScreen(
     val view = LocalView.current
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Arbeitszeit Tracker") },
+                actions = {
+                    // Schnellaktionen Button
+                    IconButton(onClick = { showQuickActionMenu = true }) {
+                        Icon(Icons.Default.Speed, "Schnellaktionen")
+                    }
+                    // Overflow Menü
+                    Box {
+                        IconButton(onClick = { showOverflowMenu = true }) {
+                            Icon(Icons.Default.MoreVert, "Mehr")
+                        }
+                        DropdownMenu(
+                            expanded = showOverflowMenu,
+                            onDismissRequest = { showOverflowMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Wochen-Vorlagen") },
+                                leadingIcon = { Icon(Icons.Default.ContentCopy, null) },
+                                onClick = {
+                                    onNavigateToWeekTemplates()
+                                    showOverflowMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Kalender") },
+                                leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                                onClick = {
+                                    onNavigateToCalendar()
+                                    showOverflowMenu = false
+                                }
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Hilfe") },
+                                leadingIcon = { Icon(Icons.Default.HelpOutline, null) },
+                                onClick = {
+                                    onNavigateToHelp()
+                                    showOverflowMenu = false
+                                }
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            Box {
-                FloatingActionButton(
-                    onClick = {
-                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                        viewModel.quickStamp()
-                    },
-                    modifier = Modifier.combinedClickable(
-                        onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            viewModel.quickStamp()
-                        },
-                        onLongClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                            showQuickActionMenu = true
-                        }
-                    )
-                ) {
-                    Icon(Icons.Default.Add, "Schnell stempeln")
-                }
-
-                // Quick Action Dropdown Menu
-                DropdownMenu(
-                    expanded = showQuickActionMenu,
-                    onDismissRequest = { showQuickActionMenu = false },
-                    offset = DpOffset(0.dp, (-8).dp)
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("🏖️ Urlaub eintragen") },
-                        leadingIcon = { Icon(Icons.Default.BeachAccess, null) },
-                        onClick = {
-                            viewModel.setTyp(TimeEntry.TYP_URLAUB)
-                            showQuickActionMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("🤒 Krank eintragen") },
-                        leadingIcon = { Icon(Icons.Default.LocalHospital, null) },
-                        onClick = {
-                            viewModel.setTyp(TimeEntry.TYP_KRANK)
-                            showQuickActionMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("📅 Feiertag eintragen") },
-                        leadingIcon = { Icon(Icons.Default.Event, null) },
-                        onClick = {
-                            viewModel.setTyp(TimeEntry.TYP_FEIERTAG)
-                            showQuickActionMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("🚫 Abwesend eintragen") },
-                        leadingIcon = { Icon(Icons.Default.EventBusy, null) },
-                        onClick = {
-                            viewModel.setTyp(TimeEntry.TYP_ABWESEND)
-                            showQuickActionMenu = false
-                        }
-                    )
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text("📋 Zum Kalender") },
-                        leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
-                        onClick = {
-                            onNavigateToCalendar()
-                            showQuickActionMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("📝 Wochen-Vorlagen") },
-                        leadingIcon = { Icon(Icons.Default.ContentCopy, null) },
-                        onClick = {
-                            onNavigateToWeekTemplates()
-                            showQuickActionMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("❓ Hilfe") },
-                        leadingIcon = { Icon(Icons.Default.HelpOutline, null) },
-                        onClick = {
-                            onNavigateToHelp()
-                            showQuickActionMenu = false
-                        }
-                    )
-                }
-            }
+            ExtendedFloatingActionButton(
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    viewModel.quickStamp()
+                },
+                icon = { Icon(Icons.Default.Add, "Stempeln") },
+                text = { Text("Stempeln") }
+            )
         }
     ) { padding ->
+        // Quick Action Dropdown Menu (separat vom FAB)
+        Box {
+            DropdownMenu(
+                expanded = showQuickActionMenu,
+                onDismissRequest = { showQuickActionMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Urlaub eintragen") },
+                    leadingIcon = { Icon(Icons.Default.BeachAccess, null) },
+                    onClick = {
+                        viewModel.setTyp(TimeEntry.TYP_URLAUB)
+                        showQuickActionMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Krank eintragen") },
+                    leadingIcon = { Icon(Icons.Default.LocalHospital, null) },
+                    onClick = {
+                        viewModel.setTyp(TimeEntry.TYP_KRANK)
+                        showQuickActionMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Feiertag eintragen") },
+                    leadingIcon = { Icon(Icons.Default.Event, null) },
+                    onClick = {
+                        viewModel.setTyp(TimeEntry.TYP_FEIERTAG)
+                        showQuickActionMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Abwesend eintragen") },
+                    leadingIcon = { Icon(Icons.Default.EventBusy, null) },
+                    onClick = {
+                        viewModel.setTyp(TimeEntry.TYP_ABWESEND)
+                        showQuickActionMenu = false
+                    }
+                )
+            }
+        }
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
