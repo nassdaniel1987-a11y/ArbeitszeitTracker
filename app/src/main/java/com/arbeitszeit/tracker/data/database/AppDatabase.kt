@@ -7,9 +7,12 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.arbeitszeit.tracker.data.dao.TimeEntryDao
 import com.arbeitszeit.tracker.data.dao.UserSettingsDao
+import com.arbeitszeit.tracker.data.dao.WeekTemplateDao
 import com.arbeitszeit.tracker.data.dao.WorkLocationDao
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
+import com.arbeitszeit.tracker.data.entity.WeekTemplate
+import com.arbeitszeit.tracker.data.entity.WeekTemplateEntry
 import com.arbeitszeit.tracker.data.entity.WorkLocation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,8 +23,14 @@ import java.time.temporal.WeekFields
 import java.util.Locale
 
 @Database(
-    entities = [UserSettings::class, TimeEntry::class, WorkLocation::class],
-    version = 8,  // Erhöht wegen darkMode in UserSettings
+    entities = [
+        UserSettings::class,
+        TimeEntry::class,
+        WorkLocation::class,
+        WeekTemplate::class,
+        WeekTemplateEntry::class
+    ],
+    version = 9,  // Erhöht wegen WeekTemplate feature
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userSettingsDao(): UserSettingsDao
     abstract fun timeEntryDao(): TimeEntryDao
     abstract fun workLocationDao(): WorkLocationDao
+    abstract fun weekTemplateDao(): WeekTemplateDao
 
     companion object {
         @Volatile
