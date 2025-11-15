@@ -36,14 +36,14 @@ fun WeekTemplatesScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            androidx.compose.material3.TopAppBar(
                 title = { Text("Wochen-Vorlagen") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Zurück")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer

@@ -34,9 +34,9 @@ fun UeberstundenScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            androidx.compose.material3.TopAppBar(
                 title = { Text("Überstunden") },
-                colors = TopAppBarDefaults.topAppBarColors(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
