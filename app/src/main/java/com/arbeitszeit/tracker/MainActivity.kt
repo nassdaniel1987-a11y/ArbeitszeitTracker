@@ -233,7 +233,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             if (showTopBar) {
-                                TopAppBar(
+                                androidx.compose.material3.TopAppBar(
                                     title = {
                                         Text(
                                             when (currentRoute) {
@@ -252,7 +252,7 @@ class MainActivity : ComponentActivity() {
                                             Icon(Icons.Default.Menu, "Menü öffnen")
                                         }
                                     },
-                                    colors = TopAppBarDefaults.topAppBarColors(
+                                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                                         titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
