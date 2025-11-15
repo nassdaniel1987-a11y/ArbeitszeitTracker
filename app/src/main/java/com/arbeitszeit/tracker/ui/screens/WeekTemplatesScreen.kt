@@ -146,6 +146,7 @@ fun WeekTemplatesScreen(
                 viewModel.applyTemplateToWeek(selectedTemplate!!.id, weekStartDate)
                 showApplyDialog = false
                 selectedTemplate = null
+                onNavigateBack()  // Zurück zum HomeScreen
             }
         )
     }
@@ -312,8 +313,10 @@ private fun CreateTemplateDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    // Konvertiere zu Map<Int, DayTimeEntry>
+                    // Konvertiere zu Map<Int, DayTimeEntry> - nur aktivierte Tage
                     val entries = dayData.mapNotNull { (day, data) ->
+                        if (!data.enabled) return@mapNotNull null
+
                         val startMinutes = timeToMinutes(data.startHour, data.startMinute)
                         val endMinutes = timeToMinutes(data.endHour, data.endMinute)
                         val pause = data.pause.toIntOrNull() ?: 0
@@ -346,7 +349,10 @@ private fun DayTimeInputRow(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (dayData.enabled)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
@@ -355,11 +361,22 @@ private fun DayTimeInputRow(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                dayName,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Checkbox(
+                    checked = dayData.enabled,
+                    onCheckedChange = { onDataChange(dayData.copy(enabled = it)) }
+                )
+                Text(
+                    dayName,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            if (dayData.enabled) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -429,12 +446,14 @@ private fun DayTimeInputRow(
                     singleLine = true
                 )
             }
+            }  // Ende if (dayData.enabled)
         }
     }
 }
 
 // Helper data class
 private data class DayData(
+    val enabled: Boolean = false,
     val startHour: String = "",
     val startMinute: String = "",
     val endHour: String = "",

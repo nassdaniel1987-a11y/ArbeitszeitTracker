@@ -133,6 +133,29 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
                             isManualEntry = true,
                             updatedAt = System.currentTimeMillis()
                         ))
+                    } else {
+                        // Erstelle neuen Eintrag aus Vorlage
+                        val dayOfWeek = targetDate.dayOfWeek.value
+                        val weekNumber = DateUtils.getCustomWeekOfYear(targetDate, settings?.ersterMontagImJahr)
+                        val year = targetDate.year
+                        val sollMinuten = settings?.getSollMinutenForDay(dayOfWeek)
+                            ?: (settings?.wochenStundenMinuten?.div(settings.arbeitsTageProWoche) ?: 0)
+
+                        timeEntryDao.insert(
+                            com.arbeitszeit.tracker.data.entity.TimeEntry(
+                                datum = dateString,
+                                wochentag = com.arbeitszeit.tracker.utils.DateUtils.getWeekdayName(targetDate),
+                                kalenderwoche = weekNumber,
+                                jahr = year,
+                                startZeit = templateEntry.startZeit,
+                                endZeit = templateEntry.endZeit,
+                                pauseMinuten = templateEntry.pauseMinuten,
+                                sollMinuten = sollMinuten,
+                                typ = templateEntry.typ,
+                                notiz = templateEntry.notiz,
+                                isManualEntry = true
+                            )
+                        )
                     }
                 }
             }
