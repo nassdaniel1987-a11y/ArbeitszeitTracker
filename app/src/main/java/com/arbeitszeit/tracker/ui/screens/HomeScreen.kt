@@ -89,12 +89,12 @@ fun HomeScreen(
             Box {
                 FloatingActionButton(
                     onClick = {
-                        view.performHapticFeedback(HapticFeedbackConstants.CLICK)
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                         viewModel.quickStamp()
                     },
                     modifier = Modifier.combinedClickable(
                         onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.CLICK)
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             viewModel.quickStamp()
                         },
                         onLongClick = {
@@ -299,15 +299,18 @@ fun HomeScreen(
     }
 
     // Pause Dialog mit Slider
-    if (showPauseDialog && todayEntry != null) {
-        PauseSliderDialog(
-            currentPauseMinutes = todayEntry.pauseMinuten,
-            onDismiss = { showPauseDialog = false },
-            onConfirm = { minutes ->
-                viewModel.setPause(minutes)
-                showPauseDialog = false
-            }
-        )
+    if (showPauseDialog) {
+        val currentEntry = todayEntry
+        if (currentEntry != null) {
+            PauseSliderDialog(
+                currentPauseMinutes = currentEntry.pauseMinuten,
+                onDismiss = { showPauseDialog = false },
+                onConfirm = { minutes ->
+                    viewModel.setPause(minutes)
+                    showPauseDialog = false
+                }
+            )
+        }
     }
 }
 
