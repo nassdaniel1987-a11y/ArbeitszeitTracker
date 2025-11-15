@@ -21,7 +21,7 @@ import java.util.Locale
 
 @Database(
     entities = [UserSettings::class, TimeEntry::class, WorkLocation::class],
-    version = 7,  // Erhöht wegen polygonPoints Spalte in WorkLocation
+    version = 8,  // Erhöht wegen darkMode in UserSettings
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

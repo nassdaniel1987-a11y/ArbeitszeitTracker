@@ -34,6 +34,9 @@ data class UserSettings(
     val geofencingEndHour: Int = 20,         // Aktiv bis 20 Uhr
     val geofencingActiveDays: String = "12345", // Mo=1, Di=2, Mi=3, Do=4, Fr=5, Sa=6, So=7
 
+    // UI Einstellungen
+    val darkMode: String = "system",         // "system", "light", oder "dark"
+
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
