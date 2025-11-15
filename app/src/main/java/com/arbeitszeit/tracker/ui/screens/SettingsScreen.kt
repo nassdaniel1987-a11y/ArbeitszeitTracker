@@ -28,11 +28,9 @@ fun SettingsScreen(
     data class TabItem(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
     val tabs = listOf(
-        TabItem("Stammdaten", Icons.Default.Person),
+        TabItem("Allgemein", Icons.Default.Settings),
         TabItem("Arbeitszeit", Icons.Default.Schedule),
-        TabItem("Sollzeiten", Icons.Default.CalendarToday),
-        TabItem("Automatisch", Icons.Default.LocationOn),
-        TabItem("Erweitert", Icons.Default.Settings)
+        TabItem("Automatisierung", Icons.Default.LocationOn)
     )
 
     Scaffold(
@@ -60,24 +58,24 @@ fun SettingsScreen(
 
             // Tab Content
             when (selectedTabIndex) {
-                0 -> StammdatenTab(viewModel, settings, snackbarHostState)
+                0 -> AllgemeinTab(viewModel, settings, snackbarHostState, onNavigateToTemplateManagement)
                 1 -> ArbeitszeitTab(viewModel, settings, snackbarHostState)
-                2 -> SollzeitenTab(viewModel, settings, snackbarHostState)
-                3 -> AutomatischTab(onNavigateToGeofencing)
-                4 -> ErweitertTab(viewModel, onNavigateToTemplateManagement)
+                2 -> AutomatisierungTab(onNavigateToGeofencing)
             }
         }
     }
 }
 
 @Composable
-private fun StammdatenTab(
+private fun AllgemeinTab(
     viewModel: SettingsViewModel,
     settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    onNavigateToTemplateManagement: () -> Unit
 ) {
     var name by remember { mutableStateOf(settings?.name ?: "") }
     var einrichtung by remember { mutableStateOf(settings?.einrichtung ?: "") }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(settings) {
@@ -94,6 +92,7 @@ private fun StammdatenTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Persönliche Daten
         Text(
             "Persönliche Daten",
             style = MaterialTheme.typography.titleMedium,
@@ -114,8 +113,6 @@ private fun StammdatenTab(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.weight(1f))
-
         Button(
             onClick = {
                 viewModel.updateStammdaten(
@@ -130,6 +127,141 @@ private fun StammdatenTab(
         ) {
             Text("Speichern")
         }
+
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(8.dp))
+
+        // UI Einstellungen
+        Text(
+            "Benutzeroberfläche",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        // Dark Mode
+        DarkModeCard(settings = settings, viewModel = viewModel)
+
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(8.dp))
+
+        // Daten & Vorlagen
+        Text(
+            "Daten & Vorlagen",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        // Excel-Vorlagen Verwaltung
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Description,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Excel-Vorlagen",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            "Verwalte Excel-Vorlagen für verschiedene Jahre",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = onNavigateToTemplateManagement,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Vorlagen verwalten")
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(8.dp))
+
+        // Gefahrenbereich
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Gefahrenbereich",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    "Diese Aktion kann nicht rückgängig gemacht werden!",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Button(
+                    onClick = { showDeleteConfirmDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text("Alle Daten löschen")
+                }
+            }
+        }
+    }
+
+    // Bestätigungsdialog
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Alle Daten löschen?") },
+            text = { Text("Möchtest du wirklich ALLE Zeiteinträge und Einstellungen löschen? Diese Aktion kann nicht rückgängig gemacht werden!") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteAllTimeEntries()
+                        showDeleteConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text("Löschen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
     }
 }
 
@@ -354,115 +486,65 @@ private fun ArbeitszeitTab(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.weight(1f))
+        HorizontalDivider()
 
-        Button(
-            onClick = {
-                val wochenMinuten = (stunden.toIntOrNull() ?: 0) * 60 + (minuten.toIntOrNull() ?: 0)
+        // Individuelle Sollzeiten pro Tag (expandable)
+        var useIndividualDays by remember { mutableStateOf(false) }
+        var montagH by remember { mutableStateOf("") }
+        var montagM by remember { mutableStateOf("") }
+        var dienstagH by remember { mutableStateOf("") }
+        var dienstagM by remember { mutableStateOf("") }
+        var mittwochH by remember { mutableStateOf("") }
+        var mittwochM by remember { mutableStateOf("") }
+        var donnerstagH by remember { mutableStateOf("") }
+        var donnerstagM by remember { mutableStateOf("") }
+        var freitagH by remember { mutableStateOf("") }
+        var freitagM by remember { mutableStateOf("") }
+        var samstagH by remember { mutableStateOf("") }
+        var samstagM by remember { mutableStateOf("") }
+        var sonntagH by remember { mutableStateOf("") }
+        var sonntagM by remember { mutableStateOf("") }
 
-                val ersterMontagFormatted = if (ersterMontag.isNotBlank()) {
-                    val parts = ersterMontag.split(".")
-                    if (parts.size == 3) {
-                        val tag = parts[0].padStart(2, '0')
-                        val monat = parts[1].padStart(2, '0')
-                        val jahr = parts[2]
-                        "$jahr-$monat-$tag"
-                    } else null
-                } else null
+        LaunchedEffect(settings) {
+            settings?.let {
+                useIndividualDays = it.hasIndividualDailyHours()
 
-                // Convert selectedWorkingDays to String (e.g., "12345" for Mo-Fr)
-                val workingDaysString = selectedWorkingDays.sorted().joinToString("")
-
-                viewModel.updateArbeitszeit(
-                    arbeitsumfangProzent = prozent.toIntOrNull() ?: 100,
-                    wochenStundenMinuten = wochenMinuten,
-                    arbeitsTageProWoche = selectedWorkingDays.size,
-                    ferienbetreuung = ferienbetreuung,
-                    ersterMontagImJahr = ersterMontagFormatted,
-                    workingDays = workingDaysString
-                )
-                scope.launch {
-                    snackbarHostState.showSnackbar("Arbeitszeiteinstellungen erfolgreich gespeichert")
+                it.montagSollMinuten?.let { min ->
+                    montagH = (min / 60).toString()
+                    montagM = (min % 60).toString().padStart(2, '0')
                 }
-            },
-            enabled = !hasErrors,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Speichern")
-        }
-    }
-}
-
-@Composable
-private fun SollzeitenTab(
-    viewModel: SettingsViewModel,
-    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
-    snackbarHostState: SnackbarHostState
-) {
-    var useIndividualDays by remember { mutableStateOf(false) }
-    var montagH by remember { mutableStateOf("") }
-    var montagM by remember { mutableStateOf("") }
-    var dienstagH by remember { mutableStateOf("") }
-    var dienstagM by remember { mutableStateOf("") }
-    var mittwochH by remember { mutableStateOf("") }
-    var mittwochM by remember { mutableStateOf("") }
-    var donnerstagH by remember { mutableStateOf("") }
-    var donnerstagM by remember { mutableStateOf("") }
-    var freitagH by remember { mutableStateOf("") }
-    var freitagM by remember { mutableStateOf("") }
-    var samstagH by remember { mutableStateOf("") }
-    var samstagM by remember { mutableStateOf("") }
-    var sonntagH by remember { mutableStateOf("") }
-    var sonntagM by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(settings) {
-        settings?.let {
-            useIndividualDays = it.hasIndividualDailyHours()
-
-            it.montagSollMinuten?.let { min ->
-                montagH = (min / 60).toString()
-                montagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.dienstagSollMinuten?.let { min ->
-                dienstagH = (min / 60).toString()
-                dienstagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.mittwochSollMinuten?.let { min ->
-                mittwochH = (min / 60).toString()
-                mittwochM = (min % 60).toString().padStart(2, '0')
-            }
-            it.donnerstagSollMinuten?.let { min ->
-                donnerstagH = (min / 60).toString()
-                donnerstagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.freitagSollMinuten?.let { min ->
-                freitagH = (min / 60).toString()
-                freitagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.samstagSollMinuten?.let { min ->
-                samstagH = (min / 60).toString()
-                samstagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.sonntagSollMinuten?.let { min ->
-                sonntagH = (min / 60).toString()
-                sonntagM = (min % 60).toString().padStart(2, '0')
+                it.dienstagSollMinuten?.let { min ->
+                    dienstagH = (min / 60).toString()
+                    dienstagM = (min % 60).toString().padStart(2, '0')
+                }
+                it.mittwochSollMinuten?.let { min ->
+                    mittwochH = (min / 60).toString()
+                    mittwochM = (min % 60).toString().padStart(2, '0')
+                }
+                it.donnerstagSollMinuten?.let { min ->
+                    donnerstagH = (min / 60).toString()
+                    donnerstagM = (min % 60).toString().padStart(2, '0')
+                }
+                it.freitagSollMinuten?.let { min ->
+                    freitagH = (min / 60).toString()
+                    freitagM = (min % 60).toString().padStart(2, '0')
+                }
+                it.samstagSollMinuten?.let { min ->
+                    samstagH = (min / 60).toString()
+                    samstagM = (min % 60).toString().padStart(2, '0')
+                }
+                it.sonntagSollMinuten?.let { min ->
+                    sonntagH = (min / 60).toString()
+                    sonntagM = (min % 60).toString().padStart(2, '0')
+                }
             }
         }
-    }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "Individuelle Soll-Zeiten pro Tag",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
@@ -501,6 +583,22 @@ private fun SollzeitenTab(
 
         Button(
             onClick = {
+                val wochenMinuten = (stunden.toIntOrNull() ?: 0) * 60 + (minuten.toIntOrNull() ?: 0)
+
+                val ersterMontagFormatted = if (ersterMontag.isNotBlank()) {
+                    val parts = ersterMontag.split(".")
+                    if (parts.size == 3) {
+                        val tag = parts[0].padStart(2, '0')
+                        val monat = parts[1].padStart(2, '0')
+                        val jahr = parts[2]
+                        "$jahr-$monat-$tag"
+                    } else null
+                } else null
+
+                // Convert selectedWorkingDays to String (e.g., "12345" for Mo-Fr)
+                val workingDaysString = selectedWorkingDays.sorted().joinToString("")
+
+                // Sollzeiten berechnen
                 val montagMin = if (useIndividualDays && montagH.isNotBlank()) {
                     (montagH.toIntOrNull() ?: 0) * 60 + (montagM.toIntOrNull() ?: 0)
                 } else null
@@ -529,6 +627,16 @@ private fun SollzeitenTab(
                     (sonntagH.toIntOrNull() ?: 0) * 60 + (sonntagM.toIntOrNull() ?: 0)
                 } else null
 
+                viewModel.updateArbeitszeit(
+                    arbeitsumfangProzent = prozent.toIntOrNull() ?: 100,
+                    wochenStundenMinuten = wochenMinuten,
+                    arbeitsTageProWoche = selectedWorkingDays.size,
+                    ferienbetreuung = ferienbetreuung,
+                    ersterMontagImJahr = ersterMontagFormatted,
+                    workingDays = workingDaysString
+                )
+
+                // Sollzeiten speichern
                 viewModel.updateSollzeiten(
                     montagSollMinuten = montagMin,
                     dienstagSollMinuten = dienstagMin,
@@ -538,12 +646,13 @@ private fun SollzeitenTab(
                     samstagSollMinuten = samstagMin,
                     sonntagSollMinuten = sonntagMin
                 )
+
                 scope.launch {
-                    snackbarHostState.showSnackbar("Sollzeiten erfolgreich gespeichert")
+                    snackbarHostState.showSnackbar("Einstellungen erfolgreich gespeichert")
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = useIndividualDays
+            enabled = !hasErrors,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Speichern")
         }
@@ -551,7 +660,7 @@ private fun SollzeitenTab(
 }
 
 @Composable
-private fun AutomatischTab(
+private fun AutomatisierungTab(
     onNavigateToGeofencing: () -> Unit
 ) {
     Column(
@@ -647,142 +756,6 @@ private fun AutomatischTab(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun ErweitertTab(
-    viewModel: SettingsViewModel,
-    onNavigateToTemplateManagement: () -> Unit
-) {
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            "Erweiterte Einstellungen",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        // Dark Mode
-        DarkModeCard(settings = settings, viewModel = viewModel)
-
-        Spacer(Modifier.height(8.dp))
-
-
-        // Excel-Vorlagen Verwaltung
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Description,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Excel-Vorlagen",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            "Verwalte Excel-Vorlagen für verschiedene Jahre",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-
-                Button(
-                    onClick = onNavigateToTemplateManagement,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Settings, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Vorlagen verwalten")
-                }
-            }
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        // Gefahrenbereich
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    "Gefahrenbereich",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
-                Text(
-                    "Diese Aktion kann nicht rückgängig gemacht werden!",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
-                Button(
-                    onClick = { showDeleteConfirmDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    )
-                ) {
-                    Text("Alle Daten löschen")
-                }
-            }
-        }
-    }
-
-    // Bestätigungsdialog
-    if (showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = false },
-            title = { Text("Alle Daten löschen?") },
-            text = { Text("Möchtest du wirklich ALLE Zeiteinträge und Einstellungen löschen? Diese Aktion kann nicht rückgängig gemacht werden!") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.deleteAllTimeEntries()
-                        showDeleteConfirmDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    )
-                ) {
-                    Text("Löschen")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Abbrechen")
-                }
-            }
-        )
     }
 }
 
