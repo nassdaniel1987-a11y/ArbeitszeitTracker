@@ -18,7 +18,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val timeEntryDao = database.timeEntryDao()
     
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
     
     /**
      * Aktualisiert oder erstellt Benutzereinstellungen
