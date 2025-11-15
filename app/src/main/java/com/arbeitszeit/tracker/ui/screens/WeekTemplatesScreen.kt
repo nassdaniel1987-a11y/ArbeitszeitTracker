@@ -3,6 +3,9 @@ package com.arbeitszeit.tracker.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -10,9 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.WeekTemplate
 import com.arbeitszeit.tracker.ui.components.EmptyStates
+import com.arbeitszeit.tracker.viewmodel.DayTimeEntry
 import com.arbeitszeit.tracker.viewmodel.WeekTemplatesViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -122,8 +127,8 @@ fun WeekTemplatesScreen(
     if (showCreateDialog) {
         CreateTemplateDialog(
             onDismiss = { showCreateDialog = false },
-            onConfirm = { name, description, weekStartDate ->
-                viewModel.createTemplateFromWeek(name, description, weekStartDate)
+            onConfirm = { name, description, dayEntries ->
+                viewModel.createTemplateManually(name, description, dayEntries)
                 showCreateDialog = false
             }
         )
@@ -238,31 +243,40 @@ private fun TemplateCard(
 @Composable
 private fun CreateTemplateDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, description: String, weekStartDate: LocalDate) -> Unit
+    onConfirm: (name: String, description: String, dayEntries: Map<Int, DayTimeEntry>) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    val currentWeekStart = remember {
-        val today = LocalDate.now()
-        today.minusDays((today.dayOfWeek.value - 1).toLong())
+
+    // Zeit-Eingaben für jeden Tag (1=Mo, 2=Di, ..., 7=So)
+    val dayData = remember {
+        mutableStateMapOf<Int, DayData>().apply {
+            (1..7).forEach { day -> put(day, DayData()) }
+        }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.ContentCopy, "Vorlage erstellen") },
-        title = { Text("Neue Vorlage aus aktueller Woche") },
+        title = { Text("Neue Dienstplan-Vorlage") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 500.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Text(
-                    "Erstelle eine Vorlage aus der aktuellen Woche",
+                    "Erstelle eine Vorlage mit deinem Dienstplan",
                     style = MaterialTheme.typography.bodySmall
                 )
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
-                    placeholder = { Text("z.B. Standard-Woche") },
+                    label = { Text("Vorlagen-Name") },
+                    placeholder = { Text("z.B. Frühdienst") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -270,15 +284,47 @@ private fun CreateTemplateDialog(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Beschreibung (optional)") },
-                    placeholder = { Text("z.B. Montag-Freitag 8-16 Uhr") },
+                    placeholder = { Text("z.B. 6:00-14:30 Uhr") },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 2
                 )
+
+                HorizontalDivider()
+
+                Text(
+                    "Dienstzeiten eingeben",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                // Eingabefelder für jeden Tag
+                val dayNames = listOf("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
+                dayNames.forEachIndexed { index, dayName ->
+                    val dayOfWeek = index + 1
+                    DayTimeInputRow(
+                        dayName = dayName,
+                        dayData = dayData[dayOfWeek] ?: DayData(),
+                        onDataChange = { newData -> dayData[dayOfWeek] = newData }
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(name, description, currentWeekStart) },
+                onClick = {
+                    // Konvertiere zu Map<Int, DayTimeEntry>
+                    val entries = dayData.mapNotNull { (day, data) ->
+                        val startMinutes = timeToMinutes(data.startHour, data.startMinute)
+                        val endMinutes = timeToMinutes(data.endHour, data.endMinute)
+                        val pause = data.pause.toIntOrNull() ?: 0
+
+                        if (startMinutes != null && endMinutes != null) {
+                            day to DayTimeEntry(startMinutes, endMinutes, pause)
+                        } else null
+                    }.toMap()
+
+                    onConfirm(name, description, entries)
+                },
                 enabled = name.isNotBlank()
             ) {
                 Text("Erstellen")
@@ -290,6 +336,118 @@ private fun CreateTemplateDialog(
             }
         }
     )
+}
+
+@Composable
+private fun DayTimeInputRow(
+    dayName: String,
+    dayData: DayData,
+    onDataChange: (DayData) -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                dayName,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Start Zeit
+                Text("Von:", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = dayData.startHour,
+                    onValueChange = { if (it.length <= 2) onDataChange(dayData.copy(startHour = it)) },
+                    modifier = Modifier.width(60.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    placeholder = { Text("08") },
+                    singleLine = true
+                )
+                Text(":")
+                OutlinedTextField(
+                    value = dayData.startMinute,
+                    onValueChange = { if (it.length <= 2) onDataChange(dayData.copy(startMinute = it)) },
+                    modifier = Modifier.width(60.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    placeholder = { Text("00") },
+                    singleLine = true
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // End Zeit
+                Text("Bis:", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = dayData.endHour,
+                    onValueChange = { if (it.length <= 2) onDataChange(dayData.copy(endHour = it)) },
+                    modifier = Modifier.width(60.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    placeholder = { Text("16") },
+                    singleLine = true
+                )
+                Text(":")
+                OutlinedTextField(
+                    value = dayData.endMinute,
+                    onValueChange = { if (it.length <= 2) onDataChange(dayData.copy(endMinute = it)) },
+                    modifier = Modifier.width(60.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    placeholder = { Text("30") },
+                    singleLine = true
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Pause:", modifier = Modifier.width(60.dp), style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = dayData.pause,
+                    onValueChange = { if (it.length <= 3) onDataChange(dayData.copy(pause = it)) },
+                    modifier = Modifier.width(80.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    placeholder = { Text("30") },
+                    suffix = { Text("Min", style = MaterialTheme.typography.bodySmall) },
+                    singleLine = true
+                )
+            }
+        }
+    }
+}
+
+// Helper data class
+private data class DayData(
+    val startHour: String = "",
+    val startMinute: String = "",
+    val endHour: String = "",
+    val endMinute: String = "",
+    val pause: String = ""
+)
+
+// Helper function
+private fun timeToMinutes(hour: String, minute: String): Int? {
+    val h = hour.toIntOrNull() ?: return null
+    val m = minute.toIntOrNull() ?: return null
+    if (h !in 0..23 || m !in 0..59) return null
+    return h * 60 + m
 }
 
 @Composable

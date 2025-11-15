@@ -68,6 +68,41 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
     }
 
     /**
+     * Erstellt eine neue Vorlage manuell mit eingegebenen Zeiten
+     */
+    fun createTemplateManually(
+        name: String,
+        description: String,
+        dayEntries: Map<Int, DayTimeEntry>  // dayOfWeek -> TimeEntry
+    ) {
+        viewModelScope.launch {
+            // Erstelle Template
+            val template = WeekTemplate(
+                name = name,
+                description = description
+            )
+            val templateId = weekTemplateDao.insertTemplate(template)
+
+            // Erstelle Template-Einträge für jeden Tag mit Daten
+            val templateEntries = dayEntries.mapNotNull { (dayOfWeek, dayEntry) ->
+                if (dayEntry.startTime != null && dayEntry.endTime != null) {
+                    WeekTemplateEntry(
+                        templateId = templateId,
+                        dayOfWeek = dayOfWeek,
+                        startZeit = dayEntry.startTime,
+                        endZeit = dayEntry.endTime,
+                        pauseMinuten = dayEntry.pauseMinutes,
+                        typ = "NORMAL",
+                        notiz = ""
+                    )
+                } else null
+            }
+
+            weekTemplateDao.insertEntries(templateEntries)
+        }
+    }
+
+    /**
      * Wendet eine Vorlage auf eine Woche an
      */
     fun applyTemplateToWeek(templateId: Long, weekStartDate: LocalDate) {
@@ -120,3 +155,12 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
         return weekTemplateDao.getEntriesByTemplate(templateId)
     }
 }
+
+/**
+ * Data class für manuelle Tages-Eingaben bei Vorlagen-Erstellung
+ */
+data class DayTimeEntry(
+    val startTime: Int?,  // in Minuten seit Mitternacht
+    val endTime: Int?,    // in Minuten seit Mitternacht
+    val pauseMinutes: Int = 0
+)

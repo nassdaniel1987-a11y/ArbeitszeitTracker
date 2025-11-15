@@ -21,11 +21,12 @@ fun HelpScreen(
 
     val helpSections = listOf(
         HelpSection(
-            title = "Schnellstempel (Quick Stamp)",
+            title = "Schnellstempel & Navigation",
             icon = Icons.Default.TouchApp,
             items = listOf(
-                HelpItem("Einfacher Tap", "Erfasst sofort Start- oder Endzeit für heute"),
-                HelpItem("Langer Tap", "Öffnet Schnellaktionen-Menü mit: Pause hinzufügen, Heute bearbeiten, Wochen-Vorlagen"),
+                HelpItem("Stempeln-Button", "Erfasst sofort Start- oder Endzeit für heute"),
+                HelpItem("Schnellaktionen (⚡)", "Blitz-Icon in TopBar: Urlaub, Krank, Feiertag, Abwesend eintragen"),
+                HelpItem("Mehr-Menü (⋮)", "Drei-Punkte-Icon: Wochen-Vorlagen und Hilfe"),
                 HelpItem("Pause-Slider", "Pausenzeit einfach per Slider einstellen (0-120 Min)")
             )
         ),
@@ -43,10 +44,12 @@ fun HelpScreen(
             title = "Wochen-Vorlagen",
             icon = Icons.Default.ContentCopy,
             items = listOf(
-                HelpItem("Vorlage erstellen", "Aus einer bestehenden Woche eine Vorlage speichern"),
-                HelpItem("Vorlage anwenden", "Schnell eine ganze Woche mit gleichen Zeiten füllen"),
+                HelpItem("Vorlage erstellen", "Erstelle Dienstplan-Vorlagen mit individuellen Zeiten für jeden Wochentag"),
+                HelpItem("Dienstplan eingeben", "Beim Erstellen: Start-Zeit, End-Zeit und Pause für Mo-So eingeben"),
+                HelpItem("Vorlage anwenden", "Im HomeScreen: Button 'Vorlage anwenden' in der Wochennavigation"),
+                HelpItem("Schneller Zugriff", "Über Mehr-Menü (⋮) → Wochen-Vorlagen"),
                 HelpItem("Vorlage löschen", "Ungenutzte Vorlagen entfernen"),
-                HelpItem("Mehrere Vorlagen", "Erstelle verschiedene Vorlagen für unterschiedliche Wochen (z.B. Frühdienst, Spätdienst)")
+                HelpItem("Mehrere Vorlagen", "Erstelle verschiedene Vorlagen (z.B. Frühdienst 6-14 Uhr, Spätdienst 14-22 Uhr)")
             )
         ),
         HelpSection(
@@ -109,10 +112,11 @@ fun HelpScreen(
             title = "Tipps & Tricks",
             icon = Icons.Default.Lightbulb,
             items = listOf(
-                HelpItem("Schnelle Pause", "Langer Tap auf FAB → 'Pause hinzufügen'"),
+                HelpItem("Schnellzugriff TopBar", "⚡ für Typen-Eingabe, ⋮ für Vorlagen und Hilfe"),
                 HelpItem("Undo-Funktion", "Nach Löschen erscheint Snackbar mit Rückgängig-Option"),
                 HelpItem("Wochenansicht", "Im Kalender: Nur deine Arbeitstage werden angezeigt"),
-                HelpItem("Vorlagen nutzen", "Spart Zeit bei wiederkehrenden Arbeitsmustern"),
+                HelpItem("Vorlagen-Button", "In der Wochennavigation: 'Vorlage anwenden' für schnelle Wocheneintragung"),
+                HelpItem("Dienstplan-Vorlagen", "Erstelle Vorlagen für Früh-/Spät-/Nachtdienst mit festen Zeiten"),
                 HelpItem("Export-Backup", "Regelmäßige Excel-Exporte als Datensicherung nutzen")
             )
         )
