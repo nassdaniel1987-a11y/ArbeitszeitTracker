@@ -36,7 +36,8 @@ fun TimeEntryCard(
             .pulsing(enabled = isRunning, minScale = 0.98f, maxScale = 1.02f, duration = 2000),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

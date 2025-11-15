@@ -34,7 +34,8 @@ fun WeekSummaryCard(summary: WeekSummary) {
                 isUndertime -> MaterialTheme.colorScheme.errorContainer
                 else -> MaterialTheme.colorScheme.secondaryContainer
             }
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
