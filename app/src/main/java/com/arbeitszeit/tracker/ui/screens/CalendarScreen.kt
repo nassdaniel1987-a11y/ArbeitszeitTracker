@@ -277,6 +277,11 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                 )
                 showEditDialog = false
                 selectedDate = null
+            },
+            onDelete = {
+                viewModel.deleteEntry(selectedDate!!)
+                showEditDialog = false
+                selectedDate = null
             }
         )
     }

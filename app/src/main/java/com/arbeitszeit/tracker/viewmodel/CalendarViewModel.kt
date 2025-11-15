@@ -88,7 +88,7 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     ) {
         viewModelScope.launch {
             val entry = timeEntryDao.getEntryByDate(date) ?: return@launch
-            
+
             timeEntryDao.update(entry.copy(
                 startZeit = if (typ == TimeEntry.TYP_NORMAL) startZeit else null,
                 endZeit = if (typ == TimeEntry.TYP_NORMAL) endZeit else null,
@@ -98,7 +98,29 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
                 isManualEntry = true,
                 updatedAt = System.currentTimeMillis()
             ))
-            
+
+            loadMonthEntries()
+        }
+    }
+
+    /**
+     * Löscht einen Eintrag (setzt alle Werte zurück auf leer)
+     */
+    fun deleteEntry(date: String) {
+        viewModelScope.launch {
+            val entry = timeEntryDao.getEntryByDate(date) ?: return@launch
+
+            // Setze alle Werte zurück auf Standard (leerer Eintrag)
+            timeEntryDao.update(entry.copy(
+                startZeit = null,
+                endZeit = null,
+                pauseMinuten = 0,
+                typ = TimeEntry.TYP_NORMAL,
+                notiz = "",
+                isManualEntry = false,
+                updatedAt = System.currentTimeMillis()
+            ))
+
             loadMonthEntries()
         }
     }
