@@ -83,11 +83,6 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
             )
             val templateId = weekTemplateDao.insertTemplate(template)
 
-            android.util.Log.d("WeekTemplates", "Creating template '$name' with ${dayEntries.size} days")
-            dayEntries.forEach { (dayOfWeek, entry) ->
-                android.util.Log.d("WeekTemplates", "Day $dayOfWeek: start=${entry.startTime}, end=${entry.endTime}, pause=${entry.pauseMinutes}")
-            }
-
             // Erstelle Template-Einträge für jeden Tag mit Daten
             val templateEntries = dayEntries.mapNotNull { (dayOfWeek, dayEntry) ->
                 if (dayEntry.startTime != null && dayEntry.endTime != null) {
@@ -102,8 +97,6 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
                     )
                 } else null
             }
-
-            android.util.Log.d("WeekTemplates", "Inserting ${templateEntries.size} template entries")
 
             weekTemplateDao.insertEntries(templateEntries)
         }
@@ -120,17 +113,10 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
             // Lade Template-Einträge
             val templateEntries = weekTemplateDao.getEntriesByTemplate(templateId)
 
-            android.util.Log.d("WeekTemplates", "Applying template $templateId, found ${templateEntries.size} entries")
-            templateEntries.forEach { entry ->
-                android.util.Log.d("WeekTemplates", "Template entry: dayOfWeek=${entry.dayOfWeek}, start=${entry.startZeit}, end=${entry.endZeit}")
-            }
-
             // Wende Template auf jeden Tag an
             templateEntries.forEach { templateEntry ->
                 // Finde den entsprechenden Tag in der Zielwoche
                 val targetDate = weekDays.find { it.dayOfWeek.value == templateEntry.dayOfWeek }
-
-                android.util.Log.d("WeekTemplates", "Processing dayOfWeek ${templateEntry.dayOfWeek}, targetDate=$targetDate")
 
                 if (targetDate != null) {
                     val dateString = DateUtils.dateToString(targetDate)
