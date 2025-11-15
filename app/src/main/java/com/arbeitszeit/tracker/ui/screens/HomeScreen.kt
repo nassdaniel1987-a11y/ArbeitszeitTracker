@@ -52,7 +52,6 @@ fun HomeScreen(
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showPauseDialog by remember { mutableStateOf(false) }
     var showQuickActionMenu by remember { mutableStateOf(false) }
-    var showOverflowMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var entryToDelete by remember { mutableStateOf<TimeEntry?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -88,66 +87,37 @@ fun HomeScreen(
     val view = LocalView.current
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Arbeitszeit Tracker") },
-                actions = {
-                    // Schnellaktionen Button
-                    IconButton(onClick = { showQuickActionMenu = true }) {
-                        Icon(Icons.Default.Speed, "Schnellaktionen")
-                    }
-                    // Overflow Menü
-                    Box {
-                        IconButton(onClick = { showOverflowMenu = true }) {
-                            Icon(Icons.Default.MoreVert, "Mehr")
-                        }
-                        DropdownMenu(
-                            expanded = showOverflowMenu,
-                            onDismissRequest = { showOverflowMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Wochen-Vorlagen") },
-                                leadingIcon = { Icon(Icons.Default.ContentCopy, null) },
-                                onClick = {
-                                    onNavigateToWeekTemplates()
-                                    showOverflowMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Hilfe") },
-                                leadingIcon = { Icon(Icons.Default.HelpOutline, null) },
-                                onClick = {
-                                    onNavigateToHelp()
-                                    showOverflowMenu = false
-                                }
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = {
-                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    viewModel.quickStamp()
-                },
-                icon = { Icon(Icons.Default.Add, "Stempeln") },
-                text = { Text("Stempeln") }
-            )
-        }
-    ) { padding ->
-        // Quick Action Dropdown Menu (separat vom FAB)
-        Box {
-            DropdownMenu(
-                expanded = showQuickActionMenu,
-                onDismissRequest = { showQuickActionMenu = false }
-            ) {
+            // FAB mit Long-Press für Schnellaktionen
+            Box {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        viewModel.quickStamp()
+                    },
+                    modifier = Modifier.combinedClickable(
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            viewModel.quickStamp()
+                        },
+                        onLongClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            showQuickActionMenu = true
+                        }
+                    )
+                ) {
+                    Icon(Icons.Default.Add, "Stempeln")
+                    Spacer(Modifier.width(8.dp))
+                    Text("Stempeln")
+                }
+
+                // Schnellaktionen-Menü (erscheint bei Long-Press)
+                DropdownMenu(
+                    expanded = showQuickActionMenu,
+                    onDismissRequest = { showQuickActionMenu = false },
+                    offset = DpOffset(x = 0.dp, y = (-8).dp)
+                ) {
                 DropdownMenuItem(
                     text = { Text("Urlaub eintragen") },
                     leadingIcon = { Icon(Icons.Default.BeachAccess, null) },
@@ -180,8 +150,10 @@ fun HomeScreen(
                         showQuickActionMenu = false
                     }
                 )
+                }
             }
         }
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
