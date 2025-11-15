@@ -5,19 +5,20 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.ui.components.*
@@ -29,7 +30,7 @@ import com.arbeitszeit.tracker.viewmodel.WeekSummary
 import java.time.LocalDate
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -44,6 +45,7 @@ fun HomeScreen(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showPauseDialog by remember { mutableStateOf(false) }
+    var showQuickActionMenu by remember { mutableStateOf(false) }
 
     // Animation state for staggered fade-in
     var itemsVisible by remember { mutableStateOf(false) }
@@ -57,13 +59,74 @@ fun HomeScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    view.performHapticFeedback(HapticFeedbackConstants.CLICK)
-                    viewModel.quickStamp()
+            Box {
+                FloatingActionButton(
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.CLICK)
+                        viewModel.quickStamp()
+                    },
+                    modifier = Modifier.combinedClickable(
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.CLICK)
+                            viewModel.quickStamp()
+                        },
+                        onLongClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            showQuickActionMenu = true
+                        }
+                    )
+                ) {
+                    Icon(Icons.Default.Add, "Schnell stempeln")
                 }
-            ) {
-                Icon(Icons.Default.Add, "Schnell stempeln")
+
+                // Quick Action Dropdown Menu
+                DropdownMenu(
+                    expanded = showQuickActionMenu,
+                    onDismissRequest = { showQuickActionMenu = false },
+                    offset = DpOffset(0.dp, (-8).dp)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("🏖️ Urlaub eintragen") },
+                        leadingIcon = { Icon(Icons.Default.BeachAccess, null) },
+                        onClick = {
+                            viewModel.setTyp(TimeEntry.TYP_URLAUB)
+                            showQuickActionMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("🤒 Krank eintragen") },
+                        leadingIcon = { Icon(Icons.Default.LocalHospital, null) },
+                        onClick = {
+                            viewModel.setTyp(TimeEntry.TYP_KRANK)
+                            showQuickActionMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("📅 Feiertag eintragen") },
+                        leadingIcon = { Icon(Icons.Default.Event, null) },
+                        onClick = {
+                            viewModel.setTyp(TimeEntry.TYP_FEIERTAG)
+                            showQuickActionMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("🚫 Abwesend eintragen") },
+                        leadingIcon = { Icon(Icons.Default.EventBusy, null) },
+                        onClick = {
+                            viewModel.setTyp(TimeEntry.TYP_ABWESEND)
+                            showQuickActionMenu = false
+                        }
+                    )
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text("📋 Zum Kalender") },
+                        leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                        onClick = {
+                            onNavigateToCalendar()
+                            showQuickActionMenu = false
+                        }
+                    )
+                }
             }
         }
     ) { padding ->
