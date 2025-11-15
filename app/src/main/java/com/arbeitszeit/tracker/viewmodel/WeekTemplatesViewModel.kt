@@ -1,0 +1,122 @@
+package com.arbeitszeit.tracker.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.arbeitszeit.tracker.data.database.AppDatabase
+import com.arbeitszeit.tracker.data.entity.WeekTemplate
+import com.arbeitszeit.tracker.data.entity.WeekTemplateEntry
+import com.arbeitszeit.tracker.utils.DateUtils
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+
+class WeekTemplatesViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val database = AppDatabase.getDatabase(application)
+    private val weekTemplateDao = database.weekTemplateDao()
+    private val timeEntryDao = database.timeEntryDao()
+    private val settingsDao = database.userSettingsDao()
+
+    // Alle verfügbaren Vorlagen
+    val allTemplates: StateFlow<List<WeekTemplate>> = weekTemplateDao.getAllTemplatesFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * Erstellt eine neue Vorlage aus einer bestehenden Woche
+     */
+    fun createTemplateFromWeek(name: String, description: String, weekStartDate: LocalDate) {
+        viewModelScope.launch {
+            val settings = settingsDao.getSettings()
+            val weekDays = DateUtils.getDaysOfWeek(weekStartDate)
+            val startDate = DateUtils.dateToString(weekDays.first())
+            val endDate = DateUtils.dateToString(weekDays.last())
+
+            // Lade Einträge der Woche
+            val weekEntries = timeEntryDao.getEntriesByDateRange(startDate, endDate)
+
+            // Erstelle Template
+            val template = WeekTemplate(
+                name = name,
+                description = description
+            )
+            val templateId = weekTemplateDao.insertTemplate(template)
+
+            // Erstelle Template-Einträge aus Wochen-Einträgen
+            val templateEntries = weekEntries.mapNotNull { entry ->
+                val date = LocalDate.parse(entry.datum)
+                val dayOfWeek = date.dayOfWeek.value // 1=Montag, 7=Sonntag
+
+                // Nur Einträge mit Daten speichern
+                if (entry.startZeit != null || entry.endZeit != null ||
+                    entry.typ != "NORMAL" || entry.notiz.isNotEmpty()
+                ) {
+                    WeekTemplateEntry(
+                        templateId = templateId,
+                        dayOfWeek = dayOfWeek,
+                        startZeit = entry.startZeit,
+                        endZeit = entry.endZeit,
+                        pauseMinuten = entry.pauseMinuten,
+                        typ = entry.typ,
+                        notiz = entry.notiz
+                    )
+                } else null
+            }
+
+            weekTemplateDao.insertEntries(templateEntries)
+        }
+    }
+
+    /**
+     * Wendet eine Vorlage auf eine Woche an
+     */
+    fun applyTemplateToWeek(templateId: Long, weekStartDate: LocalDate) {
+        viewModelScope.launch {
+            val settings = settingsDao.getSettings()
+            val weekDays = DateUtils.getDaysOfWeek(weekStartDate)
+
+            // Lade Template-Einträge
+            val templateEntries = weekTemplateDao.getEntriesByTemplate(templateId)
+
+            // Wende Template auf jeden Tag an
+            templateEntries.forEach { templateEntry ->
+                // Finde den entsprechenden Tag in der Zielwoche
+                val targetDate = weekDays.find { it.dayOfWeek.value == templateEntry.dayOfWeek }
+
+                if (targetDate != null) {
+                    val dateString = DateUtils.dateToString(targetDate)
+                    val existingEntry = timeEntryDao.getEntryByDate(dateString)
+
+                    if (existingEntry != null) {
+                        // Update existing entry
+                        timeEntryDao.update(existingEntry.copy(
+                            startZeit = templateEntry.startZeit,
+                            endZeit = templateEntry.endZeit,
+                            pauseMinuten = templateEntry.pauseMinuten,
+                            typ = templateEntry.typ,
+                            notiz = templateEntry.notiz,
+                            isManualEntry = true,
+                            updatedAt = System.currentTimeMillis()
+                        ))
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Löscht eine Vorlage
+     */
+    fun deleteTemplate(template: WeekTemplate) {
+        viewModelScope.launch {
+            weekTemplateDao.deleteTemplate(template)
+        }
+    }
+
+    /**
+     * Holt die Einträge einer Vorlage zur Vorschau
+     */
+    suspend fun getTemplateEntries(templateId: Long): List<WeekTemplateEntry> {
+        return weekTemplateDao.getEntriesByTemplate(templateId)
+    }
+}
