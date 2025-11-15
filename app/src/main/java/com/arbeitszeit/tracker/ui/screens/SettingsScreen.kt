@@ -38,7 +38,8 @@ fun SettingsScreen(
             settings = settings,
             snackbarHostState = snackbarHostState,
             onNavigateBack = { selectedSection = null },
-            onNavigateToGeofencing = onNavigateToGeofencing
+            onNavigateToGeofencing = onNavigateToGeofencing,
+            onNavigateToTemplateManagement = onNavigateToTemplateManagement
         )
         return
     }
@@ -116,6 +117,19 @@ fun SettingsScreen(
                 )
             }
 
+            // Excel & Vorlagen
+            item {
+                SettingsMenuSection(title = "Excel & Vorlagen")
+            }
+            item {
+                SettingsMenuItem(
+                    icon = Icons.Default.Description,
+                    title = "Excel-Vorlagen",
+                    subtitle = "Vorlagen für verschiedene Jahre verwalten",
+                    onClick = { selectedSection = SettingsSection.EXCEL_TEMPLATES }
+                )
+            }
+
             // Daten & Sicherheit
             item {
                 SettingsMenuSection(title = "Daten & Sicherheit")
@@ -145,6 +159,7 @@ enum class SettingsSection {
     WORK_TIME,
     DAILY_HOURS,
     GEOFENCING,
+    EXCEL_TEMPLATES,
     DELETE_DATA
 }
 
@@ -239,7 +254,8 @@ private fun SettingsDetailScreen(
     settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
     snackbarHostState: SnackbarHostState,
     onNavigateBack: () -> Unit,
-    onNavigateToGeofencing: () -> Unit
+    onNavigateToGeofencing: () -> Unit,
+    onNavigateToTemplateManagement: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -252,6 +268,7 @@ private fun SettingsDetailScreen(
                             SettingsSection.WORK_TIME -> "Arbeitszeit"
                             SettingsSection.DAILY_HOURS -> "Sollzeiten"
                             SettingsSection.GEOFENCING -> "Geofencing & Orte"
+                            SettingsSection.EXCEL_TEMPLATES -> "Excel-Vorlagen"
                             SettingsSection.DELETE_DATA -> "Daten löschen"
                         }
                     )
@@ -276,6 +293,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.WORK_TIME -> WorkTimeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.DAILY_HOURS -> DailyHoursSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
+                SettingsSection.EXCEL_TEMPLATES -> ExcelTemplatesSection(onNavigateToTemplateManagement)
                 SettingsSection.DELETE_DATA -> DeleteDataSection(viewModel, snackbarHostState, onNavigateBack)
             }
         }
@@ -629,6 +647,109 @@ private fun GeofencingSection(
                     "• Die Zeiterfassung erfolgt im Hintergrund\n" +
                     "• Du kannst mehrere Standorte definieren\n" +
                     "• Die Genauigkeit hängt vom GPS-Signal ab",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Excel Templates Section
+ */
+@Composable
+private fun ExcelTemplatesSection(
+    onNavigateToTemplateManagement: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Info Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Description,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Excel-Vorlagen",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            "Verwalte Excel-Vorlagen für verschiedene Jahre",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Text(
+                    "Importiere und verwalte Excel-Vorlagen, die beim Export verwendet werden. " +
+                    "Du kannst für jedes Jahr eine eigene Vorlage hinterlegen.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Button(
+                    onClick = onNavigateToTemplateManagement,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Vorlagen verwalten")
+                }
+            }
+        }
+
+        // Hinweise Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Hinweise",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Text(
+                    "• Die Excel-Vorlage wird beim Export verwendet\n" +
+                    "• Pro Jahr kann eine Vorlage hinterlegt werden\n" +
+                    "• Die Vorlage muss die richtigen Spalten enthalten\n" +
+                    "• Du kannst die Standard-Vorlage jederzeit wieder aktivieren",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

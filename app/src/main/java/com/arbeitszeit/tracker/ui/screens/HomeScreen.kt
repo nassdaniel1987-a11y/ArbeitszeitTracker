@@ -89,35 +89,34 @@ fun HomeScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            // FAB mit Long-Press für Schnellaktionen
+            // FAB öffnet Schnellaktionen-Menü
             Box {
                 ExtendedFloatingActionButton(
                     onClick = {
                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                        viewModel.quickStamp()
-                    },
-                    modifier = Modifier.combinedClickable(
-                        onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            viewModel.quickStamp()
-                        },
-                        onLongClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                            showQuickActionMenu = true
-                        }
-                    )
+                        showQuickActionMenu = true
+                    }
                 ) {
-                    Icon(Icons.Default.Add, "Stempeln")
+                    Icon(Icons.Default.MoreVert, "Aktionen")
                     Spacer(Modifier.width(8.dp))
-                    Text("Stempeln")
+                    Text("Aktionen")
                 }
 
-                // Schnellaktionen-Menü (erscheint bei Long-Press)
+                // Schnellaktionen-Menü
                 DropdownMenu(
                     expanded = showQuickActionMenu,
                     onDismissRequest = { showQuickActionMenu = false },
                     offset = DpOffset(x = 0.dp, y = (-8).dp)
                 ) {
+                DropdownMenuItem(
+                    text = { Text("Stempeln") },
+                    leadingIcon = { Icon(Icons.Default.AccessTime, null) },
+                    onClick = {
+                        viewModel.quickStamp()
+                        showQuickActionMenu = false
+                    }
+                )
+                HorizontalDivider()
                 DropdownMenuItem(
                     text = { Text("Urlaub eintragen") },
                     leadingIcon = { Icon(Icons.Default.BeachAccess, null) },
