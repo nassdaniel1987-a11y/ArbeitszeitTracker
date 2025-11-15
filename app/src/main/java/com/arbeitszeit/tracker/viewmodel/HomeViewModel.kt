@@ -45,12 +45,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     // Settings
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     // Heutiger Eintrag
     private val todayDate = DateUtils.today()
     val todayEntry: StateFlow<TimeEntry?> = timeEntryDao.getEntryByDateFlow(todayDate)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     // Einträge der ausgewählten Woche - nur Arbeitstage
     val weekEntries: StateFlow<List<TimeEntry>> = combine(
@@ -73,7 +73,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             entries
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
     init {
         // Erstelle heute-Eintrag falls nicht vorhanden

@@ -20,7 +20,7 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
 
     // Alle verfügbaren Vorlagen
     val allTemplates: StateFlow<List<WeekTemplate>> = weekTemplateDao.getAllTemplatesFlow()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     /**
      * Erstellt eine neue Vorlage aus einer bestehenden Woche

@@ -30,11 +30,11 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
 
     // Alle Arbeitsorte
     val workLocations: StateFlow<List<WorkLocation>> = workLocationDao.getAllLocationsFlow()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     // Settings
     val settings = settingsDao.getSettingsFlow()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     /**
      * Fügt einen neuen Arbeitsort hinzu
