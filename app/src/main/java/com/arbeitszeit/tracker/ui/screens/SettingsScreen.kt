@@ -670,6 +670,12 @@ private fun ErweitertTab(
             color = MaterialTheme.colorScheme.primary
         )
 
+        // Dark Mode
+        DarkModeCard(settings = settings, viewModel = viewModel)
+
+        Spacer(Modifier.height(8.dp))
+
+
         // Excel-Vorlagen Verwaltung
         Card(
             colors = CardDefaults.cardColors(
