@@ -144,7 +144,7 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
                         timeEntryDao.insert(
                             com.arbeitszeit.tracker.data.entity.TimeEntry(
                                 datum = dateString,
-                                wochentag = com.arbeitszeit.tracker.utils.DateUtils.getWeekdayName(targetDate),
+                                wochentag = DateUtils.getWeekdayShort(targetDate),
                                 kalenderwoche = weekNumber,
                                 jahr = year,
                                 startZeit = templateEntry.startZeit,
