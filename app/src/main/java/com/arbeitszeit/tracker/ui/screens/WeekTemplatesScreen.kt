@@ -349,7 +349,10 @@ private fun DayTimeInputRow(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (dayData.enabled)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
@@ -358,11 +361,22 @@ private fun DayTimeInputRow(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                dayName,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Checkbox(
+                    checked = dayData.enabled,
+                    onCheckedChange = { onDataChange(dayData.copy(enabled = it)) }
+                )
+                Text(
+                    dayName,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            if (dayData.enabled) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -432,6 +446,7 @@ private fun DayTimeInputRow(
                     singleLine = true
                 )
             }
+            }  // Ende if (dayData.enabled)
         }
     }
 }
