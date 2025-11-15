@@ -16,6 +16,7 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object Geofencing : Screen("geofencing")
     object TemplateManagement : Screen("template_management")
+    object WeekTemplates : Screen("week_templates")
 }
 
 @Composable
@@ -31,7 +32,8 @@ fun NavGraph(
             val viewModel: HomeViewModel = viewModel()
             HomeScreen(
                 viewModel = viewModel,
-                onNavigateToCalendar = { navController.navigate(Screen.Calendar.route) }
+                onNavigateToCalendar = { navController.navigate(Screen.Calendar.route) },
+                onNavigateToWeekTemplates = { navController.navigate(Screen.WeekTemplates.route) }
             )
         }
         
@@ -67,6 +69,14 @@ fun NavGraph(
         composable(Screen.TemplateManagement.route) {
             val viewModel: TemplateViewModel = viewModel()
             TemplateManagementScreen(viewModel = viewModel)
+        }
+
+        composable(Screen.WeekTemplates.route) {
+            val viewModel: WeekTemplatesViewModel = viewModel()
+            WeekTemplatesScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

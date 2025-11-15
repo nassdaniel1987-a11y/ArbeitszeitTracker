@@ -37,7 +37,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onNavigateToCalendar: () -> Unit
+    onNavigateToCalendar: () -> Unit,
+    onNavigateToWeekTemplates: () -> Unit = {}
 ) {
     val todayEntry by viewModel.todayEntry.collectAsState()
     val userSettings by viewModel.userSettings.collectAsState()
@@ -149,6 +150,14 @@ fun HomeScreen(
                         leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
                         onClick = {
                             onNavigateToCalendar()
+                            showQuickActionMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("📝 Wochen-Vorlagen") },
+                        leadingIcon = { Icon(Icons.Default.ContentCopy, null) },
+                        onClick = {
+                            onNavigateToWeekTemplates()
                             showQuickActionMenu = false
                         }
                     )
