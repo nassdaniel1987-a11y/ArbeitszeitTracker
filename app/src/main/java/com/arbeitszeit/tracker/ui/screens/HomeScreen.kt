@@ -112,15 +112,6 @@ fun HomeScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Kalender") },
-                                leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
-                                onClick = {
-                                    onNavigateToCalendar()
-                                    showOverflowMenu = false
-                                }
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
                                 text = { Text("Hilfe") },
                                 leadingIcon = { Icon(Icons.Default.HelpOutline, null) },
                                 onClick = {
@@ -259,6 +250,7 @@ fun HomeScreen(
                         onPreviousWeek = { viewModel.previousWeek() },
                         onNextWeek = { viewModel.nextWeek() },
                         onGoToCurrentWeek = { viewModel.goToCurrentWeek() },
+                        onApplyTemplate = { onNavigateToWeekTemplates() },
                         firstMonday = userSettings?.ersterMontagImJahr
                     )
                 }
@@ -415,6 +407,7 @@ private fun WeekNavigationHeader(
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
     onGoToCurrentWeek: () -> Unit,
+    onApplyTemplate: () -> Unit = {},
     firstMonday: String? = null
 ) {
     val weekDays = DateUtils.getDaysOfWeek(selectedWeekDate)
@@ -465,15 +458,34 @@ private fun WeekNavigationHeader(
                 }
             }
 
-            if (!isCurrentWeek) {
-                Button(
-                    onClick = onGoToCurrentWeek,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+            // Buttons Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (!isCurrentWeek) {
+                    Button(
+                        onClick = onGoToCurrentWeek,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Zur aktuellen Woche")
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = onApplyTemplate,
+                    modifier = if (isCurrentWeek) Modifier.fillMaxWidth() else Modifier.weight(1f)
                 ) {
-                    Text("Zur aktuellen Woche")
+                    Icon(
+                        Icons.Default.ContentPaste,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Vorlage anwenden")
                 }
             }
         }
