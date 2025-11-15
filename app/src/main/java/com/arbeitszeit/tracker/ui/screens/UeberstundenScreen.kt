@@ -353,7 +353,7 @@ private fun MonatCard(
                 }
 
                 Column(
-                    horizontalAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = "Erfüllung",
