@@ -80,6 +80,16 @@ fun ExportScreen(viewModel: ExportViewModel) {
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
 
+                OutlinedButton(
+                    onClick = { viewModel.loadExportPreview() },
+                    enabled = !uiState.isExporting && !uiState.isImporting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Visibility, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Vorschau anzeigen")
+                }
+
                 Button(
                     onClick = { viewModel.exportExcel() },
                     enabled = !uiState.isExporting && !uiState.isImporting,
@@ -254,6 +264,120 @@ fun ExportScreen(viewModel: ExportViewModel) {
             }
         )
     }
+
+    // Export Vorschau Dialog
+    uiState.previewData?.let { previewData ->
+        ExportPreviewDialog(
+            previewData = previewData,
+            onConfirm = {
+                viewModel.closePreview()
+                viewModel.exportExcel()
+            },
+            onDismiss = { viewModel.closePreview() }
+        )
+    }
+}
+
+@Composable
+fun ExportPreviewDialog(
+    previewData: com.arbeitszeit.tracker.viewmodel.ExportPreviewData,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(Icons.Default.Visibility, contentDescription = null)
+                Text("Export Vorschau ${previewData.year}")
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Übersicht
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            "Übersicht",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
+                        Text("Jahr: ${previewData.year}")
+                        Text("Name: ${previewData.userName}")
+                        Text("Einrichtung: ${previewData.einrichtung}")
+                        Text(
+                            "Einträge gesamt: ${previewData.totalEntries}",
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Beispiel-Daten
+                Text(
+                    "Beispiel-Einträge (erste 10):",
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.heightIn(max = 200.dp)
+                ) {
+                    previewData.entries.forEach { entry ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    entry.datum,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    "${entry.startZeit ?: "--"}:${entry.endZeit ?: "--"}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Icon(Icons.Default.FileDownload, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Jetzt exportieren")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
 }
 
 @Composable

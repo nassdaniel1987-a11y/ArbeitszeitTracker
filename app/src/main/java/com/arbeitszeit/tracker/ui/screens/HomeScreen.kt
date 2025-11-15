@@ -38,7 +38,8 @@ import kotlinx.coroutines.delay
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToCalendar: () -> Unit,
-    onNavigateToWeekTemplates: () -> Unit = {}
+    onNavigateToWeekTemplates: () -> Unit = {},
+    onNavigateToHelp: () -> Unit = {}
 ) {
     val todayEntry by viewModel.todayEntry.collectAsState()
     val userSettings by viewModel.userSettings.collectAsState()
@@ -158,6 +159,14 @@ fun HomeScreen(
                         leadingIcon = { Icon(Icons.Default.ContentCopy, null) },
                         onClick = {
                             onNavigateToWeekTemplates()
+                            showQuickActionMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("❓ Hilfe") },
+                        leadingIcon = { Icon(Icons.Default.HelpOutline, null) },
+                        onClick = {
+                            onNavigateToHelp()
                             showQuickActionMenu = false
                         }
                     )

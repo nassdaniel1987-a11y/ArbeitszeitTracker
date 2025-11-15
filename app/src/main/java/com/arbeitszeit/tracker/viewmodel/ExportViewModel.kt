@@ -332,6 +332,40 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
     }
+
+    /**
+     * Lädt Vorschau-Daten für den Export
+     */
+    fun loadExportPreview() {
+        viewModelScope.launch {
+            try {
+                val year = LocalDate.now().year
+                val settings = settingsDao.getSettings()
+                val entries = timeEntryDao.getEntriesByYear(year)
+
+                _uiState.value = _uiState.value.copy(
+                    previewData = ExportPreviewData(
+                        year = year,
+                        totalEntries = entries.size,
+                        entries = entries.take(10), // Nur erste 10 für Vorschau
+                        userName = settings?.name ?: "",
+                        einrichtung = settings?.einrichtung ?: ""
+                    )
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Vorschau konnte nicht geladen werden: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Schließt die Vorschau
+     */
+    fun closePreview() {
+        _uiState.value = _uiState.value.copy(previewData = null)
+    }
 }
 
 data class ExportUiState(
@@ -341,5 +375,14 @@ data class ExportUiState(
     val exportSuccess: Boolean = false,
     val importSuccess: Boolean = false,
     val importedEntriesCount: Int = 0,
-    val error: String? = null
+    val error: String? = null,
+    val previewData: ExportPreviewData? = null
+)
+
+data class ExportPreviewData(
+    val year: Int,
+    val totalEntries: Int,
+    val entries: List<com.arbeitszeit.tracker.data.entity.TimeEntry>,
+    val userName: String,
+    val einrichtung: String
 )
