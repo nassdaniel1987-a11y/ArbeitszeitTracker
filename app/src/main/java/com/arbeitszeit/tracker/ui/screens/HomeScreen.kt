@@ -1,5 +1,6 @@
 package com.arbeitszeit.tracker.ui.screens
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -15,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
@@ -51,10 +53,15 @@ fun HomeScreen(
         itemsVisible = true
     }
 
+    val view = LocalView.current
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.quickStamp() }
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.CLICK)
+                    viewModel.quickStamp()
+                }
             ) {
                 Icon(Icons.Default.Add, "Schnell stempeln")
             }
