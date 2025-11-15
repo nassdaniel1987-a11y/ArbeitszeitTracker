@@ -56,7 +56,7 @@ fun HomeScreen(
             FloatingActionButton(
                 onClick = { viewModel.quickStamp() }
             ) {
-                Icon(Icons.Default.AccessTime, "Quick Stempel")
+                Icon(Icons.Default.Add, "Schnell stempeln")
             }
         }
     ) { padding ->
@@ -92,6 +92,28 @@ fun HomeScreen(
                     GeofencingStatusCard(
                         locationStatus = locationStatus,
                         onRefresh = { viewModel.checkLocationStatus() }
+                    )
+                }
+            }
+
+            // Wochen-Statistik Dashboard
+            item {
+                AnimatedVisibility(
+                    visible = itemsVisible,
+                    enter = fadeIn(animationSpec = tween(400, delayMillis = 150)) +
+                            slideInVertically(animationSpec = tween(400, delayMillis = 150), initialOffsetY = { it / 4 })
+                ) {
+                    val summary = viewModel.getWeekSummary()
+                    val today = LocalDate.now()
+                    val daysUntilWeekend = when (today.dayOfWeek.value) {
+                        in 1..5 -> 6 - today.dayOfWeek.value // Mo-Fr: Tage bis Samstag
+                        else -> 0 // Wochenende
+                    }
+
+                    WeekStatsCard(
+                        istMinuten = summary.istMinuten,
+                        sollMinuten = summary.sollMinuten,
+                        daysRemaining = daysUntilWeekend
                     )
                 }
             }
