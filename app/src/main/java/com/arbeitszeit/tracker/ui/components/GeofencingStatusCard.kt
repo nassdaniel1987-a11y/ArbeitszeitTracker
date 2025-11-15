@@ -4,9 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOff
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,7 +29,8 @@ fun GeofencingStatusCard(
                 is LocationStatus.NotAtWork -> MaterialTheme.colorScheme.surfaceVariant
                 else -> MaterialTheme.colorScheme.surface
             }
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -45,19 +44,24 @@ fun GeofencingStatusCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                // Status indicator circle
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .background(
-                            color = when (locationStatus) {
-                                is LocationStatus.AtWork -> LocationAtWork
-                                is LocationStatus.NotAtWork -> LocationNotAtWork
-                                is LocationStatus.GeofencingDisabled -> LocationInactive
-                                else -> LocationInactive
-                            },
-                            shape = CircleShape
-                        )
+                // Status Icon statt nur Punkt
+                Icon(
+                    imageVector = when (locationStatus) {
+                        is LocationStatus.AtWork -> Icons.Default.LocationOn
+                        is LocationStatus.NotAtWork -> Icons.Default.LocationOff
+                        is LocationStatus.GeofencingDisabled -> Icons.Default.LocationDisabled
+                        is LocationStatus.NoLocations -> Icons.Default.AddLocation
+                        is LocationStatus.NoPermission -> Icons.Default.GpsOff
+                        is LocationStatus.LocationUnavailable -> Icons.Default.LocationSearching
+                        else -> Icons.Default.Help
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = when (locationStatus) {
+                        is LocationStatus.AtWork -> LocationAtWork
+                        is LocationStatus.NotAtWork -> LocationNotAtWork
+                        else -> LocationInactive
+                    }
                 )
 
                 Column {
@@ -76,18 +80,29 @@ fun GeofencingStatusCard(
                         fontWeight = FontWeight.Bold
                     )
 
-                    if (locationStatus is LocationStatus.AtWork) {
-                        Text(
-                            text = locationStatus.location.name,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else if (locationStatus is LocationStatus.Error) {
-                        Text(
-                            text = locationStatus.message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                    when (locationStatus) {
+                        is LocationStatus.AtWork -> {
+                            Text(
+                                text = locationStatus.location.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        is LocationStatus.NotAtWork -> {
+                            Text(
+                                text = "Du bist gerade unterwegs",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        is LocationStatus.Error -> {
+                            Text(
+                                text = locationStatus.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        else -> {}
                     }
                 }
             }
