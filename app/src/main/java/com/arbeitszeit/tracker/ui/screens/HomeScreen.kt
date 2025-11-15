@@ -269,7 +269,8 @@ fun HomeScreen(
                         confirmValueChange = { dismissValue ->
                             if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
                                 viewModel.deleteEntry(entry.datum)
-                                true
+                                // false zurückgeben damit Box zurückspringt (Eintrag wird geleert, nicht entfernt)
+                                false
                             } else {
                                 false
                             }
