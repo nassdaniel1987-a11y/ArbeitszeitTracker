@@ -17,8 +17,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
@@ -286,6 +288,88 @@ fun HomeScreen(
             }
         }
     }
+
+    // Pause Dialog mit Slider
+    if (showPauseDialog && todayEntry != null) {
+        PauseSliderDialog(
+            currentPauseMinutes = todayEntry.pauseMinuten,
+            onDismiss = { showPauseDialog = false },
+            onConfirm = { minutes ->
+                viewModel.setPause(minutes)
+                showPauseDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun PauseSliderDialog(
+    currentPauseMinutes: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var pauseMinutes by remember { mutableFloatStateOf(currentPauseMinutes.toFloat()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Coffee, "Pause") },
+        title = { Text("Pause einstellen") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Anzeige der aktuellen Pause
+                Text(
+                    text = "${pauseMinutes.toInt()} Minuten",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                // Slider (0-120 Minuten)
+                Slider(
+                    value = pauseMinutes,
+                    onValueChange = { pauseMinutes = it },
+                    valueRange = 0f..120f,
+                    steps = 23, // Alle 5 Minuten: 0, 5, 10, ..., 120
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Schnellauswahl-Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(0, 15, 30, 45, 60).forEach { minutes ->
+                        OutlinedButton(
+                            onClick = { pauseMinutes = minutes.toFloat() },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (pauseMinutes.toInt() == minutes) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    Color.Transparent
+                                }
+                            )
+                        ) {
+                            Text("$minutes")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(pauseMinutes.toInt()) }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
 }
 
 @Composable
