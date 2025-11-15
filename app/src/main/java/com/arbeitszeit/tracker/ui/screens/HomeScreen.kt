@@ -274,6 +274,10 @@ fun HomeScreen(
                             } else {
                                 false
                             }
+                        },
+                        positionalThreshold = { totalDistance ->
+                            // User muss mindestens 70% der Breite swipen um zu löschen
+                            totalDistance * 0.7f
                         }
                     )
 
