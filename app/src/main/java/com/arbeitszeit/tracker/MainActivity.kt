@@ -7,13 +7,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.arbeitszeit.tracker.data.database.AppDatabase
@@ -26,6 +29,8 @@ import com.arbeitszeit.tracker.utils.NotificationHelper
 import com.arbeitszeit.tracker.worker.ReminderWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -55,7 +60,18 @@ class MainActivity : ComponentActivity() {
         migrateKalenderwochen()
 
         setContent {
-            ArbeitszeitTrackerTheme {
+            // Observe settings for dark mode
+            val database = AppDatabase.getDatabase(this)
+            val settings by database.userSettingsDao().getSettingsFlow()
+                .collectAsState(initial = null)
+
+            val darkTheme = when (settings?.darkMode) {
+                "dark" -> true
+                "light" -> false
+                else -> isSystemInDarkTheme() // "system" or null
+            }
+
+            ArbeitszeitTrackerTheme(darkTheme = darkTheme) {
                 val navController = rememberNavController()
 
                 Scaffold(

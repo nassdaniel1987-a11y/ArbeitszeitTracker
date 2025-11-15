@@ -253,6 +253,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Aktualisiert nur den Dark Mode
+     */
+    fun updateDarkMode(mode: String) {
+        viewModelScope.launch {
+            val settings = settingsDao.getSettings() ?: return@launch
+            settingsDao.insertOrUpdate(settings.copy(
+                darkMode = mode,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+
+    /**
      * Löscht alle Zeiteinträge (ACHTUNG: Kann nicht rückgängig gemacht werden!)
      */
     fun deleteAllTimeEntries() {
