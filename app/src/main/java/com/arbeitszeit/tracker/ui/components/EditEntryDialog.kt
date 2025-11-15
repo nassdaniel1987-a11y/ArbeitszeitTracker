@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,9 +30,7 @@ fun EditEntryDialog(
     var startZeitMinuten by remember { mutableStateOf(entry?.startZeit) }
     var endZeitMinuten by remember { mutableStateOf(entry?.endZeit) }
 
-    var pauseStr by remember {
-        mutableStateOf(if (entry?.pauseMinuten ?: 0 > 0) entry!!.pauseMinuten.toString() else "")
-    }
+    var pauseMinuten by remember { mutableIntStateOf(entry?.pauseMinuten ?: 0) }
     var selectedTyp by remember { mutableStateOf(entry?.typ ?: TimeEntry.TYP_NORMAL) }
     var notiz by remember { mutableStateOf(entry?.notiz ?: "") }
 
@@ -39,6 +38,7 @@ fun EditEntryDialog(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showPauseSlider by remember { mutableStateOf(false) }
 
     // Prüfe ob Eintrag Daten hat (zum Anzeigen des Löschen-Buttons)
     val hasData = entry?.let {
@@ -115,15 +115,21 @@ fun EditEntryDialog(
                         onClear = { endZeitMinuten = null }
                     )
 
-                    // Pause
-                    OutlinedTextField(
-                        value = pauseStr,
-                        onValueChange = { pauseStr = it.filter { char -> char.isDigit() } },
-                        label = { Text("Pause (Minuten)") },
-                        placeholder = { Text("30") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    // Pause mit Slider
+                    Text("Pause:", style = MaterialTheme.typography.labelMedium)
+                    OutlinedButton(
+                        onClick = { showPauseSlider = true },
                         modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        Text(
+                            text = if (pauseMinuten > 0) {
+                                "$pauseMinuten Min"
+                            } else {
+                                "Keine Pause"
+                            },
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 }
 
                 Divider()
@@ -157,11 +163,11 @@ fun EditEntryDialog(
 
                 Button(
                     onClick = {
-                        val pauseMinuten = if (selectedTyp == TimeEntry.TYP_NORMAL) {
-                            pauseStr.toIntOrNull() ?: 0
+                        val pause = if (selectedTyp == TimeEntry.TYP_NORMAL) {
+                            pauseMinuten
                         } else 0
 
-                        onSave(startZeitMinuten, endZeitMinuten, pauseMinuten, selectedTyp, notiz)
+                        onSave(startZeitMinuten, endZeitMinuten, pause, selectedTyp, notiz)
                     }
                 ) {
                     Text("Speichern")
@@ -174,6 +180,18 @@ fun EditEntryDialog(
             }
         }
     )
+
+    // Pause Slider Dialog
+    if (showPauseSlider) {
+        PauseSliderDialog(
+            currentPauseMinutes = pauseMinuten,
+            onDismiss = { showPauseSlider = false },
+            onConfirm = { minutes ->
+                pauseMinuten = minutes
+                showPauseSlider = false
+            }
+        )
+    }
 
     // Bestätigungsdialog für Löschen
     if (showDeleteConfirmDialog) {
@@ -287,5 +305,78 @@ private fun TimePickerDialog(
             }
         },
         text = { content() }
+    )
+}
+
+/**
+ * Pause Slider Dialog
+ */
+@Composable
+private fun PauseSliderDialog(
+    currentPauseMinutes: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var pauseMinutes by remember { mutableFloatStateOf(currentPauseMinutes.toFloat()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Coffee, "Pause") },
+        title = { Text("Pause einstellen") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Anzeige der aktuellen Pause
+                Text(
+                    text = "${pauseMinutes.toInt()} Minuten",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                // Slider (0-120 Minuten)
+                Slider(
+                    value = pauseMinutes,
+                    onValueChange = { pauseMinutes = it },
+                    valueRange = 0f..120f,
+                    steps = 23, // Alle 5 Minuten: 0, 5, 10, ..., 120
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Schnellauswahl-Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(0, 15, 30, 45, 60).forEach { minutes ->
+                        OutlinedButton(
+                            onClick = { pauseMinutes = minutes.toFloat() },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (pauseMinutes.toInt() == minutes) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    androidx.compose.ui.graphics.Color.Transparent
+                                }
+                            )
+                        ) {
+                            Text("$minutes")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(pauseMinutes.toInt()) }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
     )
 }
