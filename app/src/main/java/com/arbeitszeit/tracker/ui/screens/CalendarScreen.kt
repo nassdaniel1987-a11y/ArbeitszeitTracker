@@ -32,11 +32,35 @@ import java.time.format.DateTimeFormatter
 fun CalendarScreen(viewModel: CalendarViewModel) {
     val month by viewModel.currentMonth.collectAsState()
     val entries by viewModel.monthEntries.collectAsState()
+    val deletedEntry by viewModel.deletedEntry.collectAsState()
 
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val today = LocalDate.now()
+
+    // Zeige Snackbar wenn Eintrag gelöscht wurde
+    LaunchedEffect(deletedEntry) {
+        if (deletedEntry != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = "Eintrag gelöscht",
+                actionLabel = "Rückgängig",
+                duration = SnackbarDuration.Short
+            )
+
+            when (result) {
+                SnackbarResult.ActionPerformed -> {
+                    // User hat auf "Rückgängig" geklickt
+                    viewModel.undoDeleteEntry()
+                }
+                SnackbarResult.Dismissed -> {
+                    // Snackbar wurde geschlossen ohne Undo
+                    viewModel.clearDeletedEntry()
+                }
+            }
+        }
+    }
 
     // Berechne Monats-Statistik
     val (totalSoll, totalIst, diffAndCompleted) = remember(entries) {
@@ -48,11 +72,16 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     }
     val (totalDiff, completedDays) = diffAndCompleted
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         // Monatsnavigation
         item {
             Row(
@@ -252,6 +281,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     }
                 }
             }
+        }
         }
     }
 
