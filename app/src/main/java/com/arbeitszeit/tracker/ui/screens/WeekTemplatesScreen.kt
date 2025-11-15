@@ -146,6 +146,7 @@ fun WeekTemplatesScreen(
                 viewModel.applyTemplateToWeek(selectedTemplate!!.id, weekStartDate)
                 showApplyDialog = false
                 selectedTemplate = null
+                onNavigateBack()  // Zurück zum HomeScreen
             }
         )
     }
@@ -312,8 +313,10 @@ private fun CreateTemplateDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    // Konvertiere zu Map<Int, DayTimeEntry>
+                    // Konvertiere zu Map<Int, DayTimeEntry> - nur aktivierte Tage
                     val entries = dayData.mapNotNull { (day, data) ->
+                        if (!data.enabled) return@mapNotNull null
+
                         val startMinutes = timeToMinutes(data.startHour, data.startMinute)
                         val endMinutes = timeToMinutes(data.endHour, data.endMinute)
                         val pause = data.pause.toIntOrNull() ?: 0
@@ -435,6 +438,7 @@ private fun DayTimeInputRow(
 
 // Helper data class
 private data class DayData(
+    val enabled: Boolean = false,
     val startHour: String = "",
     val startMinute: String = "",
     val endHour: String = "",
