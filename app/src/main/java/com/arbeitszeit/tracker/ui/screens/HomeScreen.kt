@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,11 +42,13 @@ fun HomeScreen(
     val weekEntries by viewModel.weekEntries.collectAsState()
     val selectedWeekDate by viewModel.selectedWeekDate.collectAsState()
     val locationStatus by viewModel.locationStatus.collectAsState()
+    val deletedEntry by viewModel.deletedEntry.collectAsState()
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showPauseDialog by remember { mutableStateOf(false) }
     var showQuickActionMenu by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Animation state for staggered fade-in
     var itemsVisible by remember { mutableStateOf(false) }
@@ -55,9 +58,30 @@ fun HomeScreen(
         itemsVisible = true
     }
 
+    // Zeige Snackbar wenn Eintrag gelöscht wurde
+    LaunchedEffect(deletedEntry) {
+        if (deletedEntry != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = "Eintrag gelöscht",
+                actionLabel = "Rückgängig",
+                duration = SnackbarDuration.Short
+            )
+
+            when (result) {
+                SnackbarResult.ActionPerformed -> {
+                    viewModel.undoDeleteEntry()
+                }
+                SnackbarResult.Dismissed -> {
+                    viewModel.clearDeletedEntry()
+                }
+            }
+        }
+    }
+
     val view = LocalView.current
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             Box {
                 FloatingActionButton(
@@ -205,13 +229,49 @@ fun HomeScreen(
                 }
             }
 
-            items(weekEntries) { entry ->
+            items(
+                items = weekEntries,
+                key = { it.datum } // Wichtig für stabile Liste bei Swipe
+            ) { entry ->
                 AnimatedVisibility(
                     visible = itemsVisible,
                     enter = fadeIn(animationSpec = tween(300)) +
                             slideInVertically(animationSpec = tween(300), initialOffsetY = { it / 4 })
                 ) {
-                    WeekEntryCard(entry = entry)
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { dismissValue ->
+                            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+                                viewModel.deleteEntry(entry.datum)
+                                true
+                            } else {
+                                false
+                            }
+                        }
+                    )
+
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        backgroundContent = {
+                            // Roter Hintergrund mit Lösch-Icon beim Wischen
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.errorContainer)
+                                    .padding(horizontal = 20.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Löschen",
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        },
+                        content = {
+                            WeekEntryCard(entry = entry)
+                        }
+                    )
                 }
             }
 

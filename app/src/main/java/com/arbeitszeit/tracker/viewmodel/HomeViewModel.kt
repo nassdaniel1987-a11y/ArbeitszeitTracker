@@ -39,6 +39,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _locationStatus = MutableStateFlow<LocationStatus>(LocationStatus.Unknown)
     val locationStatus: StateFlow<LocationStatus> = _locationStatus.asStateFlow()
 
+    // Für Undo-Funktion: Speichert gelöschten Eintrag temporär
+    private val _deletedEntry = MutableStateFlow<TimeEntry?>(null)
+    val deletedEntry: StateFlow<TimeEntry?> = _deletedEntry.asStateFlow()
+
     // Settings
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -288,6 +292,49 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    /**
+     * Löscht einen Eintrag (setzt alle Werte zurück auf leer)
+     * Speichert den Eintrag für Undo-Funktion
+     */
+    fun deleteEntry(date: String) {
+        viewModelScope.launch {
+            val entry = timeEntryDao.getEntryByDate(date) ?: return@launch
+
+            // Speichere Original-Eintrag für Undo
+            _deletedEntry.value = entry
+
+            // Setze alle Werte zurück auf Standard (leerer Eintrag)
+            timeEntryDao.update(entry.copy(
+                startZeit = null,
+                endZeit = null,
+                pauseMinuten = 0,
+                typ = TimeEntry.TYP_NORMAL,
+                notiz = "",
+                isManualEntry = false,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+
+    /**
+     * Stellt einen gelöschten Eintrag wieder her
+     */
+    fun undoDeleteEntry() {
+        viewModelScope.launch {
+            val entry = _deletedEntry.value ?: return@launch
+
+            timeEntryDao.update(entry)
+            _deletedEntry.value = null
+        }
+    }
+
+    /**
+     * Löscht den gespeicherten Eintrag (nach Timeout oder wenn User abbricht)
+     */
+    fun clearDeletedEntry() {
+        _deletedEntry.value = null
+    }
+
     /**
      * Berechnet Wochen-Statistik
      */
