@@ -38,23 +38,13 @@ fun SettingsScreen(
             settings = settings,
             snackbarHostState = snackbarHostState,
             onNavigateBack = { selectedSection = null },
-            onNavigateToGeofencing = onNavigateToGeofencing,
-            onNavigateToTemplateManagement = onNavigateToTemplateManagement
+            onNavigateToGeofencing = onNavigateToGeofencing
         )
         return
     }
 
     // Hauptmenü (Android Settings-Style)
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Einstellungen") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         LazyColumn(
@@ -64,15 +54,20 @@ fun SettingsScreen(
         ) {
             // Persönliche Daten
             item {
-                SettingsMenuSection(title = "Allgemein")
+                SettingsMenuSection(title = "Persönliche Daten")
             }
             item {
                 SettingsMenuItem(
                     icon = Icons.Default.Person,
-                    title = "Persönliche Daten",
+                    title = "Name & Einrichtung",
                     subtitle = "${settings?.name ?: "Nicht gesetzt"}",
                     onClick = { selectedSection = SettingsSection.PERSONAL_DATA }
                 )
+            }
+
+            // Darstellung
+            item {
+                SettingsMenuSection(title = "Darstellung")
             }
             item {
                 SettingsMenuItem(
@@ -94,7 +89,7 @@ fun SettingsScreen(
             item {
                 SettingsMenuItem(
                     icon = Icons.Default.Schedule,
-                    title = "Arbeitszeit-Einstellungen",
+                    title = "Wochenstunden & Prozent",
                     subtitle = "${settings?.arbeitsumfangProzent ?: 100}% • ${settings?.arbeitsTageProWoche ?: 5} Tage/Woche",
                     onClick = { selectedSection = SettingsSection.WORK_TIME }
                 )
@@ -102,41 +97,28 @@ fun SettingsScreen(
             item {
                 SettingsMenuItem(
                     icon = Icons.Default.CalendarToday,
-                    title = "Individuelle Sollzeiten",
+                    title = "Individuelle Sollzeiten pro Tag",
                     subtitle = if (settings?.hasIndividualDailyHours() == true) "Aktiv" else "Standard",
                     onClick = { selectedSection = SettingsSection.DAILY_HOURS }
                 )
             }
 
-            // Automatisierung
+            // Automatisierung & Orte
             item {
-                SettingsMenuSection(title = "Automatisierung")
+                SettingsMenuSection(title = "Automatisierung & Orte")
             }
             item {
                 SettingsMenuItem(
                     icon = Icons.Default.LocationOn,
-                    title = "Geofencing",
+                    title = "Geofencing & Arbeitsorte",
                     subtitle = if (settings?.geofencingEnabled == true) "Aktiviert" else "Deaktiviert",
-                    onClick = onNavigateToGeofencing
+                    onClick = { selectedSection = SettingsSection.GEOFENCING }
                 )
             }
 
-            // Daten & Vorlagen
+            // Daten & Sicherheit
             item {
-                SettingsMenuSection(title = "Daten & Vorlagen")
-            }
-            item {
-                SettingsMenuItem(
-                    icon = Icons.Default.Description,
-                    title = "Excel-Vorlagen",
-                    subtitle = "Vorlagen verwalten",
-                    onClick = onNavigateToTemplateManagement
-                )
-            }
-
-            // Gefährliche Aktionen
-            item {
-                SettingsMenuSection(title = "Gefahrenbereich")
+                SettingsMenuSection(title = "Daten & Sicherheit")
             }
             item {
                 SettingsMenuItem(
@@ -162,6 +144,7 @@ enum class SettingsSection {
     DARK_MODE,
     WORK_TIME,
     DAILY_HOURS,
+    GEOFENCING,
     DELETE_DATA
 }
 
@@ -256,8 +239,7 @@ private fun SettingsDetailScreen(
     settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
     snackbarHostState: SnackbarHostState,
     onNavigateBack: () -> Unit,
-    onNavigateToGeofencing: () -> Unit,
-    onNavigateToTemplateManagement: () -> Unit
+    onNavigateToGeofencing: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -269,6 +251,7 @@ private fun SettingsDetailScreen(
                             SettingsSection.DARK_MODE -> "Dark Mode"
                             SettingsSection.WORK_TIME -> "Arbeitszeit"
                             SettingsSection.DAILY_HOURS -> "Sollzeiten"
+                            SettingsSection.GEOFENCING -> "Geofencing & Orte"
                             SettingsSection.DELETE_DATA -> "Daten löschen"
                         }
                     )
@@ -292,6 +275,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.DARK_MODE -> DarkModeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.WORK_TIME -> WorkTimeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.DAILY_HOURS -> DailyHoursSection(viewModel, settings, snackbarHostState)
+                SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
                 SettingsSection.DELETE_DATA -> DeleteDataSection(viewModel, snackbarHostState, onNavigateBack)
             }
         }
@@ -545,6 +529,109 @@ private fun DailyHoursSection(
             enabled = useIndividualDays
         ) {
             Text("Speichern")
+        }
+    }
+}
+
+/**
+ * Geofencing Section
+ */
+@Composable
+private fun GeofencingSection(
+    onNavigateToGeofencing: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Info Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Standortbasierte Zeiterfassung",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            "Automatisches Starten und Stoppen basierend auf GPS-Standort",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Text(
+                    "Konfiguriere die automatische Zeiterfassung basierend auf deinem Standort. " +
+                    "Die App kann automatisch die Arbeitszeit starten und beenden, wenn du einen bestimmten Ort betrittst oder verlässt.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Button(
+                    onClick = onNavigateToGeofencing,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Orte konfigurieren")
+                }
+            }
+        }
+
+        // Hinweise Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Hinweise",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Text(
+                    "• Die App benötigt Standortberechtigungen\n" +
+                    "• Die Zeiterfassung erfolgt im Hintergrund\n" +
+                    "• Du kannst mehrere Standorte definieren\n" +
+                    "• Die Genauigkeit hängt vom GPS-Signal ab",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
