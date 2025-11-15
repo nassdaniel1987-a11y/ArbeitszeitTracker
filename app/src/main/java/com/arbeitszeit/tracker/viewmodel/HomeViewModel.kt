@@ -53,27 +53,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     // Einträge der ausgewählten Woche - nur Arbeitstage
-    val weekEntries: StateFlow<List<TimeEntry>> = combine(
-        _selectedWeekDate,
-        userSettings
-    ) { weekDate, settings ->
-        val weekDays = DateUtils.getDaysOfWeek(weekDate)
-        val startDate = DateUtils.dateToString(weekDays.first())
-        val endDate = DateUtils.dateToString(weekDays.last())
+    val weekEntries: StateFlow<List<TimeEntry>> = _selectedWeekDate
+        .flatMapLatest { weekDate ->
+            val weekDays = DateUtils.getDaysOfWeek(weekDate)
+            val startDate = DateUtils.dateToString(weekDays.first())
+            val endDate = DateUtils.dateToString(weekDays.last())
 
-        val entries = timeEntryDao.getEntriesByDateRange(startDate, endDate)
-
-        // Filtere nur Arbeitstage
-        if (settings != null) {
-            entries.filter { entry ->
-                val date = LocalDate.parse(entry.datum)
-                val dayOfWeek = date.dayOfWeek.value // 1=Mo, 7=So
-                settings.isWorkingDay(dayOfWeek)
-            }
-        } else {
-            entries
+            // Verwende Flow aus Datenbank für Live-Updates!
+            timeEntryDao.getEntriesByDateRangeFlow(startDate, endDate)
         }
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        .combine(userSettings) { entries, settings ->
+            // Filtere nur Arbeitstage
+            if (settings != null) {
+                entries.filter { entry ->
+                    val date = LocalDate.parse(entry.datum)
+                    val dayOfWeek = date.dayOfWeek.value // 1=Mo, 7=So
+                    settings.isWorkingDay(dayOfWeek)
+                }
+            } else {
+                entries
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
     init {
         // Erstelle heute-Eintrag falls nicht vorhanden
