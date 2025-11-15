@@ -5,8 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,111 +37,205 @@ fun ExportScreen(viewModel: ExportViewModel) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Excel Export & Import", style = MaterialTheme.typography.titleLarge)
-
-        Divider()
-
-        // EXPORT SECTION
-        Text("Export", style = MaterialTheme.typography.titleMedium)
-
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        // Header mit Icon
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                Icons.Default.FileDownload,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
             Text(
-                "Exportiert alle Zeiteinträge des Jahres in eine Excel-Datei mit der Vorlage.",
-                modifier = Modifier.padding(12.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                "Excel Export & Import",
+                style = MaterialTheme.typography.titleLarge
             )
         }
 
-        Button(
-            onClick = { viewModel.exportExcel() },
-            enabled = !uiState.isExporting && !uiState.isImporting,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (uiState.isExporting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("Exportiere...")
-            } else {
-                Icon(Icons.Default.FileDownload, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Excel exportieren (Gesamtjahr)")
-            }
-        }
+        HorizontalDivider()
 
-        Button(
-            onClick = { viewModel.exportSimpleExcel() },
-            enabled = !uiState.isExporting && !uiState.isImporting,
+        // EXPORT SECTION als Card
+        Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
-            )
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Icon(Icons.Default.FileDownload, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Einfacher Export (Wochenblöcke)")
-        }
-
-        if (uiState.exportSuccess) {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text(
-                    "Export erfolgreich: ${viewModel.getExpectedFileName()}",
-                    modifier = Modifier.padding(12.dp),
+                    "Export",
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+
+                Text(
+                    "Exportiert alle Zeiteinträge des Jahres in eine Excel-Datei mit der Vorlage.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                )
+
+                Button(
+                    onClick = { viewModel.exportExcel() },
+                    enabled = !uiState.isExporting && !uiState.isImporting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (uiState.isExporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Exportiere...")
+                    } else {
+                        Icon(Icons.Default.FileDownload, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Excel exportieren (Gesamtjahr)")
+                    }
+                }
+
+                Button(
+                    onClick = { viewModel.exportSimpleExcel() },
+                    enabled = !uiState.isExporting && !uiState.isImporting,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Icon(Icons.Default.FileDownload, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Einfacher Export (Wochenblöcke)")
+                }
+
+                if (uiState.exportSuccess) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                            Text(
+                                "Erfolgreich: ${viewModel.getExpectedFileName()}",
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
         }
 
-        Divider()
+        HorizontalDivider()
 
-        // IMPORT SECTION
-        Text("Import", style = MaterialTheme.typography.titleMedium)
-
-        Text(
-            "Importiere eine vorhandene Excel-Datei mit Zeiteinträgen",
-            style = MaterialTheme.typography.bodySmall
-        )
-
-        Button(
-            onClick = { filePickerLauncher.launch("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") },
-            enabled = !uiState.isExporting && !uiState.isImporting,
-            modifier = Modifier.fillMaxWidth()
+        // IMPORT SECTION als Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            if (uiState.isImporting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("Importiere...")
-            } else {
-                Icon(Icons.Default.FileUpload, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Excel importieren")
-            }
-        }
-
-        if (uiState.importSuccess) {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text(
-                    "Import erfolgreich: ${uiState.importedEntriesCount} Einträge importiert",
-                    modifier = Modifier.padding(12.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    "Import",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
+
+                Text(
+                    "Importiere eine vorhandene Excel-Datei mit Zeiteinträgen",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+
+                Button(
+                    onClick = { filePickerLauncher.launch("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") },
+                    enabled = !uiState.isExporting && !uiState.isImporting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (uiState.isImporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Importiere...")
+                    } else {
+                        Icon(Icons.Default.FileUpload, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Excel importieren")
+                    }
+                }
+
+                if (uiState.importSuccess) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                            Text(
+                                "Erfolgreich: ${uiState.importedEntriesCount} Einträge importiert",
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
         }
 
         // ERROR MESSAGE
         uiState.error?.let {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                Text(
-                    "Fehler: $it",
-                    modifier = Modifier.padding(12.dp),
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Error,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "Fehler: $it",
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
             }
         }
     }
