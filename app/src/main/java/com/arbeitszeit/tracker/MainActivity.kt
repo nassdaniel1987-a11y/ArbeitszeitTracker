@@ -9,12 +9,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -73,43 +77,192 @@ class MainActivity : ComponentActivity() {
 
             ArbeitszeitTrackerTheme(darkTheme = darkTheme) {
                 val navController = rememberNavController()
+                val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+                val scope = rememberCoroutineScope()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
 
-                Scaffold(
-                    bottomBar = {
-                        NavigationBar {
-                            val navBackStackEntry by navController.currentBackStackEntryAsState()
-                            val currentRoute = navBackStackEntry?.destination?.route
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = {
+                        ModalDrawerSheet {
+                            // Header
+                            Surface(
+                                modifier = Modifier.height(120.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                androidx.compose.foundation.layout.Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.AccessTime,
+                                        contentDescription = null,
+                                        modifier = Modifier.padding(bottom = 8.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        "Arbeitszeit Tracker",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(8.dp))
 
                             // Navigation Items
-                            val items = listOf(
-                                Triple(Screen.Home, Icons.Default.Home, "Home"),
-                                Triple(Screen.Calendar, Icons.Default.CalendarMonth, "Kalender"),
-                                Triple(Screen.Ueberstunden, Icons.Default.Timeline, "Überstunden"),
-                                Triple(Screen.Export, Icons.Default.FileDownload, "Export"),
-                                Triple(Screen.Settings, Icons.Default.Settings, "Einstellungen")
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.Home, null) },
+                                label = { Text("Home") },
+                                selected = currentRoute == Screen.Home.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                }
                             )
 
-                            items.forEach { (screen, icon, label) ->
-                                NavigationBarItem(
-                                    selected = currentRoute == screen.route,
-                                    onClick = {
-                                        navController.navigate(screen.route) {
-                                            popUpTo(navController.graph.startDestinationId) {
-                                                saveState = true
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.Timeline, null) },
+                                label = { Text("Überstunden") },
+                                selected = currentRoute == Screen.Ueberstunden.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.Ueberstunden.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.CalendarMonth, null) },
+                                label = { Text("Kalender") },
+                                selected = currentRoute == Screen.Calendar.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.Calendar.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.ContentCopy, null) },
+                                label = { Text("Wochen-Vorlagen") },
+                                selected = currentRoute == Screen.WeekTemplates.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.WeekTemplates.route) {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.FileDownload, null) },
+                                label = { Text("Export") },
+                                selected = currentRoute == Screen.Export.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.Export.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.FileUpload, null) },
+                                label = { Text("Import") },
+                                selected = currentRoute == Screen.Import.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.Import.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.Settings, null) },
+                                label = { Text("Einstellungen") },
+                                selected = currentRoute == Screen.Settings.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.Settings.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.HelpOutline, null) },
+                                label = { Text("Hilfe") },
+                                selected = currentRoute == Screen.Help.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.Help.route) {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+                        }
+                    }
+                ) {
+                    Scaffold(
+                        topBar = {
+                            // TopBar nur auf Hauptscreens (Home, Überstunden, Kalender)
+                            val showTopBar = currentRoute in listOf(
+                                Screen.Home.route,
+                                Screen.Ueberstunden.route,
+                                Screen.Calendar.route,
+                                Screen.Export.route,
+                                Screen.Import.route,
+                                Screen.Settings.route
+                            )
+
+                            if (showTopBar) {
+                                TopAppBar(
+                                    title = {
+                                        Text(
+                                            when (currentRoute) {
+                                                Screen.Home.route -> "Home"
+                                                Screen.Ueberstunden.route -> "Überstunden"
+                                                Screen.Calendar.route -> "Kalender"
+                                                Screen.Export.route -> "Export"
+                                                Screen.Import.route -> "Import"
+                                                Screen.Settings.route -> "Einstellungen"
+                                                else -> "Arbeitszeit Tracker"
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
+                                        )
+                                    },
+                                    navigationIcon = {
+                                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                            Icon(Icons.Default.Menu, "Menü öffnen")
                                         }
                                     },
-                                    icon = { Icon(icon, label) },
-                                    label = { Text(label) }
+                                    colors = TopAppBarDefaults.topAppBarColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                 )
                             }
                         }
-                    }
-                ) { padding ->
-                    Surface(modifier = Modifier.padding(padding)) {
-                        NavGraph(navController = navController)
+                    ) { padding ->
+                        Surface(modifier = Modifier.padding(padding)) {
+                            NavGraph(navController = navController)
+                        }
                     }
                 }
             }
