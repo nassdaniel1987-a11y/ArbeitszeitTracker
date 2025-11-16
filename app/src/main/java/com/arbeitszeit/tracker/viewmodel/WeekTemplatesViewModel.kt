@@ -163,6 +163,49 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
     }
 
     /**
+     * Aktualisiert eine bestehende Vorlage
+     */
+    fun updateTemplate(
+        templateId: Long,
+        name: String,
+        description: String,
+        dayEntries: Map<Int, DayTimeEntry>
+    ) {
+        viewModelScope.launch {
+            // Lade die bestehende Vorlage
+            val existingTemplate = weekTemplateDao.getTemplateById(templateId)
+            if (existingTemplate != null) {
+                // Aktualisiere Template-Metadaten
+                val updatedTemplate = existingTemplate.copy(
+                    name = name,
+                    description = description
+                )
+                weekTemplateDao.updateTemplate(updatedTemplate)
+
+                // Lösche alte Einträge und erstelle neue
+                weekTemplateDao.deleteEntriesByTemplate(templateId)
+
+                // Erstelle neue Template-Einträge
+                val templateEntries = dayEntries.mapNotNull { (dayOfWeek, dayEntry) ->
+                    if (dayEntry.startTime != null && dayEntry.endTime != null) {
+                        WeekTemplateEntry(
+                            templateId = templateId,
+                            dayOfWeek = dayOfWeek,
+                            startZeit = dayEntry.startTime,
+                            endZeit = dayEntry.endTime,
+                            pauseMinuten = dayEntry.pauseMinutes,
+                            typ = "NORMAL",
+                            notiz = ""
+                        )
+                    } else null
+                }
+
+                weekTemplateDao.insertEntries(templateEntries)
+            }
+        }
+    }
+
+    /**
      * Löscht eine Vorlage
      */
     fun deleteTemplate(template: WeekTemplate) {

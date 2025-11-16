@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget colors - Dark Mode -->
+    <color name="widget_background">#1E1E1E</color>
+    <color name="widget_title">#64B5F6</color>
+    <color name="widget_card_background">#2C2C2C</color>
+    <color name="widget_text">#E0E0E0</color>
+    <color name="widget_primary">#64B5F6</color>
+    <color name="widget_progress">#66BB6A</color>
+    <color name="widget_progress_background">#424242</color>
+    <color name="widget_status_active">#66BB6A</color>
+    <color name="widget_status_inactive">#757575</color>
+    <color name="widget_week_summary_bg">#263238</color>
+    <color name="widget_error">#EF5350</color>
+</resources>
