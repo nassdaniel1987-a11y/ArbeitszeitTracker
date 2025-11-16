@@ -290,34 +290,35 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                                 }
                             )
                         ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "${day + 1}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
-                                )
-                                // Zeige Icon für Typ
-                                if (entry != null) {
-                                    Spacer(Modifier.height(2.dp))
-                                    Icon(
-                                        imageVector = when (entry.typ) {
-                                            TimeEntry.TYP_URLAUB -> Icons.Default.BeachAccess
-                                            TimeEntry.TYP_KRANK -> Icons.Default.LocalHospital
-                                            TimeEntry.TYP_FEIERTAG -> Icons.Default.Event
-                                            TimeEntry.TYP_ABWESEND -> Icons.Default.EventBusy
-                                            else -> Icons.Default.Work
-                                        },
-                                        contentDescription = entry.typ,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = Color.White.copy(alpha = 0.8f)
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "${day + 1}",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
                                     )
+                                    // Zeige Icon für Typ
+                                    if (entry != null) {
+                                        Spacer(Modifier.height(2.dp))
+                                        Icon(
+                                            imageVector = when (entry.typ) {
+                                                TimeEntry.TYP_URLAUB -> Icons.Default.BeachAccess
+                                                TimeEntry.TYP_KRANK -> Icons.Default.LocalHospital
+                                                TimeEntry.TYP_FEIERTAG -> Icons.Default.Event
+                                                TimeEntry.TYP_ABWESEND -> Icons.Default.EventBusy
+                                                else -> Icons.Default.Work
+                                            },
+                                            contentDescription = entry.typ,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = Color.White.copy(alpha = 0.8f)
+                                        )
+                                    }
                                 }
                             }
                         }
