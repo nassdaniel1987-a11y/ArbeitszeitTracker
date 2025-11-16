@@ -1,5 +1,7 @@
 package com.arbeitszeit.tracker.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,6 +29,7 @@ import com.arbeitszeit.tracker.viewmodel.CalendarViewModel
 import com.arbeitszeit.tracker.viewmodel.EntryStatus
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,19 +107,32 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
             }
         }
 
-        // Monats-Statistik
+        // Monats-Statistik mit Fade-In Animation
         if (entries.isNotEmpty()) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = when {
-                            totalDiff > 0 -> MaterialTheme.colorScheme.primaryContainer
-                            totalDiff < 0 -> MaterialTheme.colorScheme.errorContainer
-                            else -> MaterialTheme.colorScheme.secondaryContainer
-                        }
-                    )
+                var visible by remember { mutableStateOf(false) }
+
+                LaunchedEffect(month) {
+                    visible = false
+                    delay(100)
+                    visible = true
+                }
+
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(400)) +
+                            expandVertically(animationSpec = tween(400))
                 ) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = when {
+                                totalDiff > 0 -> MaterialTheme.colorScheme.primaryContainer
+                                totalDiff < 0 -> MaterialTheme.colorScheme.errorContainer
+                                else -> MaterialTheme.colorScheme.secondaryContainer
+                            }
+                        )
+                    ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -215,7 +232,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     Box(modifier = Modifier.aspectRatio(1f))
                 }
 
-                // Füge die eigentlichen Tage des Monats hinzu
+                // Füge die eigentlichen Tage des Monats hinzu mit staggered Animation
                 items(month.lengthOfMonth()) { day ->
                     val date = month.atDay(day + 1)
                     val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
@@ -223,30 +240,55 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     val status = viewModel.getEntryStatus(entry)
                     val isToday = date == today
 
-                    Card(
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .then(
-                                if (isToday) Modifier.border(
-                                    width = 2.dp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(8.dp)
-                                ) else Modifier
-                            )
-                            .clickable {
-                                selectedDate = dateString
-                                showEditDialog = true
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = when (status) {
-                                EntryStatus.COMPLETE -> StatusComplete
-                                EntryStatus.PARTIAL -> StatusPartial
-                                EntryStatus.EMPTY -> StatusEmpty
-                                EntryStatus.SPECIAL -> StatusSpecial
-                                else -> MaterialTheme.colorScheme.surfaceVariant
-                            }
-                        )
+                    // Staggered Fade-in Animation
+                    var visible by remember(month) { mutableStateOf(false) }
+                    LaunchedEffect(month) {
+                        delay((day * 15L).coerceAtMost(300))
+                        visible = true
+                    }
+
+                    // Scale Animation beim Klicken
+                    var isPressed by remember { mutableStateOf(false) }
+                    val scale by animateFloatAsState(
+                        targetValue = if (isPressed) 0.95f else 1f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
+                        label = "day_click_scale"
+                    )
+
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(animationSpec = tween(300)) +
+                                scaleIn(initialScale = 0.8f, animationSpec = tween(300))
                     ) {
+                        Card(
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .scale(scale)
+                                .then(
+                                    if (isToday) Modifier.border(
+                                        width = 2.dp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) else Modifier
+                                )
+                                .clickable {
+                                    isPressed = true
+                                    selectedDate = dateString
+                                    showEditDialog = true
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = when (status) {
+                                    EntryStatus.COMPLETE -> StatusComplete
+                                    EntryStatus.PARTIAL -> StatusPartial
+                                    EntryStatus.EMPTY -> StatusEmpty
+                                    EntryStatus.SPECIAL -> StatusSpecial
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            )
+                        ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
