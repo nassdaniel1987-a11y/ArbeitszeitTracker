@@ -325,7 +325,6 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                 }
             }
         }
-        }
     }
 
     // Edit Dialog
