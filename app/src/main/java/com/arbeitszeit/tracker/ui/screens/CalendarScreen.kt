@@ -362,7 +362,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
 }
 
 @Composable
-private fun LegendItem(color: Color, label: String) {
+fun LegendItem(color: Color, label: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
