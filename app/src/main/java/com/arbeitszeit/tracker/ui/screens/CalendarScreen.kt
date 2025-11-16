@@ -326,42 +326,43 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                 }
             }
         }
-    }
+        }
 
-    // Edit Dialog
-    if (showEditDialog && selectedDate != null) {
-        val entry = entries.find { it.datum == selectedDate }
+        // Edit Dialog
+        if (showEditDialog && selectedDate != null) {
+            val entry = entries.find { it.datum == selectedDate }
 
-        EditEntryDialog(
-            entry = entry,
-            datum = selectedDate!!,
-            onDismiss = {
-                showEditDialog = false
-                selectedDate = null
-            },
-            onSave = { startZeit, endZeit, pauseMinuten, typ, notiz ->
-                viewModel.updateEntry(
-                    date = selectedDate!!,
-                    startZeit = startZeit,
-                    endZeit = endZeit,
-                    pauseMinuten = pauseMinuten,
-                    typ = typ,
-                    notiz = notiz
-                )
-                showEditDialog = false
-                selectedDate = null
-            },
-            onDelete = {
-                viewModel.deleteEntry(selectedDate!!)
-                showEditDialog = false
-                selectedDate = null
-            }
-        )
+            EditEntryDialog(
+                entry = entry,
+                datum = selectedDate!!,
+                onDismiss = {
+                    showEditDialog = false
+                    selectedDate = null
+                },
+                onSave = { startZeit, endZeit, pauseMinuten, typ, notiz ->
+                    viewModel.updateEntry(
+                        date = selectedDate!!,
+                        startZeit = startZeit,
+                        endZeit = endZeit,
+                        pauseMinuten = pauseMinuten,
+                        typ = typ,
+                        notiz = notiz
+                    )
+                    showEditDialog = false
+                    selectedDate = null
+                },
+                onDelete = {
+                    viewModel.deleteEntry(selectedDate!!)
+                    showEditDialog = false
+                    selectedDate = null
+                }
+            )
+        }
     }
 }
 
 @Composable
-private fun LegendItem(color: Color, label: String) {
+fun LegendItem(color: Color, label: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
