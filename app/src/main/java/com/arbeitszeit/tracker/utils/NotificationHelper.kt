@@ -54,9 +54,20 @@ object NotificationHelper {
 
     /**
      * Zeigt Morgen-Erinnerung mit Action Buttons
+     * Nur wenn User noch NICHT eingestempelt ist
      */
-    fun showMorningReminder(context: Context) {
+    suspend fun showMorningReminder(context: Context) {
         if (!hasNotificationPermission(context)) return
+
+        // Status-Prüfung: Nur benachrichtigen wenn noch nicht eingestempelt
+        val database = com.arbeitszeit.tracker.data.database.AppDatabase.getDatabase(context)
+        val today = DateUtils.today()
+        val entry = database.timeEntryDao().getEntryByDate(today)
+
+        // Nicht benachrichtigen wenn bereits eingestempelt
+        if (entry != null && entry.startZeit != null) {
+            return
+        }
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -112,6 +123,7 @@ object NotificationHelper {
 
     /**
      * Zeigt Abend-Erinnerung mit Restzeit-Info und Action Button
+     * Nur wenn User eingestempelt ist, aber noch NICHT ausgestempelt
      */
     suspend fun showEveningReminder(context: Context) {
         if (!hasNotificationPermission(context)) return
@@ -120,6 +132,11 @@ object NotificationHelper {
         val database = com.arbeitszeit.tracker.data.database.AppDatabase.getDatabase(context)
         val today = DateUtils.today()
         val entry = database.timeEntryDao().getEntryByDate(today)
+
+        // Status-Prüfung: Nur benachrichtigen wenn eingestempelt aber noch nicht ausgestempelt
+        if (entry == null || entry.startZeit == null || entry.endZeit != null) {
+            return
+        }
 
         val infoText = if (entry != null && entry.startZeit != null) {
             val istMinuten = entry.getIstMinuten()

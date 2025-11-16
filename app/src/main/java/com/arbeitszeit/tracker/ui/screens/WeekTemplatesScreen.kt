@@ -31,6 +31,7 @@ fun WeekTemplatesScreen(
     val templates by viewModel.allTemplates.collectAsState()
 
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
     var showApplyDialog by remember { mutableStateOf(false) }
     var selectedTemplate by remember { mutableStateOf<WeekTemplate?>(null) }
 
@@ -111,6 +112,10 @@ fun WeekTemplatesScreen(
                 items(templates) { template ->
                     TemplateCard(
                         template = template,
+                        onEdit = {
+                            selectedTemplate = template
+                            showEditDialog = true
+                        },
                         onApply = {
                             selectedTemplate = template
                             showApplyDialog = true
@@ -131,6 +136,23 @@ fun WeekTemplatesScreen(
             onConfirm = { name, description, dayEntries ->
                 viewModel.createTemplateManually(name, description, dayEntries)
                 showCreateDialog = false
+            }
+        )
+    }
+
+    // Edit Template Dialog
+    if (showEditDialog && selectedTemplate != null) {
+        EditTemplateDialog(
+            viewModel = viewModel,
+            template = selectedTemplate!!,
+            onDismiss = {
+                showEditDialog = false
+                selectedTemplate = null
+            },
+            onConfirm = { name, description, dayEntries ->
+                viewModel.updateTemplate(selectedTemplate!!.id, name, description, dayEntries)
+                showEditDialog = false
+                selectedTemplate = null
             }
         )
     }
@@ -156,6 +178,7 @@ fun WeekTemplatesScreen(
 @Composable
 private fun TemplateCard(
     template: WeekTemplate,
+    onEdit: () -> Unit,
     onApply: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -189,8 +212,13 @@ private fun TemplateCard(
                     }
                 }
 
-                IconButton(onClick = { showDeleteConfirm = true }) {
-                    Icon(Icons.Default.Delete, "Löschen", tint = MaterialTheme.colorScheme.error)
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, "Bearbeiten", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    IconButton(onClick = { showDeleteConfirm = true }) {
+                        Icon(Icons.Default.Delete, "Löschen", tint = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
 
@@ -340,6 +368,155 @@ private fun CreateTemplateDialog(
             }
         }
     )
+}
+
+@Composable
+private fun EditTemplateDialog(
+    viewModel: WeekTemplatesViewModel,
+    template: WeekTemplate,
+    onDismiss: () -> Unit,
+    onConfirm: (name: String, description: String, dayEntries: Map<Int, DayTimeEntry>) -> Unit
+) {
+    var name by remember { mutableStateOf(template.name) }
+    var description by remember { mutableStateOf(template.description) }
+
+    // Lade Template-Einträge
+    var templateEntries by remember { mutableStateOf<List<com.arbeitszeit.tracker.data.entity.WeekTemplateEntry>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(template.id) {
+        templateEntries = viewModel.getTemplateEntries(template.id)
+        isLoading = false
+    }
+
+    // Zeit-Eingaben für jeden Tag (1=Mo, 2=Di, ..., 7=So)
+    val dayData = remember(templateEntries) {
+        mutableStateMapOf<Int, DayData>().apply {
+            (1..7).forEach { day ->
+                // Finde existierenden Eintrag für diesen Tag
+                val existingEntry = templateEntries.find { it.dayOfWeek == day }
+                if (existingEntry != null && existingEntry.startZeit != null && existingEntry.endZeit != null) {
+                    // Konvertiere Minuten zu Stunden und Minuten
+                    val startHour = existingEntry.startZeit!! / 60
+                    val startMinute = existingEntry.startZeit!! % 60
+                    val endHour = existingEntry.endZeit!! / 60
+                    val endMinute = existingEntry.endZeit!! % 60
+
+                    put(day, DayData(
+                        enabled = true,
+                        startHour = startHour.toString(),
+                        startMinute = startMinute.toString(),
+                        endHour = endHour.toString(),
+                        endMinute = endMinute.toString(),
+                        pause = existingEntry.pauseMinuten.toString()
+                    ))
+                } else {
+                    put(day, DayData())
+                }
+            }
+        }
+    }
+
+    if (isLoading) {
+        // Zeige Lade-Indikator
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Lade Vorlage...") },
+            text = {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            },
+            confirmButton = {}
+        )
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            icon = { Icon(Icons.Default.Edit, "Vorlage bearbeiten") },
+            title = { Text("Vorlage bearbeiten") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 500.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        "Bearbeite deine Dienstplan-Vorlage",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Vorlagen-Name") },
+                        placeholder = { Text("z.B. Frühdienst") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Beschreibung (optional)") },
+                        placeholder = { Text("z.B. 6:00-14:30 Uhr") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 2
+                    )
+
+                    HorizontalDivider()
+
+                    Text(
+                        "Dienstzeiten bearbeiten",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Eingabefelder für jeden Tag
+                    val dayNames = listOf("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
+                    dayNames.forEachIndexed { index, dayName ->
+                        val dayOfWeek = index + 1
+                        DayTimeInputRow(
+                            dayName = dayName,
+                            dayData = dayData[dayOfWeek] ?: DayData(),
+                            onDataChange = { newData -> dayData[dayOfWeek] = newData }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Konvertiere zu Map<Int, DayTimeEntry> - nur aktivierte Tage
+                        val entries = dayData.mapNotNull { (day, data) ->
+                            if (!data.enabled) return@mapNotNull null
+
+                            val startMinutes = timeToMinutes(data.startHour, data.startMinute)
+                            val endMinutes = timeToMinutes(data.endHour, data.endMinute)
+                            val pause = data.pause.toIntOrNull() ?: 0
+
+                            if (startMinutes != null && endMinutes != null) {
+                                day to DayTimeEntry(startMinutes, endMinutes, pause)
+                            } else null
+                        }.toMap()
+
+                        onConfirm(name, description, entries)
+                    },
+                    enabled = name.isNotBlank()
+                ) {
+                    Text("Speichern")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
 }
 
 @Composable
