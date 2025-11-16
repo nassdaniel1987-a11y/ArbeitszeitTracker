@@ -172,6 +172,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                             )
                         }
                     }
+                    }
                 }
             }
         }
