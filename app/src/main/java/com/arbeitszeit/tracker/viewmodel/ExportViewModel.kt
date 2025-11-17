@@ -36,6 +36,9 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     private val _selectedKW = MutableStateFlow(1)
     val selectedKW: StateFlow<Int> = _selectedKW.asStateFlow()
 
+    private val _selectedYear = MutableStateFlow(currentYear)
+    val selectedYear: StateFlow<Int> = _selectedYear.asStateFlow()
+
     init {
         // Initialisiere mit aktueller KW basierend auf Settings
         viewModelScope.launch {
@@ -53,6 +56,13 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
      */
     fun selectKW(kw: Int) {
         _selectedKW.value = kw
+    }
+
+    /**
+     * Wählt ein Jahr für den Export aus
+     */
+    fun selectYear(year: Int) {
+        _selectedYear.value = year
     }
     
     /**
@@ -80,7 +90,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.value = _uiState.value.copy(isExporting = true, error = null, showFileNameDialog = false)
 
             try {
-                val year = LocalDate.now().year
+                val year = _selectedYear.value
 
                 // Lade Settings
                 val settings = settingsDao.getSettings()
@@ -135,7 +145,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val kw = _selectedKW.value
                 val (startKW, endKW) = DateUtils.getWeekRangeForSheet(kw)
-                val year = LocalDate.now().year
+                val year = _selectedYear.value
 
                 // Lade Settings
                 val settings = settingsDao.getSettings()
@@ -193,7 +203,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
      * Gibt den erwarteten Dateinamen zurück
      */
     fun getExpectedFileName(): String {
-        val year = LocalDate.now().year
+        val year = _selectedYear.value
         return exportManager.getExportFileName(year)
     }
     
@@ -358,7 +368,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     fun loadExportPreview() {
         viewModelScope.launch {
             try {
-                val year = LocalDate.now().year
+                val year = _selectedYear.value
                 val settings = settingsDao.getSettings()
                 val entries = timeEntryDao.getEntriesByYear(year)
 
