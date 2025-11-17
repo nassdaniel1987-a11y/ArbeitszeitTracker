@@ -37,6 +37,9 @@ data class UserSettings(
     // UI Einstellungen
     val darkMode: String = "system",         // "system", "light", oder "dark"
 
+    // Export Einstellungen
+    val selectedTemplateYear: Int? = null,   // Welches Jahr der Vorlage verwendet werden soll (null = Standard aus Assets)
+
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

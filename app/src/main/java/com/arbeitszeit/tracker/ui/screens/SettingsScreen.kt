@@ -704,9 +704,22 @@ private fun ExcelTemplatesSection(
                 }
 
                 Text(
-                    "Importiere und verwalte Excel-Vorlagen, die beim Export verwendet werden. " +
-                    "Du kannst für jedes Jahr eine eigene Vorlage hinterlegen.",
+                    "Beim Export wird automatisch die passende Vorlage für das gewählte Jahr verwendet. " +
+                    "Wenn keine Vorlage vorhanden ist, wird die Standard-Vorlage aus der App verwendet.",
                     style = MaterialTheme.typography.bodyMedium
+                )
+
+                Text(
+                    "So funktioniert's:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    "1. Im Export-Screen kannst du das Jahr auswählen\n" +
+                    "2. Die App verwendet automatisch die Vorlage für dieses Jahr\n" +
+                    "3. Falls keine Vorlage vorhanden: Standard-Vorlage wird verwendet",
+                    style = MaterialTheme.typography.bodySmall
                 )
 
                 Button(
@@ -715,7 +728,7 @@ private fun ExcelTemplatesSection(
                 ) {
                     Icon(Icons.Default.Settings, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Vorlagen verwalten")
+                    Text("Vorlagen hochladen & verwalten")
                 }
             }
         }
@@ -746,10 +759,10 @@ private fun ExcelTemplatesSection(
                     )
                 }
                 Text(
-                    "• Die Excel-Vorlage wird beim Export verwendet\n" +
-                    "• Pro Jahr kann eine Vorlage hinterlegt werden\n" +
-                    "• Die Vorlage muss die richtigen Spalten enthalten\n" +
-                    "• Du kannst die Standard-Vorlage jederzeit wieder aktivieren",
+                    "• Pro Jahr kann eine eigene Vorlage hinterlegt werden\n" +
+                    "• Die Vorlage muss die korrekte Struktur haben (wie ANZ_Template.xlsx)\n" +
+                    "• Standard-Vorlage wird immer als Fallback verwendet\n" +
+                    "• Jahr-Auswahl erfolgt direkt im Export-Screen",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

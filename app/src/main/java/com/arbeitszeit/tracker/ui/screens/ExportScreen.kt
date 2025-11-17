@@ -15,6 +15,11 @@ import java.time.LocalDate
 @Composable
 fun ExportScreen(viewModel: ExportViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val selectedYear by viewModel.selectedYear.collectAsState()
+
+    // Jahr-Auswahl: Aktuellas Jahr ± 5 Jahre
+    val currentYear = LocalDate.now().year
+    val availableYears = (currentYear - 5..currentYear + 5).toList()
 
     Column(
         modifier = Modifier
@@ -40,6 +45,66 @@ fun ExportScreen(viewModel: ExportViewModel) {
         }
 
         HorizontalDivider()
+
+        // Jahr-Auswahl Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Jahr auswählen",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Jahr-Auswahl mit Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { viewModel.selectYear(selectedYear - 1) },
+                        enabled = selectedYear > availableYears.first()
+                    ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Vorheriges Jahr")
+                    }
+
+                    Text(
+                        text = selectedYear.toString(),
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.weight(1f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+
+                    IconButton(
+                        onClick = { viewModel.selectYear(selectedYear + 1) },
+                        enabled = selectedYear < availableYears.last()
+                    ) {
+                        Icon(Icons.Default.ArrowForward, contentDescription = "Nächstes Jahr")
+                    }
+                }
+
+                if (selectedYear != currentYear) {
+                    TextButton(
+                        onClick = { viewModel.selectYear(currentYear) },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Icon(Icons.Default.Today, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Zum aktuellen Jahr ($currentYear)")
+                    }
+                }
+            }
+        }
 
         // EXPORT SECTION als Card
         Card(
