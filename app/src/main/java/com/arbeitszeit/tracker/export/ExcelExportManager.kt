@@ -27,12 +27,14 @@ class ExcelExportManager(private val context: Context) {
      * @param userSettings Benutzereinstellungen (Name, Einrichtung, etc.)
      * @param entries Alle Zeiteinträge für den Export
      * @param year Jahr
+     * @param customFileName Optionaler benutzerdefinierter Dateiname (ohne .xlsx)
      * @return Die exportierte Excel-Datei
      */
     suspend fun exportToExcel(
         userSettings: UserSettings,
         entries: List<TimeEntry>,
-        year: Int
+        year: Int,
+        customFileName: String? = null
     ): File = withContext(Dispatchers.IO) {
 
         // 1. Lade Template (Custom für Jahr oder Standard aus Assets)
@@ -55,10 +57,21 @@ class ExcelExportManager(private val context: Context) {
             // 5. Formeln zur Neuberechnung markieren
             workbook.setForceFormulaRecalculation(true)
 
-            // 6. Speichere Datei
+            // 6. Speichere Datei mit custom oder default Namen
+            val fileName = if (!customFileName.isNullOrBlank()) {
+                // Stelle sicher, dass .xlsx Extension vorhanden ist
+                if (customFileName.endsWith(".xlsx", ignoreCase = true)) {
+                    customFileName
+                } else {
+                    "${customFileName}.xlsx"
+                }
+            } else {
+                "Arbeitszeit_${year}.xlsx"
+            }
+
             val outputFile = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "Arbeitszeit_${year}.xlsx"
+                fileName
             )
 
             FileOutputStream(outputFile).use { outputStream ->
