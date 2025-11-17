@@ -1,6 +1,7 @@
 package com.arbeitszeit.tracker.utils
 
 import java.time.LocalTime
+import kotlin.math.roundToInt
 
 object TimeUtils {
     
@@ -68,7 +69,7 @@ object TimeUtils {
      * Für Excel-Import: 1.0 = 1440 Minuten (24 Stunden)
      */
     fun excelTimeToMinutes(excelTime: Double): Int {
-        return (excelTime * 1440.0).toInt()
+        return (excelTime * 1440.0).roundToInt()
     }
     
     /**
