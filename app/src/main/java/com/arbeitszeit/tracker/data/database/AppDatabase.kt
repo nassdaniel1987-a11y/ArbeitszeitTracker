@@ -30,7 +30,7 @@ import java.util.Locale
         WeekTemplate::class,
         WeekTemplateEntry::class
     ],
-    version = 9,  // Erhöht wegen WeekTemplate feature
+    version = 10,  // Erhöht wegen selectedTemplateYear in UserSettings
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
