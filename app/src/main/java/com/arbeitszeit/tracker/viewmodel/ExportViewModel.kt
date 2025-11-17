@@ -56,11 +56,28 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     /**
+     * Zeigt den Dialog für die Dateinamen-Eingabe
+     */
+    fun showFileNameDialog(isSimpleExport: Boolean = false) {
+        _uiState.value = _uiState.value.copy(
+            showFileNameDialog = true,
+            isSimpleExport = isSimpleExport
+        )
+    }
+
+    /**
+     * Schließt den Dialog für die Dateinamen-Eingabe
+     */
+    fun dismissFileNameDialog() {
+        _uiState.value = _uiState.value.copy(showFileNameDialog = false)
+    }
+
+    /**
      * Exportiert Excel für das gesamte Jahr
      */
-    fun exportExcel() {
+    fun exportExcel(customFileName: String? = null) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isExporting = true, error = null)
+            _uiState.value = _uiState.value.copy(isExporting = true, error = null, showFileNameDialog = false)
 
             try {
                 val year = LocalDate.now().year
@@ -82,7 +99,8 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                 val file = exportManager.exportToExcel(
                     userSettings = settings,
                     entries = entries,
-                    year = year
+                    year = year,
+                    customFileName = customFileName
                 )
 
                 // Zeige Erfolg
@@ -110,9 +128,9 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     /**
      * Exportiert Excel als einfache Tabelle (ohne Template)
      */
-    fun exportSimpleExcel() {
+    fun exportSimpleExcel(customFileName: String? = null) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isExporting = true, error = null)
+            _uiState.value = _uiState.value.copy(isExporting = true, error = null, showFileNameDialog = false)
 
             try {
                 val kw = _selectedKW.value
@@ -138,7 +156,8 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                     entries = entries,
                     startKW = startKW,
                     endKW = endKW,
-                    year = year
+                    year = year,
+                    customFileName = customFileName
                 )
 
                 // Zeige Erfolg
@@ -376,7 +395,9 @@ data class ExportUiState(
     val importSuccess: Boolean = false,
     val importedEntriesCount: Int = 0,
     val error: String? = null,
-    val previewData: ExportPreviewData? = null
+    val previewData: ExportPreviewData? = null,
+    val showFileNameDialog: Boolean = false,
+    val isSimpleExport: Boolean = false
 )
 
 data class ExportPreviewData(

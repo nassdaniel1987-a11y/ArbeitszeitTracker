@@ -24,7 +24,8 @@ class SimpleExcelExportManager(private val context: Context) {
         entries: List<TimeEntry>,
         startKW: Int,
         endKW: Int,
-        year: Int
+        year: Int,
+        customFileName: String? = null
     ): File = withContext(Dispatchers.IO) {
 
         val workbook = XSSFWorkbook()
@@ -150,7 +151,16 @@ class SimpleExcelExportManager(private val context: Context) {
             ?: context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
             ?: context.filesDir
 
-        val fileName = "Arbeitszeiten_${year}_KW${String.format("%02d", startKW)}-${String.format("%02d", endKW)}_Einfach.xlsx"
+        val fileName = if (!customFileName.isNullOrBlank()) {
+            // Stelle sicher, dass .xlsx Extension vorhanden ist
+            if (customFileName.endsWith(".xlsx", ignoreCase = true)) {
+                customFileName
+            } else {
+                "${customFileName}.xlsx"
+            }
+        } else {
+            "Arbeitszeiten_${year}_KW${String.format("%02d", startKW)}-${String.format("%02d", endKW)}_Einfach.xlsx"
+        }
         val outputFile = File(downloadsDir, fileName)
 
         try {

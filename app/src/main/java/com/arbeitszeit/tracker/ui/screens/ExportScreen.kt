@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.viewmodel.ExportViewModel
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +76,7 @@ fun ExportScreen(viewModel: ExportViewModel) {
                 }
 
                 Button(
-                    onClick = { viewModel.exportExcel() },
+                    onClick = { viewModel.showFileNameDialog(isSimpleExport = false) },
                     enabled = !uiState.isExporting && !uiState.isImporting,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -94,7 +95,7 @@ fun ExportScreen(viewModel: ExportViewModel) {
                 }
 
                 Button(
-                    onClick = { viewModel.exportSimpleExcel() },
+                    onClick = { viewModel.showFileNameDialog(isSimpleExport = true) },
                     enabled = !uiState.isExporting && !uiState.isImporting,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
@@ -168,9 +169,24 @@ fun ExportScreen(viewModel: ExportViewModel) {
             previewData = previewData,
             onConfirm = {
                 viewModel.closePreview()
-                viewModel.exportExcel()
+                viewModel.showFileNameDialog(isSimpleExport = false)
             },
             onDismiss = { viewModel.closePreview() }
+        )
+    }
+
+    // Dateinamen-Eingabe Dialog
+    if (uiState.showFileNameDialog) {
+        FileNameInputDialog(
+            isSimpleExport = uiState.isSimpleExport,
+            onConfirm = { fileName ->
+                if (uiState.isSimpleExport) {
+                    viewModel.exportSimpleExcel(fileName)
+                } else {
+                    viewModel.exportExcel(fileName)
+                }
+            },
+            onDismiss = { viewModel.dismissFileNameDialog() }
         )
     }
 }
@@ -267,6 +283,97 @@ fun ExportPreviewDialog(
                 Icon(Icons.Default.FileDownload, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Jetzt exportieren")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
+}
+
+@Composable
+fun FileNameInputDialog(
+    isSimpleExport: Boolean,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var fileName by remember {
+        mutableStateOf(
+            if (isSimpleExport) {
+                "Arbeitszeiten_${LocalDate.now().year}_Einfach"
+            } else {
+                "Arbeitszeit_${LocalDate.now().year}"
+            }
+        )
+    }
+    var showError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = null)
+                Text("Dateinamen eingeben")
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Gib einen Namen für die Export-Datei ein:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                OutlinedTextField(
+                    value = fileName,
+                    onValueChange = {
+                        fileName = it
+                        showError = it.isBlank()
+                    },
+                    label = { Text("Dateiname") },
+                    placeholder = { Text("z.B. Arbeitszeit_2025") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = showError,
+                    supportingText = {
+                        if (showError) {
+                            Text(
+                                "Bitte einen Dateinamen eingeben",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else {
+                            Text(".xlsx wird automatisch hinzugefügt")
+                        }
+                    },
+                    singleLine = true
+                )
+
+                Text(
+                    "Die Datei wird im Download-Ordner gespeichert.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (fileName.isNotBlank()) {
+                        onConfirm(fileName.trim())
+                    } else {
+                        showError = true
+                    }
+                },
+                enabled = fileName.isNotBlank()
+            ) {
+                Icon(Icons.Default.FileDownload, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Exportieren")
             }
         },
         dismissButton = {
