@@ -57,7 +57,15 @@ class ExcelExportManager(private val context: Context) {
             // 5. Formeln zur Neuberechnung markieren
             workbook.setForceFormulaRecalculation(true)
 
-            // 6. Speichere Datei mit custom oder default Namen
+            // 6. Speichere Datei mit custom oder default Namen in dediziertem Ordner
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+
+            // Erstelle dedizierten Unterordner "ArbeitszeitTracker"
+            val arbeitszeitDir = File(downloadsDir, "ArbeitszeitTracker")
+            if (!arbeitszeitDir.exists()) {
+                arbeitszeitDir.mkdirs()
+            }
+
             val fileName = if (!customFileName.isNullOrBlank()) {
                 // Stelle sicher, dass .xlsx Extension vorhanden ist
                 if (customFileName.endsWith(".xlsx", ignoreCase = true)) {
@@ -69,10 +77,7 @@ class ExcelExportManager(private val context: Context) {
                 "Arbeitszeit_${year}.xlsx"
             }
 
-            val outputFile = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                fileName
-            )
+            val outputFile = File(arbeitszeitDir, fileName)
 
             FileOutputStream(outputFile).use { outputStream ->
                 workbook.write(outputStream)
