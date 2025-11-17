@@ -67,9 +67,10 @@ object TimeUtils {
     /**
      * Konvertiert Excel-Dezimalwert zu Minuten
      * Für Excel-Import: 1.0 = 1440 Minuten (24 Stunden)
+     * Verwendet Math.round für konsistente Rundung (immer bei .5 aufrunden)
      */
     fun excelTimeToMinutes(excelTime: Double): Int {
-        return (excelTime * 1440.0).roundToInt()
+        return kotlin.math.round(excelTime * 1440.0).toInt()
     }
     
     /**

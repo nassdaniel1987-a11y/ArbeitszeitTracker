@@ -354,7 +354,7 @@ fun FileNameInputDialog(
                 )
 
                 Text(
-                    "Die Datei wird im Download-Ordner gespeichert.",
+                    "Die Datei wird im Ordner Downloads/ArbeitszeitTracker gespeichert.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -146,10 +146,16 @@ class SimpleExcelExportManager(private val context: Context) {
         sheet.setColumnWidth(5, 8 * 256)   // Ist: 8 Zeichen
         sheet.setColumnWidth(6, 10 * 256)  // Typ: 10 Zeichen
 
-        // Datei speichern - verwende app-spezifisches Verzeichnis (keine Berechtigungen nötig)
+        // Datei speichern - verwende dedizierten Ordner im Download-Bereich
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             ?: context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
             ?: context.filesDir
+
+        // Erstelle dedizierten Unterordner "ArbeitszeitTracker"
+        val arbeitszeitDir = File(downloadsDir, "ArbeitszeitTracker")
+        if (!arbeitszeitDir.exists()) {
+            arbeitszeitDir.mkdirs()
+        }
 
         val fileName = if (!customFileName.isNullOrBlank()) {
             // Stelle sicher, dass .xlsx Extension vorhanden ist
@@ -161,7 +167,7 @@ class SimpleExcelExportManager(private val context: Context) {
         } else {
             "Arbeitszeiten_${year}_KW${String.format("%02d", startKW)}-${String.format("%02d", endKW)}_Einfach.xlsx"
         }
-        val outputFile = File(downloadsDir, fileName)
+        val outputFile = File(arbeitszeitDir, fileName)
 
         try {
             FileOutputStream(outputFile).use { outputStream ->
