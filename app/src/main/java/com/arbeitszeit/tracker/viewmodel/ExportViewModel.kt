@@ -395,6 +395,82 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     fun closePreview() {
         _uiState.value = _uiState.value.copy(previewData = null)
     }
+
+    /**
+     * Exportiert Excel in die Cloud (via Storage Access Framework)
+     * Wird aufgerufen nachdem der Nutzer einen Speicherort gewählt hat
+     */
+    fun exportToCloud(uri: Uri, isSimpleExport: Boolean = false) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isExporting = true, error = null)
+
+            try {
+                val year = _selectedYear.value
+                val settings = settingsDao.getSettings()
+                if (settings == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isExporting = false,
+                        error = "Bitte erst Einstellungen ausfüllen"
+                    )
+                    return@launch
+                }
+
+                val success = if (isSimpleExport) {
+                    // Einfacher Export
+                    val kw = _selectedKW.value
+                    val (startKW, endKW) = com.arbeitszeit.tracker.utils.DateUtils.getWeekRangeForSheet(kw)
+                    val entries = timeEntryDao.getEntriesByWeekRange(year, startKW, endKW)
+
+                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        simpleExportManager.exportToStream(
+                            userSettings = settings,
+                            entries = entries,
+                            startKW = startKW,
+                            endKW = endKW,
+                            year = year,
+                            outputStream = outputStream
+                        )
+                    } ?: false
+                } else {
+                    // Gesamtjahr-Export
+                    val entries = timeEntryDao.getEntriesByYear(year)
+
+                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        exportManager.exportToStream(
+                            userSettings = settings,
+                            entries = entries,
+                            year = year,
+                            outputStream = outputStream
+                        )
+                    } ?: false
+                }
+
+                if (success) {
+                    NotificationHelper.showExportSuccess(
+                        getApplication(),
+                        "In Cloud gespeichert"
+                    )
+
+                    _uiState.value = _uiState.value.copy(
+                        isExporting = false,
+                        exportSuccess = true
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isExporting = false,
+                        error = "Cloud-Export fehlgeschlagen"
+                    )
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _uiState.value = _uiState.value.copy(
+                    isExporting = false,
+                    error = "Cloud-Export fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"
+                )
+            }
+        }
+    }
 }
 
 data class ExportUiState(

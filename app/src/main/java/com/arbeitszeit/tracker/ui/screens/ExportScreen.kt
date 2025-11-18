@@ -1,5 +1,8 @@
 package com.arbeitszeit.tracker.ui.screens
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,6 +23,20 @@ fun ExportScreen(viewModel: ExportViewModel) {
     // Jahr-Auswahl: Aktuellas Jahr ± 5 Jahre
     val currentYear = LocalDate.now().year
     val availableYears = (currentYear - 5..currentYear + 5).toList()
+
+    // Activity Result Launcher für Cloud-Export (Gesamtjahr)
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ) { uri ->
+        uri?.let { viewModel.exportToCloud(it, isSimpleExport = false) }
+    }
+
+    // Activity Result Launcher für Cloud-Export (Einfach)
+    val createDocumentSimpleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ) { uri ->
+        uri?.let { viewModel.exportToCloud(it, isSimpleExport = true) }
+    }
 
     Column(
         modifier = Modifier
@@ -170,6 +187,39 @@ fun ExportScreen(viewModel: ExportViewModel) {
                     Icon(Icons.Default.FileDownload, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Einfacher Export (Wochenblöcke)")
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Cloud-Export Buttons
+                Text(
+                    "In Cloud speichern",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+
+                OutlinedButton(
+                    onClick = {
+                        createDocumentLauncher.launch("Arbeitszeit_${selectedYear}.xlsx")
+                    },
+                    enabled = !uiState.isExporting && !uiState.isImporting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Cloud, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Cloud: Gesamtjahr")
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        createDocumentSimpleLauncher.launch("Arbeitszeiten_${selectedYear}_Einfach.xlsx")
+                    },
+                    enabled = !uiState.isExporting && !uiState.isImporting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Cloud, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Cloud: Wochenblöcke")
                 }
 
                 if (uiState.exportSuccess) {

@@ -341,6 +341,55 @@ class ExcelExportManager(private val context: Context) {
     }
     
     /**
+     * Exportiert direkt in einen OutputStream (für Cloud-Upload via SAF)
+     *
+     * @param userSettings Benutzereinstellungen
+     * @param entries Alle Zeiteinträge für den Export
+     * @param year Jahr
+     * @param outputStream Ziel-OutputStream (z.B. von ContentResolver)
+     */
+    suspend fun exportToStream(
+        userSettings: UserSettings,
+        entries: List<TimeEntry>,
+        year: Int,
+        outputStream: java.io.OutputStream
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            // 1. Lade Template
+            val templateStream: InputStream = templateManager.getTemplateStream(year)
+                ?: context.assets.open("ANZ_Template.xlsx")
+
+            val workbook = WorkbookFactory.create(templateStream)
+
+            try {
+                // 2. Lese wichtige Werte aus der Vorlage
+                val ueberstundenVorjahr = readUeberstundenVorjahr(workbook)
+                val letzterUebertrag = readLetzterUebertrag(workbook)
+
+                // 3. Fülle Stammangaben
+                fillStammangaben(workbook, userSettings, ueberstundenVorjahr, letzterUebertrag)
+
+                // 4. Fülle ALLE KW-Sheets
+                fillAllSheets(workbook, entries)
+
+                // 5. Formeln zur Neuberechnung markieren
+                workbook.setForceFormulaRecalculation(true)
+
+                // 6. Schreibe direkt in OutputStream
+                workbook.write(outputStream)
+
+                true
+            } finally {
+                workbook.close()
+                templateStream.close()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ExcelExportManager", "Stream-Export fehlgeschlagen", e)
+            false
+        }
+    }
+
+    /**
      * Gibt den Dateinamen für einen Export zurück
      */
     fun getExportFileName(year: Int): String {
