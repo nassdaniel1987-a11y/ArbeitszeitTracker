@@ -397,6 +397,85 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     /**
+     * Exportiert und teilt Excel-Datei (via Share Intent)
+     * Funktioniert mit OneDrive, Google Drive, E-Mail, WhatsApp, etc.
+     */
+    fun shareExport(isSimpleExport: Boolean = false) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isExporting = true, error = null)
+
+            try {
+                val year = _selectedYear.value
+                val settings = settingsDao.getSettings()
+                if (settings == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isExporting = false,
+                        error = "Bitte erst Einstellungen ausfüllen"
+                    )
+                    return@launch
+                }
+
+                val file = if (isSimpleExport) {
+                    // Einfacher Export
+                    val kw = _selectedKW.value
+                    val (startKW, endKW) = com.arbeitszeit.tracker.utils.DateUtils.getWeekRangeForSheet(kw)
+                    val entries = timeEntryDao.getEntriesByWeekRange(year, startKW, endKW)
+
+                    simpleExportManager.exportToSimpleExcel(
+                        userSettings = settings,
+                        entries = entries,
+                        startKW = startKW,
+                        endKW = endKW,
+                        year = year
+                    )
+                } else {
+                    // Gesamtjahr-Export
+                    val entries = timeEntryDao.getEntriesByYear(year)
+
+                    exportManager.exportToExcel(
+                        userSettings = settings,
+                        entries = entries,
+                        year = year
+                    )
+                }
+
+                // Öffne Share-Dialog
+                val context = getApplication<Application>()
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+
+                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+
+                context.startActivity(
+                    android.content.Intent.createChooser(shareIntent, "Excel teilen mit...").apply {
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    isExporting = false,
+                    exportSuccess = true
+                )
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _uiState.value = _uiState.value.copy(
+                    isExporting = false,
+                    error = "Share fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"
+                )
+            }
+        }
+    }
+
+    /**
      * Exportiert Excel in die Cloud (via Storage Access Framework)
      * Wird aufgerufen nachdem der Nutzer einen Speicherort gewählt hat
      */

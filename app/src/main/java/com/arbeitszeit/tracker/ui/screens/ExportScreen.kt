@@ -191,11 +191,52 @@ fun ExportScreen(viewModel: ExportViewModel) {
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // Cloud-Export Buttons
+                // Share-Buttons (OneDrive, E-Mail, etc.)
                 Text(
-                    "In Cloud speichern",
+                    "Teilen",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+
+                Text(
+                    "Funktioniert mit OneDrive, Google Drive, E-Mail, WhatsApp, etc.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                )
+
+                OutlinedButton(
+                    onClick = { viewModel.shareExport(isSimpleExport = false) },
+                    enabled = !uiState.isExporting && !uiState.isImporting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("📤 Teilen: Gesamtjahr")
+                }
+
+                OutlinedButton(
+                    onClick = { viewModel.shareExport(isSimpleExport = true) },
+                    enabled = !uiState.isExporting && !uiState.isImporting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("📤 Teilen: Wochenblöcke")
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Cloud-Export Buttons (nur Google Drive)
+                Text(
+                    "Direkt in Cloud speichern",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+
+                Text(
+                    "Meist nur Google Drive verfügbar",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
                 )
 
                 OutlinedButton(
