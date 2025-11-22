@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -352,14 +354,52 @@ private fun VorlageEditDialog(
     var wochenMinuten by remember { mutableStateOf((vorlage?.wochenStundenMinuten ?: 2400) % 60) }
     var arbeitsTage by remember { mutableStateOf(vorlage?.arbeitsTageProWoche?.toString() ?: "5") }
 
+    // Individuelle Tageszeiten (in Minuten, null = automatisch)
+    var montagStd by remember { mutableStateOf((vorlage?.montagSollMinuten ?: 0) / 60) }
+    var montagMin by remember { mutableStateOf((vorlage?.montagSollMinuten ?: 0) % 60) }
+    var montagAuto by remember { mutableStateOf(vorlage?.montagSollMinuten == null) }
+
+    var dienstagStd by remember { mutableStateOf((vorlage?.dienstagSollMinuten ?: 0) / 60) }
+    var dienstagMin by remember { mutableStateOf((vorlage?.dienstagSollMinuten ?: 0) % 60) }
+    var dienstagAuto by remember { mutableStateOf(vorlage?.dienstagSollMinuten == null) }
+
+    var mittwochStd by remember { mutableStateOf((vorlage?.mittwochSollMinuten ?: 0) / 60) }
+    var mittwochMin by remember { mutableStateOf((vorlage?.mittwochSollMinuten ?: 0) % 60) }
+    var mittwochAuto by remember { mutableStateOf(vorlage?.mittwochSollMinuten == null) }
+
+    var donnerstagStd by remember { mutableStateOf((vorlage?.donnerstagSollMinuten ?: 0) / 60) }
+    var donnerstagMin by remember { mutableStateOf((vorlage?.donnerstagSollMinuten ?: 0) % 60) }
+    var donnerstagAuto by remember { mutableStateOf(vorlage?.donnerstagSollMinuten == null) }
+
+    var freitagStd by remember { mutableStateOf((vorlage?.freitagSollMinuten ?: 0) / 60) }
+    var freitagMin by remember { mutableStateOf((vorlage?.freitagSollMinuten ?: 0) % 60) }
+    var freitagAuto by remember { mutableStateOf(vorlage?.freitagSollMinuten == null) }
+
+    var samstagStd by remember { mutableStateOf((vorlage?.samstagSollMinuten ?: 0) / 60) }
+    var samstagMin by remember { mutableStateOf((vorlage?.samstagSollMinuten ?: 0) % 60) }
+    var samstagAuto by remember { mutableStateOf(vorlage?.samstagSollMinuten == null) }
+
+    var sonntagStd by remember { mutableStateOf((vorlage?.sonntagSollMinuten ?: 0) / 60) }
+    var sonntagMin by remember { mutableStateOf((vorlage?.sonntagSollMinuten ?: 0) % 60) }
+    var sonntagAuto by remember { mutableStateOf(vorlage?.sonntagSollMinuten == null) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (vorlage == null) "Neue Vorlage" else "Vorlage bearbeiten") },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
             ) {
+                // Allgemeine Einstellungen
+                Text(
+                    "Allgemeine Einstellungen",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -404,6 +444,69 @@ private fun VorlageEditDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+
+                HorizontalDivider()
+
+                // Individuelle Soll-Zeiten pro Tag
+                Text(
+                    "Soll-Arbeitszeiten pro Tag (optional)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Leer lassen für automatische Berechnung",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Montag
+                DayTimeInput("Montag", montagStd, montagMin, montagAuto,
+                    onStdChange = { montagStd = it },
+                    onMinChange = { montagMin = it },
+                    onAutoChange = { montagAuto = it }
+                )
+
+                // Dienstag
+                DayTimeInput("Dienstag", dienstagStd, dienstagMin, dienstagAuto,
+                    onStdChange = { dienstagStd = it },
+                    onMinChange = { dienstagMin = it },
+                    onAutoChange = { dienstagAuto = it }
+                )
+
+                // Mittwoch
+                DayTimeInput("Mittwoch", mittwochStd, mittwochMin, mittwochAuto,
+                    onStdChange = { mittwochStd = it },
+                    onMinChange = { mittwochMin = it },
+                    onAutoChange = { mittwochAuto = it }
+                )
+
+                // Donnerstag
+                DayTimeInput("Donnerstag", donnerstagStd, donnerstagMin, donnerstagAuto,
+                    onStdChange = { donnerstagStd = it },
+                    onMinChange = { donnerstagMin = it },
+                    onAutoChange = { donnerstagAuto = it }
+                )
+
+                // Freitag
+                DayTimeInput("Freitag", freitagStd, freitagMin, freitagAuto,
+                    onStdChange = { freitagStd = it },
+                    onMinChange = { freitagMin = it },
+                    onAutoChange = { freitagAuto = it }
+                )
+
+                // Samstag
+                DayTimeInput("Samstag", samstagStd, samstagMin, samstagAuto,
+                    onStdChange = { samstagStd = it },
+                    onMinChange = { samstagMin = it },
+                    onAutoChange = { samstagAuto = it }
+                )
+
+                // Sonntag
+                DayTimeInput("Sonntag", sonntagStd, sonntagMin, sonntagAuto,
+                    onStdChange = { sonntagStd = it },
+                    onMinChange = { sonntagMin = it },
+                    onAutoChange = { sonntagAuto = it }
+                )
             }
         },
         confirmButton = {
@@ -415,6 +518,13 @@ private fun VorlageEditDialog(
                         arbeitsumfangProzent = prozent.toIntOrNull() ?: 100,
                         wochenStundenMinuten = wochenStunden * 60 + wochenMinuten,
                         arbeitsTageProWoche = arbeitsTage.toIntOrNull() ?: 5,
+                        montagSollMinuten = if (montagAuto) null else (montagStd * 60 + montagMin),
+                        dienstagSollMinuten = if (dienstagAuto) null else (dienstagStd * 60 + dienstagMin),
+                        mittwochSollMinuten = if (mittwochAuto) null else (mittwochStd * 60 + mittwochMin),
+                        donnerstagSollMinuten = if (donnerstagAuto) null else (donnerstagStd * 60 + donnerstagMin),
+                        freitagSollMinuten = if (freitagAuto) null else (freitagStd * 60 + freitagMin),
+                        samstagSollMinuten = if (samstagAuto) null else (samstagStd * 60 + samstagMin),
+                        sonntagSollMinuten = if (sonntagAuto) null else (sonntagStd * 60 + sonntagMin),
                         isDefault = vorlage?.isDefault ?: false
                     )
                     onSave(newVorlage)
@@ -430,4 +540,59 @@ private fun VorlageEditDialog(
             }
         }
     )
+}
+
+@Composable
+private fun DayTimeInput(
+    dayName: String,
+    std: Int,
+    min: Int,
+    auto: Boolean,
+    onStdChange: (Int) -> Unit,
+    onMinChange: (Int) -> Unit,
+    onAutoChange: (Boolean) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Checkbox(
+                checked = !auto,
+                onCheckedChange = { onAutoChange(!it) }
+            )
+            Text(
+                dayName,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
+            )
+
+            if (!auto) {
+                OutlinedTextField(
+                    value = std.toString(),
+                    onValueChange = { if (it.all { c -> c.isDigit() } && it.length <= 2) onStdChange(it.toIntOrNull() ?: 0) },
+                    label = { Text("Std") },
+                    modifier = Modifier.width(80.dp),
+                    singleLine = true
+                )
+                Text(":", modifier = Modifier.padding(horizontal = 4.dp))
+                OutlinedTextField(
+                    value = String.format("%02d", min),
+                    onValueChange = { if (it.all { c -> c.isDigit() } && it.length <= 2) onMinChange(it.toIntOrNull() ?: 0) },
+                    label = { Text("Min") },
+                    modifier = Modifier.width(80.dp),
+                    singleLine = true
+                )
+            } else {
+                Text(
+                    "Automatisch",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
