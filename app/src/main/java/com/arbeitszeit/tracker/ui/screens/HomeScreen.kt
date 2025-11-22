@@ -47,6 +47,8 @@ fun HomeScreen(
     val selectedWeekDate by viewModel.selectedWeekDate.collectAsState()
     val locationStatus by viewModel.locationStatus.collectAsState()
     val deletedEntry by viewModel.deletedEntry.collectAsState()
+    val vorlagen by viewModel.vorlagen.collectAsState()
+    val defaultVorlage by viewModel.defaultVorlage.collectAsState()
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
@@ -224,7 +226,10 @@ fun HomeScreen(
                         onNextWeek = { viewModel.nextWeek() },
                         onGoToCurrentWeek = { viewModel.goToCurrentWeek() },
                         onApplyTemplate = { onNavigateToWeekTemplates() },
-                        firstMonday = userSettings?.ersterMontagImJahr
+                        firstMonday = userSettings?.ersterMontagImJahr,
+                        vorlagen = vorlagen,
+                        currentVorlageName = weekEntries.firstOrNull()?.sollZeitVorlageName,
+                        onApplyVorlageToWeek = { vorlageId -> viewModel.applyVorlageToWeek(vorlageId) }
                     )
                 }
             }
@@ -408,8 +413,12 @@ private fun WeekNavigationHeader(
     onNextWeek: () -> Unit,
     onGoToCurrentWeek: () -> Unit,
     onApplyTemplate: () -> Unit = {},
-    firstMonday: String? = null
+    firstMonday: String? = null,
+    vorlagen: List<com.arbeitszeit.tracker.data.entity.SollZeitVorlage> = emptyList(),
+    currentVorlageName: String? = null,
+    onApplyVorlageToWeek: (Long) -> Unit = {}
 ) {
+    var showVorlageDropdown by remember { mutableStateOf(false) }
     val weekDays = DateUtils.getDaysOfWeek(selectedWeekDate)
     val weekStart = weekDays.first()
     val weekEnd = weekDays.last()
@@ -486,6 +495,100 @@ private fun WeekNavigationHeader(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text("Vorlage anwenden")
+                }
+            }
+
+            // Arbeitszeitvorlagen-Auswahl
+            if (vorlagen.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Layers,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        OutlinedButton(
+                            onClick = { showVorlageDropdown = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    currentVorlageName ?: "Keine Vorlage",
+                                    modifier = Modifier.weight(1f),
+                                    color = if (currentVorlageName != null)
+                                        MaterialTheme.colorScheme.onSurface
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Icon(
+                                    Icons.Default.ArrowDropDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = showVorlageDropdown,
+                            onDismissRequest = { showVorlageDropdown = false }
+                        ) {
+                            vorlagen.forEach { vorlage ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(vorlage.name)
+                                            if (vorlage.isDefault) {
+                                                Icon(
+                                                    Icons.Default.Star,
+                                                    contentDescription = "Standard",
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        onApplyVorlageToWeek(vorlage.id)
+                                        showVorlageDropdown = false
+                                    },
+                                    leadingIcon = {
+                                        if (vorlage.name == currentVorlageName) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = "Ausgewählt",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Zeige aktuelle Vorlage Info
+                if (currentVorlageName != null) {
+                    Text(
+                        "Woche nutzt: $currentVorlageName",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 28.dp)
+                    )
                 }
             }
         }
