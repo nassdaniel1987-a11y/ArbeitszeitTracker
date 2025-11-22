@@ -79,8 +79,8 @@ class StatistikWidget : AppWidgetProvider() {
             val sunday = monday.plusDays(6)
 
             val weekEntries = timeEntryDao.getEntriesByDateRange(
-                DateUtils.formatDate(monday),
-                DateUtils.formatDate(sunday)
+                DateUtils.dateToString(monday),
+                DateUtils.dateToString(sunday)
             )
 
             // Berechne Statistiken
