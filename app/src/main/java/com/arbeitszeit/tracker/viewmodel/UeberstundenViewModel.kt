@@ -34,6 +34,12 @@ data class UrlaubsSummary(
     val krankheitstage: Int                // Krankheitstage im Jahr (Info)
 )
 
+data class WeekData(
+    val weekNumber: Int,                   // KW-Nummer
+    val year: Int,                         // Jahr
+    val differenzMinuten: Int              // Überstunden/Minderstunden dieser Woche
+)
+
 class UeberstundenViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
@@ -66,6 +72,35 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         SharingStarted.Lazily,
         UrlaubsSummary(30, 0, 30, 0)
     )
+
+    val weeklyData: StateFlow<List<WeekData>> = allEntries.map { entries ->
+        calculateWeeklyData(entries)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.Lazily,
+        emptyList()
+    )
+
+    private fun calculateWeeklyData(entries: List<TimeEntry>): List<WeekData> {
+        // Gruppiere nach KW und Jahr
+        val weekGroups = entries
+            .groupBy { "${it.jahr}-${it.kalenderwoche}" }
+            .mapNotNull { (key, weekEntries) ->
+                val year = weekEntries.firstOrNull()?.jahr ?: return@mapNotNull null
+                val week = weekEntries.firstOrNull()?.kalenderwoche ?: return@mapNotNull null
+                val differenz = weekEntries.sumOf { it.getDifferenzMinuten() }
+
+                WeekData(
+                    weekNumber = week,
+                    year = year,
+                    differenzMinuten = differenz
+                )
+            }
+            .sortedWith(compareBy({ it.year }, { it.weekNumber }))
+
+        // Nimm die letzten 12 Wochen
+        return weekGroups.takeLast(12)
+    }
 
     private fun calculateUeberstundenSummary(
         entries: List<TimeEntry>,

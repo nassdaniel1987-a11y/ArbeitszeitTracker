@@ -32,6 +32,7 @@ fun UeberstundenScreen(
 ) {
     val summary by viewModel.ueberstundenSummary.collectAsState()
     val urlaubsSummary by viewModel.urlaubsSummary.collectAsState()
+    val weeklyData by viewModel.weeklyData.collectAsState()
 
     Scaffold(
         topBar = {
