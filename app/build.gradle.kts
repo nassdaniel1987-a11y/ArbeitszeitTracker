@@ -104,10 +104,10 @@ dependencies {
     // Google Play Services - Geofencing
     implementation("com.google.android.gms:play-services-location:21.3.0")  // Neueste
 
-    // Google Drive API für Cloud-Backup
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
-    implementation("com.google.api-client:google-api-client-android:2.6.0")
-    implementation("com.google.apis:google-api-services-drive:v3-rev20240914-2.0.0")
+    // Google Drive API für Cloud-Backup (disabled - requires OAuth setup)
+    // implementation("com.google.android.gms:play-services-auth:21.2.0")
+    // implementation("com.google.api-client:google-api-client-android:2.6.0")
+    // implementation("com.google.apis:google-api-services-drive:v3-rev20240914-2.0.0")
 
     // OpenStreetMap (OSMDroid) - Open Source Maps
     implementation("org.osmdroid:osmdroid-android:6.1.20")  // Neueste

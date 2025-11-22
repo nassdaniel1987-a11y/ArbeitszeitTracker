@@ -11,8 +11,10 @@ import com.arbeitszeit.tracker.MainActivity
 import com.arbeitszeit.tracker.R
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
+import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -74,14 +76,14 @@ class LockScreenGlanceWidget : AppWidgetProvider() {
             val todayEntry = timeEntryDao.getEntryByDate(today)
 
             // Prüfe ob es einen laufenden Eintrag gibt
-            val isRunning = todayEntry != null && todayEntry.endezeit.isNullOrEmpty()
+            val isRunning = todayEntry != null && todayEntry.endZeit == null
 
             // Berechne Statistiken
             val todayMinutes = todayEntry?.getIstMinuten() ?: 0
 
             // Hole Überstunden
             val settings = settingsDao.getSettings()
-            val allEntries = timeEntryDao.getAllEntries()
+            val allEntries = timeEntryDao.getAllEntriesFlow().first()
 
             val currentYear = LocalDate.now().year
             val currentYearEntries = allEntries.filter {
@@ -101,14 +103,14 @@ class LockScreenGlanceWidget : AppWidgetProvider() {
                     views.setTextViewText(R.id.widget_lockscreen_status_icon, "▶")
                     views.setTextViewText(R.id.widget_lockscreen_status_text, "Arbeitszeit läuft")
 
-                    val startTime = todayEntry.startzeit ?: "--:--"
+                    val startTime = TimeUtils.formatTimeForDisplay(todayEntry.startZeit)
                     views.setTextViewText(R.id.widget_lockscreen_time_info, "seit $startTime")
-                } else if (todayEntry != null && todayEntry.endezeit != null) {
+                } else if (todayEntry != null && todayEntry.endZeit != null) {
                     // Arbeitszeit beendet
                     views.setTextViewText(R.id.widget_lockscreen_status_icon, "✓")
                     views.setTextViewText(R.id.widget_lockscreen_status_text, "Arbeitszeit beendet")
 
-                    val endTime = todayEntry.endezeit ?: "--:--"
+                    val endTime = TimeUtils.formatTimeForDisplay(todayEntry.endZeit)
                     views.setTextViewText(R.id.widget_lockscreen_time_info, "um $endTime")
                 } else {
                     // Noch nicht gestartet

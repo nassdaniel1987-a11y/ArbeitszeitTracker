@@ -2,9 +2,10 @@ package com.arbeitszeit.tracker.backup
 
 import android.content.Context
 import com.arbeitszeit.tracker.data.database.AppDatabase
-import com.arbeitszeit.tracker.data.model.TimeEntry
-import com.arbeitszeit.tracker.data.model.UserSettings
+import com.arbeitszeit.tracker.data.entity.TimeEntry
+import com.arbeitszeit.tracker.data.entity.UserSettings
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -34,7 +35,7 @@ class BackupManager(private val context: Context) {
         val settingsDao = database.userSettingsDao()
 
         // Daten aus Datenbank holen
-        val timeEntries = timeEntryDao.getAllEntries()
+        val timeEntries = timeEntryDao.getAllEntriesFlow().first()
         val settings = settingsDao.getSettings()
 
         // JSON-Objekt erstellen
@@ -45,17 +46,21 @@ class BackupManager(private val context: Context) {
 
             // TimeEntries
             val entriesArray = JSONArray()
-            timeEntries.forEach { entry ->
+            for (entry in timeEntries) {
                 val entryJson = JSONObject().apply {
+                    put("id", entry.id)
                     put("datum", entry.datum)
-                    put("startzeit", entry.startzeit)
-                    put("endezeit", entry.endezeit)
-                    put("pauseMinuten", entry.pauseMinuten)
-                    put("sollMinuten", entry.sollMinuten)
-                    put("notiz", entry.notiz)
-                    put("typ", entry.typ)
+                    put("wochentag", entry.wochentag)
                     put("kalenderwoche", entry.kalenderwoche)
                     put("jahr", entry.jahr)
+                    put("startZeit", entry.startZeit)
+                    put("endZeit", entry.endZeit)
+                    put("pauseMinuten", entry.pauseMinuten)
+                    put("sollMinuten", entry.sollMinuten)
+                    put("typ", entry.typ)
+                    put("notiz", entry.notiz)
+                    put("arbeitszeitBereitschaft", entry.arbeitszeitBereitschaft)
+                    put("isManualEntry", entry.isManualEntry)
                 }
                 entriesArray.put(entryJson)
             }
@@ -64,16 +69,29 @@ class BackupManager(private val context: Context) {
             // UserSettings
             settings?.let { s ->
                 val settingsJson = JSONObject().apply {
-                    put("standardSollStunden", s.standardSollStunden)
-                    put("standardPauseMinuten", s.standardPauseMinuten)
+                    put("name", s.name)
+                    put("einrichtung", s.einrichtung)
+                    put("arbeitsumfangProzent", s.arbeitsumfangProzent)
+                    put("wochenStundenMinuten", s.wochenStundenMinuten)
+                    put("arbeitsTageProWoche", s.arbeitsTageProWoche)
+                    put("ferienbetreuung", s.ferienbetreuung)
                     put("ueberstundenVorjahrMinuten", s.ueberstundenVorjahrMinuten)
-                    put("benachrichtigungenAktiv", s.benachrichtigungenAktiv)
-                    put("benachrichtigungStartZeit", s.benachrichtigungStartZeit)
-                    put("benachrichtigungEndeZeit", s.benachrichtigungEndeZeit)
-                    put("geofencingAktiv", s.geofencingAktiv)
-                    put("arbeitsortLatitude", s.arbeitsortLatitude)
-                    put("arbeitsortLongitude", s.arbeitsortLongitude)
-                    put("arbeitsortRadius", s.arbeitsortRadius)
+                    put("letzterUebertragMinuten", s.letzterUebertragMinuten)
+                    put("ersterMontagImJahr", s.ersterMontagImJahr)
+                    put("montagSollMinuten", s.montagSollMinuten)
+                    put("dienstagSollMinuten", s.dienstagSollMinuten)
+                    put("mittwochSollMinuten", s.mittwochSollMinuten)
+                    put("donnerstagSollMinuten", s.donnerstagSollMinuten)
+                    put("freitagSollMinuten", s.freitagSollMinuten)
+                    put("samstagSollMinuten", s.samstagSollMinuten)
+                    put("sonntagSollMinuten", s.sonntagSollMinuten)
+                    put("workingDays", s.workingDays)
+                    put("geofencingEnabled", s.geofencingEnabled)
+                    put("geofencingStartHour", s.geofencingStartHour)
+                    put("geofencingEndHour", s.geofencingEndHour)
+                    put("geofencingActiveDays", s.geofencingActiveDays)
+                    put("darkMode", s.darkMode)
+                    put("selectedTemplateYear", s.selectedTemplateYear)
                     put("bundesland", s.bundesland)
                     put("urlaubsanspruchTage", s.urlaubsanspruchTage)
                 }
@@ -112,7 +130,7 @@ class BackupManager(private val context: Context) {
 
             // Wenn replaceExisting, lösche vorhandene Daten
             if (replaceExisting) {
-                timeEntryDao.deleteAll()
+                timeEntryDao.deleteAllEntries()
             }
 
             // TimeEntries wiederherstellen
@@ -122,16 +140,19 @@ class BackupManager(private val context: Context) {
                 val entryJson = entriesArray.getJSONObject(i)
                 val entry = TimeEntry(
                     datum = entryJson.getString("datum"),
-                    startzeit = entryJson.optString("startzeit", null),
-                    endezeit = entryJson.optString("endezeit", null),
+                    wochentag = entryJson.getString("wochentag"),
+                    kalenderwoche = entryJson.getInt("kalenderwoche"),
+                    jahr = entryJson.getInt("jahr"),
+                    startZeit = if (entryJson.isNull("startZeit")) null else entryJson.getInt("startZeit"),
+                    endZeit = if (entryJson.isNull("endZeit")) null else entryJson.getInt("endZeit"),
                     pauseMinuten = entryJson.getInt("pauseMinuten"),
                     sollMinuten = entryJson.getInt("sollMinuten"),
+                    typ = entryJson.getString("typ"),
                     notiz = entryJson.optString("notiz", ""),
-                    typ = entryJson.optString("typ", TimeEntry.TYP_NORMAL),
-                    kalenderwoche = entryJson.getInt("kalenderwoche"),
-                    jahr = entryJson.getInt("jahr")
+                    arbeitszeitBereitschaft = entryJson.optInt("arbeitszeitBereitschaft", 0),
+                    isManualEntry = entryJson.optBoolean("isManualEntry", false)
                 )
-                timeEntryDao.insertOrUpdate(entry)
+                timeEntryDao.insert(entry)
                 entriesRestored++
             }
 
@@ -139,20 +160,33 @@ class BackupManager(private val context: Context) {
             if (backupJson.has("settings")) {
                 val settingsJson = backupJson.getJSONObject("settings")
                 val settings = UserSettings(
-                    standardSollStunden = settingsJson.getDouble("standardSollStunden"),
-                    standardPauseMinuten = settingsJson.getInt("standardPauseMinuten"),
+                    name = settingsJson.getString("name"),
+                    einrichtung = settingsJson.getString("einrichtung"),
+                    arbeitsumfangProzent = settingsJson.getInt("arbeitsumfangProzent"),
+                    wochenStundenMinuten = settingsJson.getInt("wochenStundenMinuten"),
+                    arbeitsTageProWoche = settingsJson.optInt("arbeitsTageProWoche", 5),
+                    ferienbetreuung = settingsJson.optBoolean("ferienbetreuung", true),
                     ueberstundenVorjahrMinuten = settingsJson.getInt("ueberstundenVorjahrMinuten"),
-                    benachrichtigungenAktiv = settingsJson.getBoolean("benachrichtigungenAktiv"),
-                    benachrichtigungStartZeit = settingsJson.optString("benachrichtigungStartZeit", null),
-                    benachrichtigungEndeZeit = settingsJson.optString("benachrichtigungEndeZeit", null),
-                    geofencingAktiv = settingsJson.getBoolean("geofencingAktiv"),
-                    arbeitsortLatitude = settingsJson.optDouble("arbeitsortLatitude", 0.0),
-                    arbeitsortLongitude = settingsJson.optDouble("arbeitsortLongitude", 0.0),
-                    arbeitsortRadius = settingsJson.optInt("arbeitsortRadius", 200),
-                    bundesland = settingsJson.optString("bundesland", null),
+                    letzterUebertragMinuten = settingsJson.optInt("letzterUebertragMinuten", 0),
+                    ersterMontagImJahr = if (settingsJson.isNull("ersterMontagImJahr")) null else settingsJson.getString("ersterMontagImJahr"),
+                    montagSollMinuten = if (settingsJson.isNull("montagSollMinuten")) null else settingsJson.getInt("montagSollMinuten"),
+                    dienstagSollMinuten = if (settingsJson.isNull("dienstagSollMinuten")) null else settingsJson.getInt("dienstagSollMinuten"),
+                    mittwochSollMinuten = if (settingsJson.isNull("mittwochSollMinuten")) null else settingsJson.getInt("mittwochSollMinuten"),
+                    donnerstagSollMinuten = if (settingsJson.isNull("donnerstagSollMinuten")) null else settingsJson.getInt("donnerstagSollMinuten"),
+                    freitagSollMinuten = if (settingsJson.isNull("freitagSollMinuten")) null else settingsJson.getInt("freitagSollMinuten"),
+                    samstagSollMinuten = if (settingsJson.isNull("samstagSollMinuten")) null else settingsJson.getInt("samstagSollMinuten"),
+                    sonntagSollMinuten = if (settingsJson.isNull("sonntagSollMinuten")) null else settingsJson.getInt("sonntagSollMinuten"),
+                    workingDays = settingsJson.optString("workingDays", "12345"),
+                    geofencingEnabled = settingsJson.optBoolean("geofencingEnabled", false),
+                    geofencingStartHour = settingsJson.optInt("geofencingStartHour", 6),
+                    geofencingEndHour = settingsJson.optInt("geofencingEndHour", 20),
+                    geofencingActiveDays = settingsJson.optString("geofencingActiveDays", "12345"),
+                    darkMode = settingsJson.optString("darkMode", "system"),
+                    selectedTemplateYear = if (settingsJson.isNull("selectedTemplateYear")) null else settingsJson.getInt("selectedTemplateYear"),
+                    bundesland = if (settingsJson.isNull("bundesland")) null else settingsJson.getString("bundesland"),
                     urlaubsanspruchTage = settingsJson.optInt("urlaubsanspruchTage", 30)
                 )
-                settingsDao.insertOrUpdate(settings)
+                settingsDao.insert(settings)
             }
 
             RestoreResult.Success(entriesRestored)
