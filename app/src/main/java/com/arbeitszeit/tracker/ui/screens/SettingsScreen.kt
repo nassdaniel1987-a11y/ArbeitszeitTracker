@@ -103,6 +103,16 @@ fun SettingsScreen(
                     onClick = { selectedSection = SettingsSection.DAILY_HOURS }
                 )
             }
+            item {
+                SettingsMenuItem(
+                    icon = Icons.Default.Celebration,
+                    title = "Feiertage",
+                    subtitle = settings?.bundesland?.let { code ->
+                        com.arbeitszeit.tracker.utils.HolidayUtils.Bundesland.fromShortCode(code)?.displayName
+                    } ?: "Nicht gesetzt",
+                    onClick = { selectedSection = SettingsSection.HOLIDAYS }
+                )
+            }
 
             // Automatisierung & Orte
             item {
@@ -158,6 +168,7 @@ enum class SettingsSection {
     DARK_MODE,
     WORK_TIME,
     DAILY_HOURS,
+    HOLIDAYS,
     GEOFENCING,
     EXCEL_TEMPLATES,
     DELETE_DATA
@@ -267,6 +278,7 @@ private fun SettingsDetailScreen(
                             SettingsSection.DARK_MODE -> "Dark Mode"
                             SettingsSection.WORK_TIME -> "Arbeitszeit"
                             SettingsSection.DAILY_HOURS -> "Sollzeiten"
+                            SettingsSection.HOLIDAYS -> "Feiertage"
                             SettingsSection.GEOFENCING -> "Geofencing & Orte"
                             SettingsSection.EXCEL_TEMPLATES -> "Excel-Vorlagen"
                             SettingsSection.DELETE_DATA -> "Daten löschen"
@@ -292,6 +304,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.DARK_MODE -> DarkModeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.WORK_TIME -> WorkTimeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.DAILY_HOURS -> DailyHoursSection(viewModel, settings, snackbarHostState)
+                SettingsSection.HOLIDAYS -> HolidaysSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
                 SettingsSection.EXCEL_TEMPLATES -> ExcelTemplatesSection(onNavigateToTemplateManagement)
                 SettingsSection.DELETE_DATA -> DeleteDataSection(viewModel, snackbarHostState, onNavigateBack)
@@ -376,6 +389,254 @@ private fun DarkModeSection(
             settings = settings,
             viewModel = viewModel
         )
+    }
+}
+
+/**
+ * Holidays Section - Bundesland-Auswahl für Feiertage
+ */
+@Composable
+private fun HolidaysSection(
+    viewModel: SettingsViewModel,
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    snackbarHostState: SnackbarHostState
+) {
+    val scope = rememberCoroutineScope()
+    val bundeslaender = com.arbeitszeit.tracker.utils.HolidayUtils.Bundesland.values()
+    val selectedBundesland = settings?.bundesland?.let { code ->
+        com.arbeitszeit.tracker.utils.HolidayUtils.Bundesland.fromShortCode(code)
+    }
+
+    // Urlaubsanspruch State
+    var urlaubsanspruch by remember { mutableStateOf(settings?.urlaubsanspruchTage?.toString() ?: "30") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Info Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Feiertage automatisch erkennen",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Wähle dein Bundesland, damit bundeslandspezifische Feiertage (wie Heilige Drei Könige oder Reformationstag) korrekt erkannt werden.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        // Urlaubsanspruch
+        Text(
+            "Urlaubsanspruch",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+
+        Card {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = urlaubsanspruch,
+                    onValueChange = { urlaubsanspruch = it },
+                    label = { Text("Jahresurlaub in Tagen") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = urlaubsanspruch.toIntOrNull() == null || (urlaubsanspruch.toIntOrNull() ?: 0) < 0,
+                    modifier = Modifier.fillMaxWidth(),
+                    supportingText = {
+                        if (urlaubsanspruch.toIntOrNull() == null) {
+                            Text("Bitte gültige Zahl eingeben")
+                        } else {
+                            Text("Standard: 30 Tage (gesetzliches Minimum: 20 Tage)")
+                        }
+                    }
+                )
+
+                Button(
+                    onClick = {
+                        val tage = urlaubsanspruch.toIntOrNull()
+                        if (tage != null && tage >= 0) {
+                            viewModel.updateUrlaubsanspruch(tage)
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Urlaubsanspruch gespeichert: $tage Tage")
+                            }
+                        }
+                    },
+                    enabled = urlaubsanspruch.toIntOrNull() != null && (urlaubsanspruch.toIntOrNull() ?: 0) >= 0,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Speichern")
+                }
+            }
+        }
+
+        Divider()
+
+        // Bundesland-Auswahl
+        Text(
+            "Bundesland auswählen",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+
+        LazyColumn(
+            modifier = Modifier.heightIn(max = 400.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Option: Kein Bundesland
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = if (selectedBundesland == null) {
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    } else {
+                        CardDefaults.cardColors()
+                    },
+                    onClick = {
+                        viewModel.updateBundesland(null)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Bundesland zurückgesetzt")
+                        }
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (selectedBundesland == null) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(12.dp))
+                        }
+                        Text(
+                            "Kein Bundesland (nur bundesweite Feiertage)",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+
+            // Alle Bundesländer
+            items(bundeslaender.size) { index ->
+                val bundesland = bundeslaender[index]
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = if (selectedBundesland == bundesland) {
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    } else {
+                        CardDefaults.cardColors()
+                    },
+                    onClick = {
+                        viewModel.updateBundesland(bundesland.shortCode)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Bundesland: ${bundesland.displayName}")
+                        }
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (selectedBundesland == bundesland) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(12.dp))
+                        }
+                        Column {
+                            Text(
+                                bundesland.displayName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (selectedBundesland == bundesland) FontWeight.Bold else FontWeight.Normal
+                            )
+                            Text(
+                                bundesland.shortCode,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Vorschau der Feiertage für aktuelles Jahr
+        if (selectedBundesland != null) {
+            Divider()
+
+            Text(
+                "Feiertage ${java.time.LocalDate.now().year}",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+
+            val currentYear = java.time.LocalDate.now().year
+            val holidays = com.arbeitszeit.tracker.utils.HolidayUtils.getHolidaysForYear(currentYear, selectedBundesland)
+                .sortedBy { it.date }
+
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    holidays.forEach { holiday ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                holiday.name,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                com.arbeitszeit.tracker.utils.DateUtils.formatForDisplay(holiday.date),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Divider()
+
+                    Text(
+                        "Gesamt: ${holidays.size} Feiertage",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
     }
 }
 

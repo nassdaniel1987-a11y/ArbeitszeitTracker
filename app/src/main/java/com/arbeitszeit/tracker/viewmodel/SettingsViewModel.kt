@@ -266,6 +266,32 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Aktualisiert das Bundesland für Feiertags-Berechnung
+     */
+    fun updateBundesland(bundeslandCode: String?) {
+        viewModelScope.launch {
+            val settings = settingsDao.getSettings() ?: return@launch
+            settingsDao.insertOrUpdate(settings.copy(
+                bundesland = bundeslandCode,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+
+    /**
+     * Aktualisiert den Urlaubsanspruch in Tagen
+     */
+    fun updateUrlaubsanspruch(tage: Int) {
+        viewModelScope.launch {
+            val settings = settingsDao.getSettings() ?: return@launch
+            settingsDao.insertOrUpdate(settings.copy(
+                urlaubsanspruchTage = tage,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+
+    /**
      * Löscht alle Zeiteinträge (ACHTUNG: Kann nicht rückgängig gemacht werden!)
      */
     fun deleteAllTimeEntries() {

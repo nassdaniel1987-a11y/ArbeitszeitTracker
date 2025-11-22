@@ -30,7 +30,7 @@ import java.util.Locale
         WeekTemplate::class,
         WeekTemplateEntry::class
     ],
-    version = 10,  // Erhöht wegen selectedTemplateYear in UserSettings
+    version = 12,  // Erhöht wegen urlaubsanspruchTage in UserSettings (Urlaubs-Planer)
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

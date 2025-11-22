@@ -27,6 +27,13 @@ data class UeberstundenSummary(
     val monatsSummen: List<MonthSummary>   // Aufschlüsselung nach Monaten
 )
 
+data class UrlaubsSummary(
+    val urlaubsanspruch: Int,              // Jahresurlaub in Tagen
+    val verbraucht: Int,                   // Bereits verbrauchte Urlaubstage
+    val resturlaub: Int,                   // Verbleibender Urlaub
+    val krankheitstage: Int                // Krankheitstage im Jahr (Info)
+)
+
 class UeberstundenViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
@@ -47,6 +54,17 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         viewModelScope,
         SharingStarted.Lazily,
         UeberstundenSummary(0, 0, 0, 0, emptyList())
+    )
+
+    val urlaubsSummary: StateFlow<UrlaubsSummary> = combine(
+        allEntries,
+        userSettings
+    ) { entries, settings ->
+        calculateUrlaubsSummary(entries, settings)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.Lazily,
+        UrlaubsSummary(30, 0, 30, 0)
     )
 
     private fun calculateUeberstundenSummary(
@@ -98,6 +116,37 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
             vorjahrUebertrag = settings.ueberstundenVorjahrMinuten,
             letzterUebertrag = settings.letzterUebertragMinuten,
             monatsSummen = monatsSummen
+        )
+    }
+
+    private fun calculateUrlaubsSummary(
+        entries: List<TimeEntry>,
+        settings: UserSettings?
+    ): UrlaubsSummary {
+        if (settings == null) {
+            return UrlaubsSummary(30, 0, 30, 0)
+        }
+
+        val currentYear = LocalDate.now().year
+        val currentYearEntries = entries.filter {
+            val date = LocalDate.parse(it.datum)
+            date.year == currentYear
+        }
+
+        // Zähle Urlaubstage (typ == TYP_URLAUB)
+        val urlaubstage = currentYearEntries.count { it.typ == TimeEntry.TYP_URLAUB }
+
+        // Zähle Krankheitstage (typ == TYP_KRANK)
+        val krankheitstage = currentYearEntries.count { it.typ == TimeEntry.TYP_KRANK }
+
+        val urlaubsanspruch = settings.urlaubsanspruchTage
+        val resturlaub = urlaubsanspruch - urlaubstage
+
+        return UrlaubsSummary(
+            urlaubsanspruch = urlaubsanspruch,
+            verbraucht = urlaubstage,
+            resturlaub = resturlaub,
+            krankheitstage = krankheitstage
         )
     }
 
