@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="200dp"
+    android:minHeight="180dp"
+    android:updatePeriodMillis="60000"
+    android:initialLayout="@layout/widget_live_activity"
+    android:description="@string/widget_live_activity_description"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:previewImage="@drawable/ic_notification" />

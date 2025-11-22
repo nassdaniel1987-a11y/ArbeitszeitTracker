@@ -2,6 +2,7 @@ package com.arbeitszeit.tracker.ui.screens
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,7 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -75,6 +78,16 @@ fun UeberstundenScreen(
                 UrlaubsCard(
                     urlaubsSummary = urlaubsSummary
                 )
+            }
+
+            // Überstunden-Trend Chart
+            if (weeklyData.isNotEmpty()) {
+                item {
+                    UeberstundenTrendChart(
+                        weeklyData = weeklyData,
+                        viewModel = viewModel
+                    )
+                }
             }
 
             // Monatliche Aufschlüsselung Header
@@ -547,6 +560,164 @@ private fun UrlaubsCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Überstunden-Trend Chart - Zeigt wöchentliche Überstunden als Balkendiagramm
+ */
+@Composable
+private fun UeberstundenTrendChart(
+    weeklyData: List<com.arbeitszeit.tracker.viewmodel.WeekData>,
+    viewModel: UeberstundenViewModel
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.ShowChart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Überstunden-Trend (12 Wochen)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Chart
+            if (weeklyData.isNotEmpty()) {
+                val maxAbsValue = weeklyData.maxOfOrNull { kotlin.math.abs(it.differenzMinuten) } ?: 1
+                val chartHeight = 200.dp
+
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(chartHeight)
+                        .padding(vertical = 8.dp)
+                ) {
+                    val barWidth = size.width / (weeklyData.size * 1.5f)
+                    val chartCenterY = size.height / 2f
+                    val maxBarHeight = size.height / 2f - 20f
+
+                    // Draw zero line
+                    drawLine(
+                        color = Color.Gray,
+                        start = Offset(0f, chartCenterY),
+                        end = Offset(size.width, chartCenterY),
+                        strokeWidth = 2f
+                    )
+
+                    // Draw bars
+                    weeklyData.forEachIndexed { index, week ->
+                        val barHeight = (week.differenzMinuten.toFloat() / maxAbsValue) * maxBarHeight
+                        val x = (index * size.width / weeklyData.size) + barWidth / 2
+                        val barColor = if (week.differenzMinuten >= 0) {
+                            androidx.compose.ui.graphics.Color(0xFF4CAF50) // Green
+                        } else {
+                            androidx.compose.ui.graphics.Color(0xFFF44336) // Red
+                        }
+
+                        val barTop = if (week.differenzMinuten >= 0) {
+                            chartCenterY - barHeight
+                        } else {
+                            chartCenterY
+                        }
+
+                        val barBottom = if (week.differenzMinuten >= 0) {
+                            chartCenterY
+                        } else {
+                            chartCenterY + kotlin.math.abs(barHeight)
+                        }
+
+                        // Draw bar
+                        drawRect(
+                            color = barColor,
+                            topLeft = Offset(x - barWidth / 2, barTop),
+                            size = androidx.compose.ui.geometry.Size(
+                                barWidth,
+                                kotlin.math.abs(barBottom - barTop)
+                            )
+                        )
+                    }
+                }
+
+                // Week labels
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    if (weeklyData.size >= 2) {
+                        val firstWeek = weeklyData.first()
+                        val lastWeek = weeklyData.last()
+
+                        Text(
+                            text = "KW ${firstWeek.weekNumber}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Text(
+                            text = "KW ${lastWeek.weekNumber}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Legend
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .background(Green500, RoundedCornerShape(2.dp))
+                    )
+                    Text(
+                        text = " Überstunden",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .background(Red500, RoundedCornerShape(2.dp))
+                    )
+                    Text(
+                        text = " Fehlstunden",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            } else {
+                Text(
+                    text = "Keine Daten verfügbar",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(32.dp),
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

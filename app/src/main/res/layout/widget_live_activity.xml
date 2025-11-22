@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@color/widget_background">
+
+    <!-- Header mit Status-Indikator -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="⏱️ Laufende Arbeitszeit"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_title" />
+
+        <TextView
+            android:id="@+id/widget_live_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="● AKTIV"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_status_active" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/widget_progress_background"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Gestartete Zeit -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Gestartet:"
+            android:textSize="11sp"
+            android:textColor="@color/widget_text" />
+
+        <TextView
+            android:id="@+id/widget_live_start_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--:--"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_primary"
+            android:paddingStart="4dp" />
+    </LinearLayout>
+
+    <!-- Verstrichene Zeit (Großanzeige) -->
+    <LinearLayout
+        android:id="@+id/widget_live_elapsed_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="16dp"
+        android:background="@color/widget_card_background">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Verstrichene Zeit"
+            android:textSize="10sp"
+            android:textColor="@color/widget_text"
+            android:paddingBottom="4dp" />
+
+        <TextView
+            android:id="@+id/widget_live_elapsed_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0:00"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_primary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stunden"
+            android:textSize="10sp"
+            android:textColor="@color/widget_text" />
+    </LinearLayout>
+
+    <!-- Spacer -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="8dp" />
+
+    <!-- Stop Button -->
+    <LinearLayout
+        android:id="@+id/widget_live_stop_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="10dp"
+        android:background="@color/widget_button_background"
+        android:clickable="true">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🛑 Arbeitszeit Beenden"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_button_text" />
+    </LinearLayout>
+
+    <!-- Kein aktiver Eintrag (Initial versteckt, wird bei Bedarf angezeigt) -->
+    <LinearLayout
+        android:id="@+id/widget_live_inactive_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏸️"
+            android:textSize="40sp"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Keine aktive Arbeitszeit"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_title"
+            android:paddingBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Starte eine Arbeitszeit in der App"
+            android:textSize="11sp"
+            android:textColor="@color/widget_text"
+            android:textAlignment="center" />
+    </LinearLayout>
+
+</LinearLayout>

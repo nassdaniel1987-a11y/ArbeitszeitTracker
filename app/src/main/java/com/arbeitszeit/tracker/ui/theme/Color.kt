@@ -85,6 +85,7 @@ val Blue200 = Color(0xFF90CAF9)
 val Green700 = Color(0xFF388E3C)
 val Green500 = Color(0xFF4CAF50)
 val Green200 = Color(0xFFA5D6A7)
+val Green50 = Color(0xFFE8F5E9)   // Sehr helles Grün für Backgrounds
 
 // Error
 val Red700 = Color(0xFFC62828)
