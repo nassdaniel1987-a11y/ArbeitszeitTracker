@@ -5,10 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.arbeitszeit.tracker.data.dao.SollZeitVorlageDao
 import com.arbeitszeit.tracker.data.dao.TimeEntryDao
 import com.arbeitszeit.tracker.data.dao.UserSettingsDao
 import com.arbeitszeit.tracker.data.dao.WeekTemplateDao
 import com.arbeitszeit.tracker.data.dao.WorkLocationDao
+import com.arbeitszeit.tracker.data.entity.SollZeitVorlage
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.data.entity.WeekTemplate
@@ -28,9 +30,10 @@ import java.util.Locale
         TimeEntry::class,
         WorkLocation::class,
         WeekTemplate::class,
-        WeekTemplateEntry::class
+        WeekTemplateEntry::class,
+        SollZeitVorlage::class
     ],
-    version = 12,  // Erhöht wegen urlaubsanspruchTage in UserSettings (Urlaubs-Planer)
+    version = 13,  // Erhöht wegen SollZeitVorlage (Arbeitszeitvorlagen-System)
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -39,6 +42,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun timeEntryDao(): TimeEntryDao
     abstract fun workLocationDao(): WorkLocationDao
     abstract fun weekTemplateDao(): WeekTemplateDao
+    abstract fun sollZeitVorlageDao(): SollZeitVorlageDao
 
     companion object {
         @Volatile
@@ -67,14 +71,19 @@ abstract class AppDatabase : RoomDatabase() {
                 super.onCreate(db)
                 INSTANCE?.let { database ->
                     CoroutineScope(Dispatchers.IO).launch {
-                        populateDatabase(database.userSettingsDao(), database.timeEntryDao())
+                        populateDatabase(
+                            database.userSettingsDao(),
+                            database.timeEntryDao(),
+                            database.sollZeitVorlageDao()
+                        )
                     }
                 }
             }
             
             suspend fun populateDatabase(
                 settingsDao: UserSettingsDao,
-                entryDao: TimeEntryDao
+                entryDao: TimeEntryDao,
+                vorlageDao: SollZeitVorlageDao
             ) {
                 // Default Settings erstellen
                 val defaultSettings = UserSettings(
@@ -89,6 +98,17 @@ abstract class AppDatabase : RoomDatabase() {
                     letzterUebertragMinuten = 0
                 )
                 settingsDao.insertOrUpdate(defaultSettings)
+
+                // Standard-Vorlage erstellen
+                val defaultVorlage = SollZeitVorlage(
+                    name = "Normal",
+                    arbeitsumfangProzent = 100,
+                    wochenStundenMinuten = 40 * 60, // 40:00
+                    arbeitsTageProWoche = 5,
+                    workingDays = "12345", // Mo-Fr
+                    isDefault = true
+                )
+                vorlageDao.insert(defaultVorlage)
                 
                 // Aktuelle Woche mit leeren Einträgen vorausfüllen
                 val today = LocalDate.now()
@@ -130,6 +150,7 @@ abstract class AppDatabase : RoomDatabase() {
                         endZeit = null,
                         pauseMinuten = 0,
                         sollMinuten = sollMinuten,
+                        sollZeitVorlageName = "Normal", // Verwende Standard-Vorlage
                         typ = TimeEntry.TYP_NORMAL
                     )
                     

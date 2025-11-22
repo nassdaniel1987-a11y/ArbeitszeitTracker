@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.ui.components.DarkModeCard
+import com.arbeitszeit.tracker.ui.sections.ArbeitszeitvorlagenSection
 import com.arbeitszeit.tracker.ui.sections.BackupSection
 import com.arbeitszeit.tracker.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
@@ -106,6 +107,14 @@ fun SettingsScreen(
             }
             item {
                 SettingsMenuItem(
+                    icon = Icons.Default.Layers,
+                    title = "Arbeitszeitvorlagen",
+                    subtitle = "Normal, Ferienbetreuung, etc.",
+                    onClick = { selectedSection = SettingsSection.ARBEITSZEITVORLAGEN }
+                )
+            }
+            item {
+                SettingsMenuItem(
                     icon = Icons.Default.Celebration,
                     title = "Feiertage",
                     subtitle = settings?.bundesland?.let { code ->
@@ -177,6 +186,7 @@ enum class SettingsSection {
     DARK_MODE,
     WORK_TIME,
     DAILY_HOURS,
+    ARBEITSZEITVORLAGEN,
     HOLIDAYS,
     GEOFENCING,
     BACKUP,
@@ -288,6 +298,7 @@ private fun SettingsDetailScreen(
                             SettingsSection.DARK_MODE -> "Dark Mode"
                             SettingsSection.WORK_TIME -> "Arbeitszeit"
                             SettingsSection.DAILY_HOURS -> "Sollzeiten"
+                            SettingsSection.ARBEITSZEITVORLAGEN -> "Arbeitszeitvorlagen"
                             SettingsSection.HOLIDAYS -> "Feiertage"
                             SettingsSection.GEOFENCING -> "Geofencing & Orte"
                             SettingsSection.BACKUP -> "Cloud-Backup"
@@ -315,6 +326,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.DARK_MODE -> DarkModeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.WORK_TIME -> WorkTimeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.DAILY_HOURS -> DailyHoursSection(viewModel, settings, snackbarHostState)
+                SettingsSection.ARBEITSZEITVORLAGEN -> ArbeitszeitvorlagenSection(viewModel, snackbarHostState)
                 SettingsSection.HOLIDAYS -> HolidaysSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
                 SettingsSection.BACKUP -> BackupSection(viewModel, snackbarHostState)

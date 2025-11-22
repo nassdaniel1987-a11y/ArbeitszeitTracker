@@ -14,6 +14,7 @@ data class TimeEntry(
     val endZeit: Int?,                  // Minuten seit Mitternacht
     val pauseMinuten: Int = 0,
     val sollMinuten: Int,               // Soll-Arbeitszeit für diesen Tag
+    val sollZeitVorlageName: String? = null, // Name der verwendeten Vorlage (z.B. "Normal", "Ferienbetreuung")
     val typ: String = "NORMAL",         // NORMAL, URLAUB, KRANK, FEIERTAG, ABWESEND
     val notiz: String = "",
     val arbeitszeitBereitschaft: Int = 0, // Spalte J: "AZ aus Bereitschaft"
