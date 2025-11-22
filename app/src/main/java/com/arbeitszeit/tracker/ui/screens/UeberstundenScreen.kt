@@ -23,7 +23,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.ui.components.EmptyStates
 import com.arbeitszeit.tracker.ui.theme.*
-import com.arbeitszeit.tracker.ui.theme.Green50
 import com.arbeitszeit.tracker.viewmodel.MonthSummary
 import com.arbeitszeit.tracker.viewmodel.UeberstundenViewModel
 import java.time.format.TextStyle
@@ -419,7 +418,7 @@ private fun UrlaubsCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Green50
+            containerColor = Color(0xFFE8F5E9)  // Green50 - Sehr helles Grün
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
