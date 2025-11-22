@@ -5,4 +5,5 @@
     <string name="widget_small_description">Kompakter Quick-Stempel (2x1)</string>
     <string name="widget_large_description">Mit Wochenübersicht (4x2)</string>
     <string name="widget_statistik_description">Arbeitszeit-Statistiken: Heute, Woche, Überstunden</string>
+    <string name="widget_live_activity_description">Zeigt laufende Arbeitszeit mit Elapsed-Timer</string>
 </resources>

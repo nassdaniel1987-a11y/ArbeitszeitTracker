@@ -92,6 +92,20 @@
                 android:resource="@xml/widget_statistik_info" />
         </receiver>
 
+        <!-- Live Activity Widget (Laufende Zeit) -->
+        <receiver
+            android:name="com.arbeitszeit.tracker.widget.LiveActivityWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_STOP_WORK" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_LIVE" />
+            </intent-filter>
+            <meta-data
+                android:name="android:appwidget.provider"
+                android:resource="@xml/widget_live_activity_info" />
+        </receiver>
+
         <!-- Geofencing Receiver -->
         <receiver
             android:name=".geofencing.GeofenceBroadcastReceiver"
