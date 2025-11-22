@@ -15,4 +15,6 @@
     <color name="widget_status_inactive">#9E9E9E</color>
     <color name="widget_week_summary_bg">#E3F2FD</color>
     <color name="widget_error">#F44336</color>
+    <color name="widget_button_background">#1976D2</color>
+    <color name="widget_button_text">#FFFFFF</color>
 </resources>
