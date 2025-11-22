@@ -106,6 +106,19 @@
                 android:resource="@xml/widget_live_activity_info" />
         </receiver>
 
+        <!-- Lock Screen Glance Widget (Android 14+) -->
+        <receiver
+            android:name="com.arbeitszeit.tracker.widget.LockScreenGlanceWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_LOCKSCREEN" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lockscreen_glance_info" />
+        </receiver>
+
         <!-- Geofencing Receiver -->
         <receiver
             android:name=".geofencing.GeofenceBroadcastReceiver"
