@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.ui.components.DarkModeCard
+import com.arbeitszeit.tracker.ui.sections.BackupSection
 import com.arbeitszeit.tracker.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 
@@ -146,6 +147,14 @@ fun SettingsScreen(
             }
             item {
                 SettingsMenuItem(
+                    icon = Icons.Default.CloudUpload,
+                    title = "Cloud-Backup",
+                    subtitle = "Datenbank sichern und wiederherstellen",
+                    onClick = { selectedSection = SettingsSection.BACKUP }
+                )
+            }
+            item {
+                SettingsMenuItem(
                     icon = Icons.Default.Delete,
                     title = "Alle Daten löschen",
                     subtitle = "Nicht rückgängig machbar",
@@ -170,6 +179,7 @@ enum class SettingsSection {
     DAILY_HOURS,
     HOLIDAYS,
     GEOFENCING,
+    BACKUP,
     EXCEL_TEMPLATES,
     DELETE_DATA
 }
@@ -280,6 +290,7 @@ private fun SettingsDetailScreen(
                             SettingsSection.DAILY_HOURS -> "Sollzeiten"
                             SettingsSection.HOLIDAYS -> "Feiertage"
                             SettingsSection.GEOFENCING -> "Geofencing & Orte"
+                            SettingsSection.BACKUP -> "Cloud-Backup"
                             SettingsSection.EXCEL_TEMPLATES -> "Excel-Vorlagen"
                             SettingsSection.DELETE_DATA -> "Daten löschen"
                         }
@@ -306,6 +317,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.DAILY_HOURS -> DailyHoursSection(viewModel, settings, snackbarHostState)
                 SettingsSection.HOLIDAYS -> HolidaysSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
+                SettingsSection.BACKUP -> BackupSection(viewModel, snackbarHostState)
                 SettingsSection.EXCEL_TEMPLATES -> ExcelTemplatesSection(onNavigateToTemplateManagement)
                 SettingsSection.DELETE_DATA -> DeleteDataSection(viewModel, snackbarHostState, onNavigateBack)
             }
