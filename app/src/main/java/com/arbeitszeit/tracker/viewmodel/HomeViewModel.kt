@@ -25,6 +25,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
     private val workLocationDao = database.workLocationDao()
+    private val sollZeitVorlageDao = database.sollZeitVorlageDao()
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
 
     // UI State
@@ -45,6 +46,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     // Settings
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    // Alle verfügbaren Arbeitszeitvorlagen
+    val vorlagen = sollZeitVorlageDao.getAllVorlagenFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    // Standard-Vorlage
+    val defaultVorlage = sollZeitVorlageDao.getDefaultVorlageFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     // Heutiger Eintrag
@@ -389,6 +398,53 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val currentYear = DateUtils.getCustomWeekBasedYear(LocalDate.now(), firstMonday)
 
         return selectedWeek == currentWeek && selectedYear == currentYear
+    }
+
+    /**
+     * Wendet eine Arbeitszeitvorlage auf die gesamte Woche an
+     * Berechnet die Soll-Zeiten für alle Tage basierend auf der Vorlage
+     */
+    fun applyVorlageToWeek(vorlageId: Long) {
+        viewModelScope.launch {
+            val vorlage = sollZeitVorlageDao.getVorlageById(vorlageId) ?: return@launch
+            val weekDays = DateUtils.getDaysOfWeek(_selectedWeekDate.value)
+
+            for (day in weekDays) {
+                val datum = DateUtils.dateToString(day)
+                val entry = timeEntryDao.getEntryByDate(datum)
+
+                if (entry != null) {
+                    val dayOfWeek = day.dayOfWeek.value // 1=Mo, 7=So
+                    val sollMinuten = vorlage.getAutomaticSollMinutenForDay(dayOfWeek)
+
+                    timeEntryDao.update(entry.copy(
+                        sollMinuten = sollMinuten,
+                        sollZeitVorlageName = vorlage.name,
+                        updatedAt = System.currentTimeMillis()
+                    ))
+                }
+            }
+        }
+    }
+
+    /**
+     * Wendet eine Arbeitszeitvorlage auf einen einzelnen Tag an
+     */
+    fun applyVorlageToDay(datum: String, vorlageId: Long) {
+        viewModelScope.launch {
+            val vorlage = sollZeitVorlageDao.getVorlageById(vorlageId) ?: return@launch
+            val entry = timeEntryDao.getEntryByDate(datum) ?: return@launch
+
+            val date = LocalDate.parse(datum)
+            val dayOfWeek = date.dayOfWeek.value
+            val sollMinuten = vorlage.getAutomaticSollMinutenForDay(dayOfWeek)
+
+            timeEntryDao.update(entry.copy(
+                sollMinuten = sollMinuten,
+                sollZeitVorlageName = vorlage.name,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
     }
 }
 
