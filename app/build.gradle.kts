@@ -110,10 +110,6 @@ dependencies {
     // Google Plus Codes (Open Location Code)
     implementation("com.google.openlocationcode:openlocationcode:1.0.4")
 
-    // Vico Charts (Compose Charts Library)
-    implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-alpha.28")
-    implementation("com.patrykandpatrick.vico:core:2.0.0-alpha.28")
-
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
