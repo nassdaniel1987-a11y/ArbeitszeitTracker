@@ -31,6 +31,7 @@ fun UeberstundenScreen(
     viewModel: UeberstundenViewModel
 ) {
     val summary by viewModel.ueberstundenSummary.collectAsState()
+    val urlaubsSummary by viewModel.urlaubsSummary.collectAsState()
 
     Scaffold(
         topBar = {
@@ -65,6 +66,13 @@ fun UeberstundenScreen(
                     vorjahrUebertrag = summary.vorjahrUebertrag,
                     letzterUebertrag = summary.letzterUebertrag,
                     viewModel = viewModel
+                )
+            }
+
+            // Urlaubs Card
+            item {
+                UrlaubsCard(
+                    urlaubsSummary = urlaubsSummary
                 )
             }
 
@@ -379,6 +387,163 @@ private fun MonatCard(
                         text = viewModel.minutesToHoursString(monatsSummary.istMinutenGesamt),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Urlaubs Card - Zeigt Urlaubsanspruch und Resturlaub
+ */
+@Composable
+private fun UrlaubsCard(
+    urlaubsSummary: com.arbeitszeit.tracker.viewmodel.UrlaubsSummary
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Green50
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Titel
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.BeachAccess,
+                    contentDescription = null,
+                    tint = Green700
+                )
+                Text(
+                    "Urlaubsübersicht ${java.time.LocalDate.now().year}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Divider()
+
+            // Hauptanzeige
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                // Anspruch
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Anspruch",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "${urlaubsSummary.urlaubsanspruch}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Green700
+                    )
+                    Text(
+                        "Tage",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Verbraucht
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Verbraucht",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "${urlaubsSummary.verbraucht}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Tage",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Resturlaub
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Resturlaub",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "${urlaubsSummary.resturlaub}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (urlaubsSummary.resturlaub < 5) Orange700 else Green700
+                    )
+                    Text(
+                        "Tage",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Fortschrittsbalken
+            val progress = if (urlaubsSummary.urlaubsanspruch > 0) {
+                urlaubsSummary.verbraucht.toFloat() / urlaubsSummary.urlaubsanspruch.toFloat()
+            } else 0f
+
+            Column {
+                LinearProgressIndicator(
+                    progress = { progress.coerceIn(0f, 1f) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = if (progress > 0.9f) Orange700 else Green700,
+                )
+
+                Text(
+                    "${(progress * 100).toInt()}% verbraucht",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
+            // Info-Text für Krankheitstage
+            if (urlaubsSummary.krankheitstage > 0) {
+                Divider()
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.LocalHospital,
+                        contentDescription = null,
+                        tint = Red700,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        "Krankheitstage: ${urlaubsSummary.krankheitstage}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

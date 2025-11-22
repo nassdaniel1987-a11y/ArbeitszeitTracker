@@ -40,6 +40,12 @@ data class UserSettings(
     // Export Einstellungen
     val selectedTemplateYear: Int? = null,   // Welches Jahr der Vorlage verwendet werden soll (null = Standard aus Assets)
 
+    // Feiertags-Einstellungen
+    val bundesland: String? = null,          // Bundesland-Code (z.B. "BW", "BY") für bundeslandspezifische Feiertage
+
+    // Urlaubs-Einstellungen
+    val urlaubsanspruchTage: Int = 30,       // Jahresurlaub in Tagen (Standard: 30 Tage)
+
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
