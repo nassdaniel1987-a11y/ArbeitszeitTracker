@@ -4,7 +4,7 @@
     android:minHeight="180dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_statistik"
-    android:description="Zeigt Arbeitszeit-Statistiken: Heute, Woche, Überstunden"
+    android:description="@string/widget_statistik_description"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:previewImage="@drawable/ic_notification" />
