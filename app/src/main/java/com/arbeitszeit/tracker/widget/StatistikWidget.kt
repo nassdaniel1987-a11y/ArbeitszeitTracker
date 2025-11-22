@@ -12,6 +12,7 @@ import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
@@ -77,7 +78,7 @@ class StatistikWidget : AppWidgetProvider() {
             val monday = currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             val sunday = monday.plusDays(6)
 
-            val weekEntries = timeEntryDao.getEntriesInRange(
+            val weekEntries = timeEntryDao.getEntriesByDateRange(
                 DateUtils.formatDate(monday),
                 DateUtils.formatDate(sunday)
             )
@@ -88,7 +89,7 @@ class StatistikWidget : AppWidgetProvider() {
 
             // Hole Überstunden
             val settings = settingsDao.getSettings()
-            val allEntries = timeEntryDao.getAllEntries()
+            val allEntries = timeEntryDao.getAllEntriesFlow().first()
 
             val currentYear = LocalDate.now().year
             val currentYearEntries = allEntries.filter {

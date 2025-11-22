@@ -11,13 +11,11 @@ import com.arbeitszeit.tracker.MainActivity
 import com.arbeitszeit.tracker.R
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
+import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.temporal.ChronoUnit
 
 /**
  * Live Activity Widget - Zeigt laufende Arbeitszeit
@@ -73,12 +71,12 @@ class LiveActivityWidget : AppWidgetProvider() {
             val todayEntry = timeEntryDao.getEntryByDate(today)
 
             // Wenn es einen laufenden Eintrag gibt, beende ihn
-            if (todayEntry != null && todayEntry.endezeit.isNullOrEmpty()) {
-                val currentTime = LocalTime.now()
+            if (todayEntry != null && todayEntry.endZeit == null) {
+                val currentTime = TimeUtils.currentTimeInMinutes()
                 val updatedEntry = todayEntry.copy(
-                    endezeit = DateUtils.formatTime(currentTime)
+                    endZeit = currentTime
                 )
-                timeEntryDao.insertOrUpdate(updatedEntry)
+                timeEntryDao.insert(updatedEntry)
 
                 // Widget aktualisieren
                 withContext(Dispatchers.Main) {
@@ -102,7 +100,7 @@ class LiveActivityWidget : AppWidgetProvider() {
             val todayEntry = timeEntryDao.getEntryByDate(today)
 
             // Prüfe ob es einen laufenden Eintrag gibt
-            val isRunning = todayEntry != null && todayEntry.endezeit.isNullOrEmpty()
+            val isRunning = todayEntry != null && todayEntry.endZeit == null
 
             withContext(Dispatchers.Main) {
                 val views = RemoteViews(context.packageName, R.layout.widget_live_activity)
@@ -122,12 +120,12 @@ class LiveActivityWidget : AppWidgetProvider() {
                     views.setTextColor(R.id.widget_live_status, context.getColor(R.color.widget_status_active))
 
                     // Start-Zeit anzeigen
-                    val startTime = todayEntry.startzeit ?: "--:--"
+                    val startTime = TimeUtils.formatTimeForDisplay(todayEntry.startZeit)
                     views.setTextViewText(R.id.widget_live_start_time, startTime)
 
                     // Verstrichene Zeit berechnen
-                    val elapsedMinutes = calculateElapsedMinutes(todayEntry.startzeit)
-                    val elapsedText = minutesToHoursString(elapsedMinutes)
+                    val elapsedMinutes = calculateElapsedMinutes(todayEntry.startZeit)
+                    val elapsedText = TimeUtils.minutesToHoursMinutes(elapsedMinutes)
                     views.setTextViewText(R.id.widget_live_elapsed_time, elapsedText)
 
                     // Stop Button
@@ -171,25 +169,10 @@ class LiveActivityWidget : AppWidgetProvider() {
     /**
      * Berechnet die verstrichenen Minuten seit der Startzeit
      */
-    private fun calculateElapsedMinutes(startzeit: String?): Int {
-        if (startzeit.isNullOrEmpty()) return 0
+    private fun calculateElapsedMinutes(startZeit: Int?): Int {
+        if (startZeit == null) return 0
 
-        return try {
-            val start = LocalTime.parse(startzeit)
-            val now = LocalTime.now()
-            ChronoUnit.MINUTES.between(start, now).toInt()
-        } catch (e: Exception) {
-            0
-        }
-    }
-
-    /**
-     * Konvertiert Minuten in Stunden-String (z.B. "8:30")
-     */
-    private fun minutesToHoursString(minutes: Int): String {
-        val absMinutes = kotlin.math.abs(minutes)
-        val hours = absMinutes / 60
-        val mins = absMinutes % 60
-        return String.format("%d:%02d", hours, mins)
+        val currentMinutes = TimeUtils.currentTimeInMinutes()
+        return currentMinutes - startZeit
     }
 }
