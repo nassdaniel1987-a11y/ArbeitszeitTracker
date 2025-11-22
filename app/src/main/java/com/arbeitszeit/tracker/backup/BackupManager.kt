@@ -186,7 +186,7 @@ class BackupManager(private val context: Context) {
                     bundesland = if (settingsJson.isNull("bundesland")) null else settingsJson.getString("bundesland"),
                     urlaubsanspruchTage = settingsJson.optInt("urlaubsanspruchTage", 30)
                 )
-                settingsDao.insert(settings)
+                settingsDao.insertOrUpdate(settings)
             }
 
             RestoreResult.Success(entriesRestored)
