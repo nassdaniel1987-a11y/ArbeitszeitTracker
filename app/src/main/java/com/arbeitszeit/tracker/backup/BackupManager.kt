@@ -138,8 +138,19 @@ class BackupManager(private val context: Context) {
             var entriesRestored = 0
             for (i in 0 until entriesArray.length()) {
                 val entryJson = entriesArray.getJSONObject(i)
+                val datum = entryJson.getString("datum")
+
+                // Wenn nicht replaceExisting, prüfe ob Eintrag bereits existiert
+                if (!replaceExisting) {
+                    val existing = timeEntryDao.getEntryByDate(datum)
+                    if (existing != null) {
+                        // Eintrag existiert bereits, überspringe
+                        continue
+                    }
+                }
+
                 val entry = TimeEntry(
-                    datum = entryJson.getString("datum"),
+                    datum = datum,
                     wochentag = entryJson.getString("wochentag"),
                     kalenderwoche = entryJson.getInt("kalenderwoche"),
                     jahr = entryJson.getInt("jahr"),

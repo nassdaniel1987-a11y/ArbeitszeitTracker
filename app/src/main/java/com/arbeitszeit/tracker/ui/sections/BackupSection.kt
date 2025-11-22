@@ -221,6 +221,8 @@ fun BackupSection(
 
     // Restore Dialog
     showRestoreDialog?.let { backup ->
+        var replaceExisting by remember { mutableStateOf(false) }
+
         AlertDialog(
             onDismissRequest = { showRestoreDialog = null },
             title = { Text("Backup wiederherstellen?") },
@@ -233,19 +235,37 @@ fun BackupSection(
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Alle aktuellen Daten werden ersetzt!",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    // Checkbox: Vorhandene überschreiben
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { replaceExisting = !replaceExisting }
+                    ) {
+                        Checkbox(
+                            checked = replaceExisting,
+                            onCheckedChange = { replaceExisting = it }
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                "Vorhandene Einträge überschreiben",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                if (replaceExisting) "Alle Daten werden ersetzt" else "Nur neue Einträge importieren",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (replaceExisting) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         scope.launch {
-                            val result = backupManager.restoreBackup(backup.file, replaceExisting = true)
+                            val result = backupManager.restoreBackup(backup.file, replaceExisting = replaceExisting)
                             when (result) {
                                 is BackupManager.RestoreResult.Success -> {
                                     snackbarHostState.showSnackbar(
