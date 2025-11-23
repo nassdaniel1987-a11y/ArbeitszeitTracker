@@ -78,13 +78,6 @@ class BackupManager(private val context: Context) {
                     put("ueberstundenVorjahrMinuten", s.ueberstundenVorjahrMinuten)
                     put("letzterUebertragMinuten", s.letzterUebertragMinuten)
                     put("ersterMontagImJahr", s.ersterMontagImJahr)
-                    put("montagSollMinuten", s.montagSollMinuten)
-                    put("dienstagSollMinuten", s.dienstagSollMinuten)
-                    put("mittwochSollMinuten", s.mittwochSollMinuten)
-                    put("donnerstagSollMinuten", s.donnerstagSollMinuten)
-                    put("freitagSollMinuten", s.freitagSollMinuten)
-                    put("samstagSollMinuten", s.samstagSollMinuten)
-                    put("sonntagSollMinuten", s.sonntagSollMinuten)
                     put("workingDays", s.workingDays)
                     put("geofencingEnabled", s.geofencingEnabled)
                     put("geofencingStartHour", s.geofencingStartHour)
@@ -180,13 +173,6 @@ class BackupManager(private val context: Context) {
                     ueberstundenVorjahrMinuten = settingsJson.getInt("ueberstundenVorjahrMinuten"),
                     letzterUebertragMinuten = settingsJson.optInt("letzterUebertragMinuten", 0),
                     ersterMontagImJahr = if (settingsJson.isNull("ersterMontagImJahr")) null else settingsJson.getString("ersterMontagImJahr"),
-                    montagSollMinuten = if (settingsJson.isNull("montagSollMinuten")) null else settingsJson.getInt("montagSollMinuten"),
-                    dienstagSollMinuten = if (settingsJson.isNull("dienstagSollMinuten")) null else settingsJson.getInt("dienstagSollMinuten"),
-                    mittwochSollMinuten = if (settingsJson.isNull("mittwochSollMinuten")) null else settingsJson.getInt("mittwochSollMinuten"),
-                    donnerstagSollMinuten = if (settingsJson.isNull("donnerstagSollMinuten")) null else settingsJson.getInt("donnerstagSollMinuten"),
-                    freitagSollMinuten = if (settingsJson.isNull("freitagSollMinuten")) null else settingsJson.getInt("freitagSollMinuten"),
-                    samstagSollMinuten = if (settingsJson.isNull("samstagSollMinuten")) null else settingsJson.getInt("samstagSollMinuten"),
-                    sonntagSollMinuten = if (settingsJson.isNull("sonntagSollMinuten")) null else settingsJson.getInt("sonntagSollMinuten"),
                     workingDays = settingsJson.optString("workingDays", "12345"),
                     geofencingEnabled = settingsJson.optBoolean("geofencingEnabled", false),
                     geofencingStartHour = settingsJson.optInt("geofencingStartHour", 6),
