@@ -415,7 +415,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (entry != null) {
                     val dayOfWeek = day.dayOfWeek.value // 1=Mo, 7=So
-                    val sollMinuten = vorlage.getAutomaticSollMinutenForDay(dayOfWeek)
+                    val sollMinuten = vorlage.getSollMinutenForDay(dayOfWeek)
 
                     timeEntryDao.update(entry.copy(
                         sollMinuten = sollMinuten,
@@ -437,7 +437,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
             val date = LocalDate.parse(datum)
             val dayOfWeek = date.dayOfWeek.value
-            val sollMinuten = vorlage.getAutomaticSollMinutenForDay(dayOfWeek)
+            val sollMinuten = vorlage.getSollMinutenForDay(dayOfWeek)
 
             timeEntryDao.update(entry.copy(
                 sollMinuten = sollMinuten,
