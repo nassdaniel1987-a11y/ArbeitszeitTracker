@@ -6,12 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.wear.data.WearDatabase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.WeekFields
 import java.util.Locale
@@ -21,8 +18,8 @@ data class HomeUiState(
     val isWorking: Boolean = false,
     val todayMinutes: Int = 0,
     val weekMinutes: Int = 0,
-    val currentTime: String = "",
-    val settings: UserSettings? = null
+    val settings: UserSettings? = null,
+    val isLoading: Boolean = false
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -31,63 +28,51 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
 
-    private val _uiState = MutableStateFlow(HomeUiState())
+    private val today = LocalDate.now()
+    private val dateString = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+    // Use Flow for automatic updates
+    private val todayEntryFlow = timeEntryDao.getEntryByDateFlow(dateString)
+    private val settingsFlow = settingsDao.getSettingsFlow()
+
+    private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadData()
-        updateCurrentTime()
+        observeData()
     }
 
-    private fun loadData() {
+    private fun observeData() {
+        // Combine flows for efficient updates
         viewModelScope.launch {
-            // Load settings
-            val settings = settingsDao.getSettings()
-            _uiState.value = _uiState.value.copy(settings = settings)
+            combine(
+                todayEntryFlow,
+                settingsFlow
+            ) { entry, settings ->
+                // Calculate week minutes only when needed
+                val weekField = WeekFields.of(Locale.GERMANY)
+                val currentWeek = today.get(weekField.weekOfWeekBasedYear())
+                val currentYear = today.get(weekField.weekBasedYear())
+                val weekEntries = timeEntryDao.getEntriesByWeek(currentYear, currentWeek)
+                val weekMinutes = weekEntries.sumOf { it.getIstMinuten() }
 
-            // Load today's entry
-            val today = LocalDate.now()
-            val dateString = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val entry = timeEntryDao.getEntryByDate(dateString)
-
-            // Check if currently working
-            val isWorking = entry?.startZeit != null && entry.endZeit == null
-
-            // Calculate today's minutes
-            val todayMinutes = entry?.getIstMinuten() ?: 0
-
-            // Calculate week's minutes
-            val weekField = WeekFields.of(Locale.GERMANY)
-            val currentWeek = today.get(weekField.weekOfWeekBasedYear())
-            val currentYear = today.get(weekField.weekBasedYear())
-            val weekEntries = timeEntryDao.getEntriesByWeek(currentYear, currentWeek)
-            val weekMinutes = weekEntries.sumOf { it.getIstMinuten() }
-
-            _uiState.value = _uiState.value.copy(
-                todayEntry = entry,
-                isWorking = isWorking,
-                todayMinutes = todayMinutes,
-                weekMinutes = weekMinutes
-            )
-        }
-    }
-
-    private fun updateCurrentTime() {
-        viewModelScope.launch {
-            while (true) {
-                val now = LocalTime.now()
-                val formatter = DateTimeFormatter.ofPattern("HH:mm")
-                _uiState.value = _uiState.value.copy(currentTime = now.format(formatter))
-                kotlinx.coroutines.delay(1000) // Update every second
+                HomeUiState(
+                    todayEntry = entry,
+                    isWorking = entry?.startZeit != null && entry?.endZeit == null,
+                    todayMinutes = entry?.getIstMinuten() ?: 0,
+                    weekMinutes = weekMinutes,
+                    settings = settings,
+                    isLoading = false
+                )
+            }.collect { newState ->
+                _uiState.value = newState
             }
         }
     }
 
     fun onCheckIn() {
         viewModelScope.launch {
-            val today = LocalDate.now()
-            val dateString = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val now = LocalTime.now()
+            val now = java.time.LocalTime.now()
             val minutesSinceMidnight = now.hour * 60 + now.minute
 
             val entry = timeEntryDao.getEntryByDate(dateString)
@@ -131,34 +116,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 timeEntryDao.insert(newEntry)
             } else {
                 // Update existing entry
-                timeEntryDao.update(entry.copy(startZeit = minutesSinceMidnight))
+                timeEntryDao.update(entry.copy(startZeit = minutesSinceMidnight, endZeit = null))
             }
-
-            loadData()
+            // Flow automatically updates UI
         }
     }
 
     fun onCheckOut() {
         viewModelScope.launch {
-            val today = LocalDate.now()
-            val dateString = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val now = LocalTime.now()
+            val now = java.time.LocalTime.now()
             val minutesSinceMidnight = now.hour * 60 + now.minute
 
             val entry = timeEntryDao.getEntryByDate(dateString)
 
             if (entry != null && entry.startZeit != null) {
                 timeEntryDao.update(entry.copy(endZeit = minutesSinceMidnight))
-                loadData()
             }
+            // Flow automatically updates UI
         }
     }
 
     fun onCancelWork() {
         viewModelScope.launch {
-            val today = LocalDate.now()
-            val dateString = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-
             val entry = timeEntryDao.getEntryByDate(dateString)
 
             if (entry != null) {
@@ -168,8 +147,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         endZeit = null
                     )
                 )
-                loadData()
             }
+            // Flow automatically updates UI
         }
     }
 }
