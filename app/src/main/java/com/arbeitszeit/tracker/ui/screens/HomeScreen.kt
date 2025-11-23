@@ -90,6 +90,7 @@ fun HomeScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             // FAB öffnet Schnellaktionen-Menü
             Box {
@@ -97,7 +98,9 @@ fun HomeScreen(
                     onClick = {
                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                         showQuickActionMenu = true
-                    }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Default.MoreVert, "Aktionen")
                     Spacer(Modifier.width(8.dp))
@@ -158,9 +161,9 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(padding),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
                 AnimatedVisibility(
