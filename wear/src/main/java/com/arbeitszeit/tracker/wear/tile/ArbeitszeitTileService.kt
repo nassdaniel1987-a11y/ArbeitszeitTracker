@@ -7,6 +7,7 @@ import androidx.wear.tiles.TileService
 import androidx.wear.tiles.TimelineBuilders
 import androidx.wear.tiles.ColorBuilders.argb
 import androidx.wear.tiles.DimensionBuilders.dp
+import androidx.wear.tiles.DimensionBuilders.sp
 import androidx.wear.tiles.LayoutElementBuilders
 import androidx.wear.tiles.ModifiersBuilders
 import com.arbeitszeit.tracker.wear.data.WearDatabase
@@ -78,7 +79,7 @@ class ArbeitszeitTileService : TileService() {
                                                         .setText("Arbeitszeit")
                                                         .setFontStyle(
                                                             LayoutElementBuilders.FontStyle.Builder()
-                                                                .setSize(dp(14f))
+                                                                .setSize(sp(14f))
                                                                 .build()
                                                         )
                                                         .build()
@@ -89,7 +90,7 @@ class ArbeitszeitTileService : TileService() {
                                                         .setText(if (isWorking) "⏱ Läuft" else "✓ Gestempelt")
                                                         .setFontStyle(
                                                             LayoutElementBuilders.FontStyle.Builder()
-                                                                .setSize(dp(12f))
+                                                                .setSize(sp(12f))
                                                                 .setColor(
                                                                     if (isWorking) {
                                                                         argb(0xFF00FF00.toInt())
@@ -112,7 +113,7 @@ class ArbeitszeitTileService : TileService() {
                                                         .setText("Heute: $todayHours:${String.format("%02d", todayMins)}")
                                                         .setFontStyle(
                                                             LayoutElementBuilders.FontStyle.Builder()
-                                                                .setSize(dp(16f))
+                                                                .setSize(sp(16f))
                                                                 .build()
                                                         )
                                                         .build()
@@ -123,7 +124,7 @@ class ArbeitszeitTileService : TileService() {
                                                         .setText("Woche: $weekHours:${String.format("%02d", weekMins)}")
                                                         .setFontStyle(
                                                             LayoutElementBuilders.FontStyle.Builder()
-                                                                .setSize(dp(12f))
+                                                                .setSize(sp(12f))
                                                                 .build()
                                                         )
                                                         .build()
