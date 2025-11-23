@@ -55,17 +55,29 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 settingsFlow,
                 weekEntriesFlow
             ) { entry, settings, weekEntries ->
-                // Calculate only when data changes
-                val weekMinutes = weekEntries.sumOf { it.getIstMinuten() }
+                try {
+                    // Calculate only when data changes
+                    val weekMinutes = weekEntries.sumOf { it.getIstMinuten() }
 
-                HomeUiState(
-                    todayEntry = entry,
-                    isWorking = entry?.startZeit != null && entry?.endZeit == null,
-                    todayMinutes = entry?.getIstMinuten() ?: 0,
-                    weekMinutes = weekMinutes,
-                    settings = settings,
-                    isLoading = false
-                )
+                    HomeUiState(
+                        todayEntry = entry,
+                        isWorking = entry?.startZeit != null && entry?.endZeit == null,
+                        todayMinutes = entry?.getIstMinuten() ?: 0,
+                        weekMinutes = weekMinutes,
+                        settings = settings,
+                        isLoading = false
+                    )
+                } catch (e: Exception) {
+                    // Fallback on error
+                    HomeUiState(
+                        todayEntry = entry,
+                        isWorking = entry?.startZeit != null && entry?.endZeit == null,
+                        todayMinutes = entry?.getIstMinuten() ?: 0,
+                        weekMinutes = 0,
+                        settings = settings,
+                        isLoading = false
+                    )
+                }
             }.collect { newState ->
                 _uiState.value = newState
             }
