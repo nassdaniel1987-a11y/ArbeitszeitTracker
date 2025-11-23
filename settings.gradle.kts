@@ -15,4 +15,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "ArbeitszeitTracker"
 include(":app")
-include(":wear")
