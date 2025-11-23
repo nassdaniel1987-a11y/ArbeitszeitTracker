@@ -18,6 +18,9 @@ data class TimeEntry(
     val typ: String = "NORMAL",         // NORMAL, URLAUB, KRANK, FEIERTAG, ABWESEND
     val notiz: String = "",
     val arbeitszeitBereitschaft: Int = 0, // Spalte J: "AZ aus Bereitschaft"
+    val spalteP: String = "",             // Spalte P (Excel): Notizen/Kommentare
+    val spalteQ: String = "",             // Spalte Q (Excel): Notizen/Kommentare
+    val spalteR: String = "",             // Spalte R (Excel): Notizen/Kommentare
     val isManualEntry: Boolean = false,   // War ein Nachtrag?
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()

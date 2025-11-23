@@ -403,6 +403,24 @@ class ExcelExportManager(private val context: Context) {
                     val cell = row.getCell(9) ?: row.createCell(9)
                     cell.setCellValue(TimeUtils.minutesToExcelTime(entry.arbeitszeitBereitschaft))
                 }
+
+                // Spalte P (Index 15): Notizen/Kommentare
+                if (entry.spalteP.isNotEmpty()) {
+                    val cell = row.getCell(15) ?: row.createCell(15)
+                    cell.setCellValue(entry.spalteP)
+                }
+
+                // Spalte Q (Index 16): Notizen/Kommentare
+                if (entry.spalteQ.isNotEmpty()) {
+                    val cell = row.getCell(16) ?: row.createCell(16)
+                    cell.setCellValue(entry.spalteQ)
+                }
+
+                // Spalte R (Index 17): Notizen/Kommentare
+                if (entry.spalteR.isNotEmpty()) {
+                    val cell = row.getCell(17) ?: row.createCell(17)
+                    cell.setCellValue(entry.spalteR)
+                }
             }
         }
     }
