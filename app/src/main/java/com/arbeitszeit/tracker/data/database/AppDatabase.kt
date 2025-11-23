@@ -33,7 +33,7 @@ import java.util.Locale
         WeekTemplateEntry::class,
         SollZeitVorlage::class
     ],
-    version = 13,  // Erhöht wegen SollZeitVorlage (Arbeitszeitvorlagen-System)
+    version = 14,  // Erhöht wegen sollZeitVorlageName-Feld in TimeEntry
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
