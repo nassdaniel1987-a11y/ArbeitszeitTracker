@@ -1,11 +1,14 @@
 package com.arbeitszeit.tracker.wear.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,17 +27,26 @@ fun HomeScreen(
             TimeText()
         }
     ) {
-        ScalingLazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = 32.dp,
-                start = 10.dp,
-                end = 10.dp,
-                bottom = 32.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            ScalingLazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top = 32.dp,
+                    start = 10.dp,
+                    end = 10.dp,
+                    bottom = 32.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                autoCentering = AutoCenteringParams(itemIndex = 0)
+            ) {
             // Title
             item {
                 Text(
@@ -64,20 +76,20 @@ fun HomeScreen(
 
             // Today's hours
             item {
-                Chip(
+                CompactChip(
                     onClick = { },
-                    enabled = false,
                     label = {
-                        Text(
-                            text = stringResource(R.string.today_hours),
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    secondaryLabel = {
-                        Text(
-                            text = formatMinutes(uiState.todayMinutes),
-                            textAlign = TextAlign.Center
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(stringResource(R.string.today_hours))
+                            Text(
+                                text = formatMinutes(uiState.todayMinutes),
+                                style = MaterialTheme.typography.title3
+                            )
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -85,20 +97,20 @@ fun HomeScreen(
 
             // Week's hours
             item {
-                Chip(
+                CompactChip(
                     onClick = { },
-                    enabled = false,
                     label = {
-                        Text(
-                            text = stringResource(R.string.week_hours),
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    secondaryLabel = {
-                        Text(
-                            text = formatMinutes(uiState.weekMinutes),
-                            textAlign = TextAlign.Center
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(stringResource(R.string.week_hours))
+                            Text(
+                                text = formatMinutes(uiState.weekMinutes),
+                                style = MaterialTheme.typography.title3
+                            )
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -117,7 +129,8 @@ fun HomeScreen(
                         label = {
                             Text(
                                 text = stringResource(R.string.quick_start),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.button
                             )
                         },
                         colors = ChipDefaults.primaryChipColors(),
@@ -134,7 +147,8 @@ fun HomeScreen(
                         label = {
                             Text(
                                 text = stringResource(R.string.quick_end),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.button
                             )
                         },
                         colors = ChipDefaults.primaryChipColors(),
@@ -151,13 +165,15 @@ fun HomeScreen(
                         label = {
                             Text(
                                 text = stringResource(R.string.cancel),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.button
                             )
                         },
                         colors = ChipDefaults.secondaryChipColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+            }
             }
         }
     }
