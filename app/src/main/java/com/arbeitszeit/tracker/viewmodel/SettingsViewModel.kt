@@ -151,17 +151,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 // Bei Urlaub, Krank, etc. -> Soll bleibt
                 entry.sollMinuten
             } else {
-                // Individuelle Zeit für diesen Wochentag?
-                val individualSoll = settings.getSollMinutenForDay(dayOfWeek)
-                if (individualSoll != null) {
-                    individualSoll
+                // Standardberechnung: Prüfe ob Arbeitstag
+                if (settings.isWorkingDay(dayOfWeek)) {
+                    settings.wochenStundenMinuten / settings.arbeitsTageProWoche
                 } else {
-                    // Standardberechnung
-                    if (com.arbeitszeit.tracker.utils.DateUtils.isWeekend(date)) {
-                        0
-                    } else {
-                        settings.wochenStundenMinuten / settings.arbeitsTageProWoche
-                    }
+                    0  // Kein Arbeitstag
                 }
             }
 
