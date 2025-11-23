@@ -93,43 +93,41 @@ fun EditEntryDialog(
                     )
                 }
 
-                // Zeitfelder nur bei NORMAL anzeigen
-                if (selectedTyp == TimeEntry.TYP_NORMAL) {
-                    Divider()
+                // Zeitfelder immer anzeigen (auch bei Urlaub/Krank/Feiertag)
+                Divider()
 
-                    // Start-Zeit mit TimePicker
-                    Text("Startzeit:", style = MaterialTheme.typography.labelMedium)
-                    TimePickerButton(
-                        label = "Start",
-                        timeMinutes = startZeitMinuten,
-                        onTimeSelected = { startZeitMinuten = it },
-                        onClear = { startZeitMinuten = null }
+                // Start-Zeit mit TimePicker
+                Text("Startzeit:", style = MaterialTheme.typography.labelMedium)
+                TimePickerButton(
+                    label = "Start",
+                    timeMinutes = startZeitMinuten,
+                    onTimeSelected = { startZeitMinuten = it },
+                    onClear = { startZeitMinuten = null }
+                )
+
+                // End-Zeit mit TimePicker
+                Text("Endzeit:", style = MaterialTheme.typography.labelMedium)
+                TimePickerButton(
+                    label = "Ende",
+                    timeMinutes = endZeitMinuten,
+                    onTimeSelected = { endZeitMinuten = it },
+                    onClear = { endZeitMinuten = null }
+                )
+
+                // Pause mit Slider
+                Text("Pause:", style = MaterialTheme.typography.labelMedium)
+                OutlinedButton(
+                    onClick = { showPauseSlider = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = if (pauseMinuten > 0) {
+                            "$pauseMinuten Min"
+                        } else {
+                            "Keine Pause"
+                        },
+                        style = MaterialTheme.typography.titleMedium
                     )
-
-                    // End-Zeit mit TimePicker
-                    Text("Endzeit:", style = MaterialTheme.typography.labelMedium)
-                    TimePickerButton(
-                        label = "Ende",
-                        timeMinutes = endZeitMinuten,
-                        onTimeSelected = { endZeitMinuten = it },
-                        onClear = { endZeitMinuten = null }
-                    )
-
-                    // Pause mit Slider
-                    Text("Pause:", style = MaterialTheme.typography.labelMedium)
-                    OutlinedButton(
-                        onClick = { showPauseSlider = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = if (pauseMinuten > 0) {
-                                "$pauseMinuten Min"
-                            } else {
-                                "Keine Pause"
-                            },
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
                 }
 
                 Divider()
@@ -163,11 +161,8 @@ fun EditEntryDialog(
 
                 Button(
                     onClick = {
-                        val pause = if (selectedTyp == TimeEntry.TYP_NORMAL) {
-                            pauseMinuten
-                        } else 0
-
-                        onSave(startZeitMinuten, endZeitMinuten, pause, selectedTyp, notiz)
+                        // Pause wird jetzt bei allen Typen gespeichert
+                        onSave(startZeitMinuten, endZeitMinuten, pauseMinuten, selectedTyp, notiz)
                     }
                 ) {
                     Text("Speichern")
@@ -346,6 +341,12 @@ private fun PauseSliderDialog(
                 )
 
                 // Schnellauswahl-Buttons
+                Text(
+                    text = "Schnellauswahl:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -362,7 +363,17 @@ private fun PauseSliderDialog(
                                 }
                             )
                         ) {
-                            Text("$minutes")
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "$minutes",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Min",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
                         }
                     }
                 }
