@@ -31,138 +31,137 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val today = LocalDate.now()
     private val dateString = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
-    private val weekField = WeekFields.of(Locale.GERMANY)
-    private val currentWeek = today.get(weekField.weekOfWeekBasedYear())
-    private val currentYear = today.get(weekField.weekBasedYear())
-
-    // Use Flow for automatic updates
-    private val todayEntryFlow = timeEntryDao.getEntryByDateFlow(dateString)
-    private val settingsFlow = settingsDao.getSettingsFlow()
-    private val weekEntriesFlow = timeEntryDao.getWeekEntriesFlow(currentYear, currentWeek)
-
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        observeData()
+        loadData()
     }
 
-    private fun observeData() {
-        // Combine flows for efficient updates
+    private fun loadData() {
         viewModelScope.launch {
-            combine(
-                todayEntryFlow,
-                settingsFlow,
-                weekEntriesFlow
-            ) { entry, settings, weekEntries ->
-                try {
-                    // Calculate only when data changes
-                    val weekMinutes = weekEntries.sumOf { it.getIstMinuten() }
+            try {
+                // Load settings
+                val settings = settingsDao.getSettings()
 
-                    HomeUiState(
-                        todayEntry = entry,
-                        isWorking = entry?.startZeit != null && entry?.endZeit == null,
-                        todayMinutes = entry?.getIstMinuten() ?: 0,
-                        weekMinutes = weekMinutes,
-                        settings = settings,
-                        isLoading = false
-                    )
-                } catch (e: Exception) {
-                    // Fallback on error
-                    HomeUiState(
-                        todayEntry = entry,
-                        isWorking = entry?.startZeit != null && entry?.endZeit == null,
-                        todayMinutes = entry?.getIstMinuten() ?: 0,
-                        weekMinutes = 0,
-                        settings = settings,
-                        isLoading = false
-                    )
-                }
-            }.collect { newState ->
-                _uiState.value = newState
+                // Load today's entry
+                val entry = timeEntryDao.getEntryByDate(dateString)
+
+                // Calculate week minutes
+                val weekField = WeekFields.of(Locale.GERMANY)
+                val currentWeek = today.get(weekField.weekOfWeekBasedYear())
+                val currentYear = today.get(weekField.weekBasedYear())
+                val weekEntries = timeEntryDao.getEntriesByWeek(currentYear, currentWeek)
+                val weekMinutes = weekEntries.sumOf { it.getIstMinuten() }
+
+                _uiState.value = HomeUiState(
+                    todayEntry = entry,
+                    isWorking = entry?.startZeit != null && entry?.endZeit == null,
+                    todayMinutes = entry?.getIstMinuten() ?: 0,
+                    weekMinutes = weekMinutes,
+                    settings = settings,
+                    isLoading = false
+                )
+            } catch (e: Exception) {
+                // Fallback on error
+                _uiState.value = HomeUiState(
+                    isLoading = false
+                )
             }
         }
     }
 
     fun onCheckIn() {
         viewModelScope.launch {
-            val now = java.time.LocalTime.now()
-            val minutesSinceMidnight = now.hour * 60 + now.minute
+            try {
+                val now = java.time.LocalTime.now()
+                val minutesSinceMidnight = now.hour * 60 + now.minute
 
-            val entry = timeEntryDao.getEntryByDate(dateString)
+                val entry = timeEntryDao.getEntryByDate(dateString)
 
-            if (entry == null) {
-                // Create new entry
-                val weekField = WeekFields.of(Locale.GERMANY)
-                val currentWeek = today.get(weekField.weekOfWeekBasedYear())
-                val currentYear = today.get(weekField.weekBasedYear())
-                val dayOfWeek = today.dayOfWeek.value
+                if (entry == null) {
+                    // Create new entry
+                    val weekField = WeekFields.of(Locale.GERMANY)
+                    val currentWeek = today.get(weekField.weekOfWeekBasedYear())
+                    val currentYear = today.get(weekField.weekBasedYear())
+                    val dayOfWeek = today.dayOfWeek.value
 
-                val wochentag = when (dayOfWeek) {
-                    1 -> "Mo"
-                    2 -> "Di"
-                    3 -> "Mi"
-                    4 -> "Do"
-                    5 -> "Fr"
-                    6 -> "Sa"
-                    7 -> "So"
-                    else -> ""
-                }
+                    val wochentag = when (dayOfWeek) {
+                        1 -> "Mo"
+                        2 -> "Di"
+                        3 -> "Mi"
+                        4 -> "Do"
+                        5 -> "Fr"
+                        6 -> "Sa"
+                        7 -> "So"
+                        else -> ""
+                    }
 
-                val settings = settingsDao.getSettings()
-                val sollMinuten = if (settings?.isWorkingDay(dayOfWeek) == true) {
-                    settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+                    val settings = settingsDao.getSettings()
+                    val sollMinuten = if (settings?.isWorkingDay(dayOfWeek) == true) {
+                        settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+                    } else {
+                        0
+                    }
+
+                    val newEntry = TimeEntry(
+                        datum = dateString,
+                        wochentag = wochentag,
+                        kalenderwoche = currentWeek,
+                        jahr = currentYear,
+                        startZeit = minutesSinceMidnight,
+                        endZeit = null,
+                        sollMinuten = sollMinuten,
+                        sollZeitVorlageName = "Normal"
+                    )
+
+                    timeEntryDao.insert(newEntry)
                 } else {
-                    0
+                    // Update existing entry
+                    timeEntryDao.update(entry.copy(startZeit = minutesSinceMidnight, endZeit = null))
                 }
-
-                val newEntry = TimeEntry(
-                    datum = dateString,
-                    wochentag = wochentag,
-                    kalenderwoche = currentWeek,
-                    jahr = currentYear,
-                    startZeit = minutesSinceMidnight,
-                    endZeit = null,
-                    sollMinuten = sollMinuten,
-                    sollZeitVorlageName = "Normal"
-                )
-
-                timeEntryDao.insert(newEntry)
-            } else {
-                // Update existing entry
-                timeEntryDao.update(entry.copy(startZeit = minutesSinceMidnight, endZeit = null))
+                loadData()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            // Flow automatically updates UI
         }
     }
 
     fun onCheckOut() {
         viewModelScope.launch {
-            val now = java.time.LocalTime.now()
-            val minutesSinceMidnight = now.hour * 60 + now.minute
+            try {
+                val now = java.time.LocalTime.now()
+                val minutesSinceMidnight = now.hour * 60 + now.minute
 
-            val entry = timeEntryDao.getEntryByDate(dateString)
+                val entry = timeEntryDao.getEntryByDate(dateString)
 
-            if (entry != null && entry.startZeit != null) {
-                timeEntryDao.update(entry.copy(endZeit = minutesSinceMidnight))
+                if (entry != null && entry.startZeit != null) {
+                    timeEntryDao.update(entry.copy(endZeit = minutesSinceMidnight))
+                }
+                loadData()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            // Flow automatically updates UI
         }
     }
 
     fun onCancelWork() {
         viewModelScope.launch {
-            val entry = timeEntryDao.getEntryByDate(dateString)
+            try {
+                val entry = timeEntryDao.getEntryByDate(dateString)
 
-            if (entry != null) {
-                timeEntryDao.update(
-                    entry.copy(
-                        startZeit = null,
-                        endZeit = null
+                if (entry != null) {
+                    timeEntryDao.update(
+                        entry.copy(
+                            startZeit = null,
+                            endZeit = null
+                        )
                     )
-                )
+                }
+                loadData()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            // Flow automatically updates UI
         }
     }
 }

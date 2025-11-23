@@ -2,13 +2,10 @@ package com.arbeitszeit.tracker.wear.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -21,13 +18,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val listState = rememberScalingLazyListState()
-    val focusRequester = FocusRequester()
-
-    // Request focus for rotary input
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
 
     Scaffold(
         timeText = {
@@ -43,10 +33,7 @@ fun HomeScreen(
             }
         } else {
             ScalingLazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .focusRequester(focusRequester),
-                state = listState,
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     top = 32.dp,
                     start = 10.dp,
@@ -54,8 +41,7 @@ fun HomeScreen(
                     bottom = 32.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                autoCentering = AutoCenteringParams(itemIndex = 1)
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
             // Header with status
             item {
