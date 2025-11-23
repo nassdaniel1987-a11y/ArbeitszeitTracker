@@ -132,8 +132,8 @@ fun TimeEntryCard(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Zeit Buttons - nur bei Arbeit
-                if (entry?.typ == TimeEntry.TYP_NORMAL) {
+                // Zeit Buttons - immer anzeigen (auch bei Urlaub/Krank/Feiertag)
+                if (entry != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -258,8 +258,12 @@ fun ModernTimeButton(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                if (isPause && time != null) TimeUtils.minutesToHoursMinutes(time)
-                else TimeUtils.formatTimeForDisplay(time),
+                if (isPause) {
+                    // Pause: Zeige Minuten (z.B. "30 Min" statt "0:30")
+                    if (time != null && time > 0) "${time} Min" else "--"
+                } else {
+                    TimeUtils.formatTimeForDisplay(time)
+                },
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )

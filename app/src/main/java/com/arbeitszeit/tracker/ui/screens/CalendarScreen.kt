@@ -77,14 +77,15 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     val (totalDiff, completedDays) = diffAndCompleted
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
         // Monatsnavigation
         item {
@@ -131,12 +132,14 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                                 totalDiff < 0 -> MaterialTheme.colorScheme.errorContainer
                                 else -> MaterialTheme.colorScheme.secondaryContainer
                             }
-                        )
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                        shape = MaterialTheme.shapes.large
                     ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(20.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
@@ -179,11 +182,15 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
 
         // Farb-Legende
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                shape = MaterialTheme.shapes.large
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     LegendItem(StatusComplete, "Vollständig")
