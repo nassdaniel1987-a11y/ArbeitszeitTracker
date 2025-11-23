@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Arbeitszeit</string>
+    <string name="tile_label">Arbeitszeit</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">Arbeitszeit</string>
+    <string name="quick_start">Kommen</string>
+    <string name="quick_end">Gehen</string>
+    <string name="current_time">Aktuelle Zeit</string>
+    <string name="today_hours">Heute</string>
+    <string name="week_hours">Woche</string>
+
+    <!-- Status -->
+    <string name="working">Arbeit läuft</string>
+    <string name="not_working">Gestempelt</string>
+    <string name="no_entry">Kein Eintrag</string>
+
+    <!-- Actions -->
+    <string name="pause">Pause</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="confirm">Bestätigen</string>
+</resources>
