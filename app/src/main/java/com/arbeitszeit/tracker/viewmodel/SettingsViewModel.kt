@@ -31,14 +31,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         arbeitsTageProWoche: Int,
         ferienbetreuung: Boolean,
         ueberstundenVorjahrMinuten: Int,
-        ersterMontagImJahr: String? = null,
-        montagSollMinuten: Int? = null,
-        dienstagSollMinuten: Int? = null,
-        mittwochSollMinuten: Int? = null,
-        donnerstagSollMinuten: Int? = null,
-        freitagSollMinuten: Int? = null,
-        samstagSollMinuten: Int? = null,
-        sonntagSollMinuten: Int? = null
+        ersterMontagImJahr: String? = null
     ) {
         viewModelScope.launch {
             val existing = settingsDao.getSettings()
@@ -54,13 +47,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 ueberstundenVorjahrMinuten = ueberstundenVorjahrMinuten,
                 letzterUebertragMinuten = existing?.letzterUebertragMinuten ?: 0,
                 ersterMontagImJahr = ersterMontagImJahr,
-                montagSollMinuten = montagSollMinuten,
-                dienstagSollMinuten = dienstagSollMinuten,
-                mittwochSollMinuten = mittwochSollMinuten,
-                donnerstagSollMinuten = donnerstagSollMinuten,
-                freitagSollMinuten = freitagSollMinuten,
-                samstagSollMinuten = samstagSollMinuten,
-                sonntagSollMinuten = sonntagSollMinuten,
                 // WICHTIG: Geofencing-Einstellungen beibehalten!
                 geofencingEnabled = existing?.geofencingEnabled ?: false,
                 geofencingStartHour = existing?.geofencingStartHour ?: 6,
