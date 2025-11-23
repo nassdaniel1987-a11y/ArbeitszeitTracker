@@ -2,6 +2,7 @@ package com.arbeitszeit.tracker.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -9,10 +10,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.arbeitszeit.tracker.ui.theme.OvertimeColor
-import com.arbeitszeit.tracker.ui.theme.UndertimeColor
+import com.arbeitszeit.tracker.ui.theme.*
 import com.arbeitszeit.tracker.utils.TimeUtils
 
 @Composable
@@ -26,120 +28,187 @@ fun WeekStatsCard(
 
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = tween(durationMillis = 1000),
+        animationSpec = tween(durationMillis = 1200),
         label = "progress"
     )
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.large
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Diese Woche",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+        Column {
+            // Gradient Header
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush = when {
+                            differenz > 0 -> GradientSuccess
+                            differenz < 0 -> GradientError
+                            else -> GradientPrimary
+                        }
                     )
-                    if (daysRemaining > 0) {
+                    .padding(24.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
                         Text(
-                            text = "Noch $daysRemaining ${if (daysRemaining == 1) "Tag" else "Tage"}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            text = "Diese Woche",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        if (daysRemaining > 0) {
+                            Text(
+                                text = "Noch $daysRemaining ${if (daysRemaining == 1) "Tag" else "Tage"}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        } else {
+                            Text(
+                                text = "Wochenende",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+                    }
+
+                    // Status Icon
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = Color.White.copy(alpha = 0.2f)
+                    ) {
+                        Icon(
+                            imageVector = when {
+                                differenz > 0 -> Icons.Default.TrendingUp
+                                differenz < 0 -> Icons.Default.TrendingDown
+                                else -> Icons.Default.TrendingFlat
+                            },
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(12.dp)
+                                .size(32.dp),
+                            tint = Color.White
                         )
                     }
                 }
-
-                Icon(
-                    imageVector = when {
-                        differenz > 0 -> Icons.Default.TrendingUp
-                        differenz < 0 -> Icons.Default.TrendingDown
-                        else -> Icons.Default.TrendingFlat
-                    },
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = when {
-                        differenz > 0 -> OvertimeColor
-                        differenz < 0 -> UndertimeColor
-                        else -> MaterialTheme.colorScheme.onPrimaryContainer
-                    }
-                )
             }
 
-            // Fortschrittsbalken
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                LinearProgressIndicator(
-                    progress = { animatedProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(12.dp),
-                    color = when {
-                        differenz >= 0 -> OvertimeColor
-                        else -> UndertimeColor
-                    },
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-
-                Row(
+            // Content mit großen Zahlen
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                // Große Differenz-Anzeige
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "${TimeUtils.minutesToHoursMinutes(istMinuten)} / ${TimeUtils.minutesToHoursMinutes(sollMinuten)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        text = when {
+                            differenz > 0 -> "Überstunden"
+                            differenz < 0 -> "Fehlstunden"
+                            else -> "Ausgeglichen"
+                        },
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = "${(progress * 100).toInt()}%",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        text = TimeUtils.formatDifferenz(differenz),
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = when {
+                            differenz > 0 -> OvertimeColor
+                            differenz < 0 -> UndertimeColor
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
                     )
                 }
-            }
 
-            // Differenz-Anzeige
-            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                // Fortschrittsbalken mit modernem Design
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LinearProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(16.dp)
+                            .clip(MaterialTheme.shapes.medium),
+                        color = when {
+                            differenz >= 0 -> OvertimeColor
+                            else -> UndertimeColor
+                        },
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = when {
-                        differenz > 0 -> "Überstunden"
-                        differenz < 0 -> "Fehlstunden"
-                        else -> "Ausgeglichen"
-                    },
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = TimeUtils.formatDifferenz(differenz),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = when {
-                        differenz > 0 -> OvertimeColor
-                        differenz < 0 -> UndertimeColor
-                        else -> MaterialTheme.colorScheme.onPrimaryContainer
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "Ist-Zeit",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = TimeUtils.minutesToHoursMinutes(istMinuten),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "Soll-Zeit",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = TimeUtils.minutesToHoursMinutes(sollMinuten),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                )
+
+                    // Prozent-Anzeige
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Speed,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "${(progress * 100).toInt()}% erreicht",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
             }
         }
     }

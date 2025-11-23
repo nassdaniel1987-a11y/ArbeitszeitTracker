@@ -15,25 +15,27 @@ import androidx.core.view.WindowCompat
 private val LightColorScheme = lightColorScheme(
     primary = BrandPrimary,
     onPrimary = Color.White,
-    primaryContainer = BrandPrimaryLight.copy(alpha = 0.2f),
+    primaryContainer = BrandPrimaryLight.copy(alpha = 0.15f),
     onPrimaryContainer = BrandPrimaryDark,
-    secondary = Green700,
+    secondary = Green500,
     onSecondary = Color.White,
-    secondaryContainer = Green200,
+    secondaryContainer = Green200.copy(alpha = 0.3f),
     onSecondaryContainer = Grey900,
-    tertiary = Orange700,
+    tertiary = Orange500,
     onTertiary = Color.White,
-    tertiaryContainer = Orange500.copy(alpha = 0.2f),
-    error = Red700,
+    tertiaryContainer = Orange500.copy(alpha = 0.15f),
+    error = Red500,
     onError = Color.White,
-    errorContainer = Red500.copy(alpha = 0.2f),
+    errorContainer = Red500.copy(alpha = 0.15f),
     onErrorContainer = Red700,
     background = Grey50,
     onBackground = Grey900,
     surface = Color.White,
     onSurface = Grey900,
     surfaceVariant = Grey100,
-    onSurfaceVariant = Grey800
+    onSurfaceVariant = Grey700,
+    outline = Grey300,
+    outlineVariant = Grey200
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -44,20 +46,22 @@ private val DarkColorScheme = darkColorScheme(
     secondary = Green500,
     onSecondary = Grey900,
     secondaryContainer = Green700,
-    onSecondaryContainer = Grey50,
+    onSecondaryContainer = Grey100,
     tertiary = Orange500,
     onTertiary = Grey900,
     tertiaryContainer = Orange700,
     error = Red500,
     onError = Grey900,
     errorContainer = Red700,
-    onErrorContainer = Grey50,
+    onErrorContainer = Grey100,
     background = Grey900,
     onBackground = Grey50,
     surface = Grey800,
     onSurface = Grey50,
-    surfaceVariant = Grey900,
-    onSurfaceVariant = Grey200
+    surfaceVariant = Grey800,
+    onSurfaceVariant = Grey300,
+    outline = Grey600,
+    outlineVariant = Grey700
 )
 
 @Composable
@@ -79,7 +83,9 @@ fun ArbeitszeitTrackerTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
+            // Moderne transparente Status Bar statt solidem Blau
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            WindowCompat.setDecorFitsSystemWindows(window, false)
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
@@ -87,6 +93,7 @@ fun ArbeitszeitTrackerTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = AppShapes,
         content = content
     )
 }

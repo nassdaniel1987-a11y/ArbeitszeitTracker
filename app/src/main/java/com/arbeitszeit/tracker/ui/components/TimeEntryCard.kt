@@ -35,143 +35,233 @@ fun TimeEntryCard(
             .fillMaxWidth()
             .pulsing(enabled = isRunning, minScale = 0.98f, maxScale = 1.02f, duration = 2000),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.large
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("Heute", style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        DateUtils.formatForDisplayWithWeekday(LocalDate.now()),
-                        style = MaterialTheme.typography.bodyMedium
+        Column {
+            // Hero Header mit Gradient Background
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush = when (entry?.typ) {
+                            TimeEntry.TYP_URLAUB -> GradientSuccess
+                            TimeEntry.TYP_KRANK -> GradientError
+                            TimeEntry.TYP_FEIERTAG -> GradientCyan
+                            else -> GradientPrimary
+                        }
                     )
-                }
-
-                // Aktueller Typ-Badge
-                Surface(
-                    color = when (entry?.typ) {
-                        TimeEntry.TYP_NORMAL -> TypeNormal
-                        TimeEntry.TYP_URLAUB -> TypeUrlaub
-                        TimeEntry.TYP_KRANK -> TypeKrank
-                        TimeEntry.TYP_FEIERTAG -> TypeFeiertag
-                        TimeEntry.TYP_ABWESEND -> TypeAbwesend
-                        else -> MaterialTheme.colorScheme.secondary
-                    },
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = when (entry?.typ) {
-                            TimeEntry.TYP_NORMAL -> "Arbeit"
-                            TimeEntry.TYP_URLAUB -> "Urlaub"
-                            TimeEntry.TYP_KRANK -> "Krank"
-                            TimeEntry.TYP_FEIERTAG -> "Feiertag"
-                            TimeEntry.TYP_ABWESEND -> "Abwesend"
-                            else -> "?"
-                        },
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Divider()
-
-            // Schnellaktionen für Typ-Auswahl
-            Text(
-                text = "Schnellauswahl",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(24.dp)
             ) {
-                QuickTypeButton(
-                    icon = Icons.Default.Work,
-                    label = "Arbeit",
-                    type = TimeEntry.TYP_NORMAL,
-                    isSelected = entry?.typ == TimeEntry.TYP_NORMAL,
-                    onClick = { onTypChange(TimeEntry.TYP_NORMAL) },
-                    color = TypeNormal,
-                    modifier = Modifier.weight(1f)
-                )
-                QuickTypeButton(
-                    icon = Icons.Default.BeachAccess,
-                    label = "Urlaub",
-                    type = TimeEntry.TYP_URLAUB,
-                    isSelected = entry?.typ == TimeEntry.TYP_URLAUB,
-                    onClick = { onTypChange(TimeEntry.TYP_URLAUB) },
-                    color = TypeUrlaub,
-                    modifier = Modifier.weight(1f)
-                )
-                QuickTypeButton(
-                    icon = Icons.Default.LocalHospital,
-                    label = "Krank",
-                    type = TimeEntry.TYP_KRANK,
-                    isSelected = entry?.typ == TimeEntry.TYP_KRANK,
-                    onClick = { onTypChange(TimeEntry.TYP_KRANK) },
-                    color = TypeKrank,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                "Heute",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                DateUtils.formatForDisplayWithWeekday(LocalDate.now()),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+
+                        // Status Badge
+                        Surface(
+                            color = Color.White.copy(alpha = 0.25f),
+                            shape = MaterialTheme.shapes.medium,
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                Color.White.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Text(
+                                text = when (entry?.typ) {
+                                    TimeEntry.TYP_NORMAL -> "Arbeit"
+                                    TimeEntry.TYP_URLAUB -> "Urlaub"
+                                    TimeEntry.TYP_KRANK -> "Krank"
+                                    TimeEntry.TYP_FEIERTAG -> "Feiertag"
+                                    TimeEntry.TYP_ABWESEND -> "Abwesend"
+                                    else -> "?"
+                                },
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    // Große Zeit-Anzeige bei Arbeit
+                    if (entry?.typ == TimeEntry.TYP_NORMAL) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            HeroTimeDisplay(
+                                label = "Ist",
+                                time = TimeUtils.minutesToHoursMinutes(entry.getIstMinuten())
+                            )
+                            HeroTimeDisplay(
+                                label = "Soll",
+                                time = TimeUtils.minutesToHoursMinutes(entry.sollMinuten)
+                            )
+                            HeroTimeDisplay(
+                                label = "Diff",
+                                time = TimeUtils.formatDifferenz(entry.getDifferenzMinuten()),
+                                highlight = entry.getDifferenzMinuten() != 0
+                            )
+                        }
+                    }
+                }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Content Area - weiß
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                QuickTypeButton(
-                    icon = Icons.Default.Event,
-                    label = "Feiertag",
-                    type = TimeEntry.TYP_FEIERTAG,
-                    isSelected = entry?.typ == TimeEntry.TYP_FEIERTAG,
-                    onClick = { onTypChange(TimeEntry.TYP_FEIERTAG) },
-                    color = TypeFeiertag,
-                    modifier = Modifier.weight(1f)
-                )
-                QuickTypeButton(
-                    icon = Icons.Default.EventBusy,
-                    label = "Abwesend",
-                    type = TimeEntry.TYP_ABWESEND,
-                    isSelected = entry?.typ == TimeEntry.TYP_ABWESEND,
-                    onClick = { onTypChange(TimeEntry.TYP_ABWESEND) },
-                    color = TypeAbwesend,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            // Zeit Buttons
-            if (entry?.typ == TimeEntry.TYP_NORMAL) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TimeButton("Von", entry.startZeit, onStartClick, Modifier.weight(1f))
-                    TimeButton("Bis", entry.endZeit, onEndClick, Modifier.weight(1f))
-                    TimeButton("Pause", entry.pauseMinuten, onPauseClick, Modifier.weight(1f), true)
+                // Zeit Buttons - nur bei Arbeit
+                if (entry?.typ == TimeEntry.TYP_NORMAL) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ModernTimeButton("Von", entry.startZeit, onStartClick, Modifier.weight(1f))
+                        ModernTimeButton("Bis", entry.endZeit, onEndClick, Modifier.weight(1f))
+                        ModernTimeButton("Pause", entry.pauseMinuten, onPauseClick, Modifier.weight(1f), true)
+                    }
                 }
 
-                // Status
+                // Typ-Auswahl
+                Text(
+                    text = "Schnellauswahl",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold
+                )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    StatusText("Soll", TimeUtils.minutesToHoursMinutes(entry.sollMinuten))
-                    StatusText("Ist", TimeUtils.minutesToHoursMinutes(entry.getIstMinuten()))
-                    StatusText(
-                        "Diff",
-                        TimeUtils.formatDifferenz(entry.getDifferenzMinuten()),
-                        if (entry.getDifferenzMinuten() >= 0) Green500 else Red500
+                    QuickTypeButton(
+                        icon = Icons.Default.Work,
+                        label = "Arbeit",
+                        type = TimeEntry.TYP_NORMAL,
+                        isSelected = entry?.typ == TimeEntry.TYP_NORMAL,
+                        onClick = { onTypChange(TimeEntry.TYP_NORMAL) },
+                        color = TypeNormal,
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickTypeButton(
+                        icon = Icons.Default.BeachAccess,
+                        label = "Urlaub",
+                        type = TimeEntry.TYP_URLAUB,
+                        isSelected = entry?.typ == TimeEntry.TYP_URLAUB,
+                        onClick = { onTypChange(TimeEntry.TYP_URLAUB) },
+                        color = TypeUrlaub,
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickTypeButton(
+                        icon = Icons.Default.LocalHospital,
+                        label = "Krank",
+                        type = TimeEntry.TYP_KRANK,
+                        isSelected = entry?.typ == TimeEntry.TYP_KRANK,
+                        onClick = { onTypChange(TimeEntry.TYP_KRANK) },
+                        color = TypeKrank,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QuickTypeButton(
+                        icon = Icons.Default.Event,
+                        label = "Feiertag",
+                        type = TimeEntry.TYP_FEIERTAG,
+                        isSelected = entry?.typ == TimeEntry.TYP_FEIERTAG,
+                        onClick = { onTypChange(TimeEntry.TYP_FEIERTAG) },
+                        color = TypeFeiertag,
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickTypeButton(
+                        icon = Icons.Default.EventBusy,
+                        label = "Abwesend",
+                        type = TimeEntry.TYP_ABWESEND,
+                        isSelected = entry?.typ == TimeEntry.TYP_ABWESEND,
+                        onClick = { onTypChange(TimeEntry.TYP_ABWESEND) },
+                        color = TypeAbwesend,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HeroTimeDisplay(
+    label: String,
+    time: String,
+    highlight: Boolean = false
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.8f)
+        )
+        Text(
+            time,
+            style = MaterialTheme.typography.headlineMedium,
+            color = if (highlight) Color.White else Color.White.copy(alpha = 0.95f),
+            fontWeight = if (highlight) FontWeight.ExtraBold else FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun ModernTimeButton(
+    label: String,
+    time: Int?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isPause: Boolean = false
+) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = modifier.height(80.dp),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (isPause && time != null) TimeUtils.minutesToHoursMinutes(time)
+                else TimeUtils.formatTimeForDisplay(time),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
