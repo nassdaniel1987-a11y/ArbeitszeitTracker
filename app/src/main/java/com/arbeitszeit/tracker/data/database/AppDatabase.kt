@@ -99,13 +99,16 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 settingsDao.insertOrUpdate(defaultSettings)
 
-                // Standard-Vorlage erstellen
+                // Standard-Vorlage erstellen (Mo-Fr 8h, Sa/So 0h)
                 val defaultVorlage = SollZeitVorlage(
                     name = "Normal",
-                    arbeitsumfangProzent = 100,
-                    wochenStundenMinuten = 40 * 60, // 40:00
-                    arbeitsTageProWoche = 5,
-                    workingDays = "12345", // Mo-Fr
+                    montagSollMinuten = 8 * 60,     // 8:00
+                    dienstagSollMinuten = 8 * 60,   // 8:00
+                    mittwochSollMinuten = 8 * 60,   // 8:00
+                    donnerstagSollMinuten = 8 * 60, // 8:00
+                    freitagSollMinuten = 8 * 60,    // 8:00
+                    samstagSollMinuten = 0,
+                    sonntagSollMinuten = 0,
                     isDefault = true
                 )
                 vorlageDao.insert(defaultVorlage)

@@ -4,32 +4,22 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Vorlage für Soll-Arbeitszeiten
- * Ermöglicht mehrere verschiedene Arbeitszeitmodelle (z.B. Normal, Ferienbetreuung, Sommer, etc.)
+ * Soll-Arbeitszeit Profil
+ * Einfache Vorlage mit individuellen Tageszeiten (Mo-So)
  */
 @Entity(tableName = "soll_zeit_vorlagen")
 data class SollZeitVorlage(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String,                        // z.B. "Normal", "Ferienbetreuung", "Sommer"
-    val arbeitsumfangProzent: Int,           // z.B. 93
-    val wochenStundenMinuten: Int,           // z.B. 37:16 = 2236 Minuten
-    val arbeitsTageProWoche: Int = 5,
+    val name: String,                        // z.B. "Normal", "Ferienbetreuung"
 
-    // Individuelle Soll-Arbeitszeiten pro Wochentag (in Minuten, null = automatisch berechnen)
-    val montagSollMinuten: Int? = null,
-    val dienstagSollMinuten: Int? = null,
-    val mittwochSollMinuten: Int? = null,
-    val donnerstagSollMinuten: Int? = null,
-    val freitagSollMinuten: Int? = null,
-    val samstagSollMinuten: Int? = null,
-    val sonntagSollMinuten: Int? = null,
-
-    // Arbeitstage Definition (Mo=1, Di=2, Mi=3, Do=4, Fr=5, Sa=6, So=7)
-    // z.B. "12345" = Montag bis Freitag
-    val workingDays: String = "12345",
-
-    // Farbcode für UI (optional, z.B. für visuelle Unterscheidung)
-    val colorHex: String? = null,
+    // Soll-Arbeitszeiten pro Wochentag (in Minuten)
+    val montagSollMinuten: Int = 0,
+    val dienstagSollMinuten: Int = 0,
+    val mittwochSollMinuten: Int = 0,
+    val donnerstagSollMinuten: Int = 0,
+    val freitagSollMinuten: Int = 0,
+    val samstagSollMinuten: Int = 0,
+    val sonntagSollMinuten: Int = 0,
 
     // Ist dies die Standard-Vorlage?
     val isDefault: Boolean = false,
@@ -41,7 +31,7 @@ data class SollZeitVorlage(
      * Gibt die Soll-Minuten für einen bestimmten Wochentag zurück
      * @param dayOfWeek 1=Montag, 2=Dienstag, ..., 7=Sonntag
      */
-    fun getSollMinutenForDay(dayOfWeek: Int): Int? {
+    fun getSollMinutenForDay(dayOfWeek: Int): Int {
         return when (dayOfWeek) {
             1 -> montagSollMinuten
             2 -> dienstagSollMinuten
@@ -50,51 +40,15 @@ data class SollZeitVorlage(
             5 -> freitagSollMinuten
             6 -> samstagSollMinuten
             7 -> sonntagSollMinuten
-            else -> null
+            else -> 0
         }
     }
 
     /**
-     * Berechnet automatische Soll-Minuten für einen Arbeitstag
-     * Wenn keine individuellen Zeiten gesetzt sind
+     * Berechnet die Gesamt-Wochenstunden
      */
-    fun getAutomaticSollMinutenForDay(dayOfWeek: Int): Int {
-        val individualSoll = getSollMinutenForDay(dayOfWeek)
-        if (individualSoll != null) return individualSoll
-
-        // Automatisch: Wochenstunden / Arbeitstage
-        return if (isWorkingDay(dayOfWeek)) {
-            wochenStundenMinuten / arbeitsTageProWoche
-        } else {
-            0
-        }
-    }
-
-    /**
-     * Prüft ob individuelle Tages-Soll-Zeiten definiert sind
-     */
-    fun hasIndividualDailyHours(): Boolean {
-        return montagSollMinuten != null ||
-               dienstagSollMinuten != null ||
-               mittwochSollMinuten != null ||
-               donnerstagSollMinuten != null ||
-               freitagSollMinuten != null ||
-               samstagSollMinuten != null ||
-               sonntagSollMinuten != null
-    }
-
-    /**
-     * Prüft ob ein Tag ein Arbeitstag ist
-     * @param dayOfWeek 1=Montag, 2=Dienstag, ..., 7=Sonntag
-     */
-    fun isWorkingDay(dayOfWeek: Int): Boolean {
-        return workingDays.contains(dayOfWeek.toString())
-    }
-
-    /**
-     * Gibt die Anzahl der definierten Arbeitstage zurück
-     */
-    fun getWorkingDaysCount(): Int {
-        return workingDays.length
+    fun getWochenStundenMinuten(): Int {
+        return montagSollMinuten + dienstagSollMinuten + mittwochSollMinuten +
+               donnerstagSollMinuten + freitagSollMinuten + samstagSollMinuten + sonntagSollMinuten
     }
 }
