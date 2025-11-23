@@ -91,6 +91,10 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.8.1")
+
+    // Guava for Tiles
+    implementation("com.google.guava:guava:33.0.0-android")
 
     // Icons
     implementation("androidx.compose.material:material-icons-extended")
