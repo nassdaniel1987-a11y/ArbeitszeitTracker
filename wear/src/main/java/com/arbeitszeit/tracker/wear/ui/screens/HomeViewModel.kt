@@ -31,9 +31,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val today = LocalDate.now()
     private val dateString = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
+    private val weekField = WeekFields.of(Locale.GERMANY)
+    private val currentWeek = today.get(weekField.weekOfWeekBasedYear())
+    private val currentYear = today.get(weekField.weekBasedYear())
+
     // Use Flow for automatic updates
     private val todayEntryFlow = timeEntryDao.getEntryByDateFlow(dateString)
     private val settingsFlow = settingsDao.getSettingsFlow()
+    private val weekEntriesFlow = timeEntryDao.getWeekEntriesFlow(currentYear, currentWeek)
 
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -47,13 +52,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             combine(
                 todayEntryFlow,
-                settingsFlow
-            ) { entry, settings ->
-                // Calculate week minutes only when needed
-                val weekField = WeekFields.of(Locale.GERMANY)
-                val currentWeek = today.get(weekField.weekOfWeekBasedYear())
-                val currentYear = today.get(weekField.weekBasedYear())
-                val weekEntries = timeEntryDao.getEntriesByWeek(currentYear, currentWeek)
+                settingsFlow,
+                weekEntriesFlow
+            ) { entry, settings, weekEntries ->
+                // Calculate only when data changes
                 val weekMinutes = weekEntries.sumOf { it.getIstMinuten() }
 
                 HomeUiState(
