@@ -170,9 +170,10 @@ class ExcelExportManager(private val context: Context) {
 
     /**
      * Füllt das Stammangaben-Sheet
+     * WICHTIG: Überschreibt NUR LEERE Felder! Bestehende Werte (z.B. nach Import) bleiben erhalten!
      *
      * @param workbook Die Excel-Arbeitsmappe
-     * @param settings Benutzereinstellungen aus der App
+     * @param settings Benutzereinstellungen aus der App (nur für leere Felder)
      * @param ueberstundenVorjahr Überstunden aus der Vorlage (werden beibehalten!)
      * @param letzterUebertrag Übertrag aus der Vorlage (wird beibehalten!)
      */
@@ -187,26 +188,43 @@ class ExcelExportManager(private val context: Context) {
             .map { workbook.getSheetAt(it) }
             .firstOrNull { it.sheetName.equals("stammangaben", ignoreCase = true) }
             ?: throw IllegalStateException("Sheet 'Stammangaben' nicht gefunden")
-        
-        // Name in B3 (Zeile 2, Index 0-basiert)
-        sheet.getRow(2)?.getCell(1)?.setCellValue(settings.name)
-        
-        // Einrichtung in B4
-        sheet.getRow(3)?.getCell(1)?.setCellValue(settings.einrichtung)
-        
-        // Arbeitsumfang % in C5 (als Dezimalwert: 93% = 0.93)
-        sheet.getRow(4)?.getCell(2)?.setCellValue(settings.arbeitsumfangProzent / 100.0)
-        
-        // Wochenstunden in C7 als Excel-Zeitwert
-        // Excel: 1 Tag = 1.0, daher Minuten / 1440
-        val wochenStundenDecimal = TimeUtils.minutesToExcelTime(settings.wochenStundenMinuten)
-        sheet.getRow(6)?.getCell(2)?.setCellValue(wochenStundenDecimal)
-        
-        // Ferienbetreuung in C8
-        sheet.getRow(7)?.getCell(2)?.setCellValue(if (settings.ferienbetreuung) "ja" else "nein")
-        
-        // Arbeitstage/Woche in C9
-        sheet.getRow(8)?.getCell(2)?.setCellValue(settings.arbeitsTageProWoche.toDouble())
+
+        // Name in B3 - nur füllen wenn leer
+        val nameCell = sheet.getRow(2)?.getCell(1)
+        if (isCellEmpty(nameCell)) {
+            nameCell?.setCellValue(settings.name)
+        }
+
+        // Einrichtung in B4 - nur füllen wenn leer
+        val einrichtungCell = sheet.getRow(3)?.getCell(1)
+        if (isCellEmpty(einrichtungCell)) {
+            einrichtungCell?.setCellValue(settings.einrichtung)
+        }
+
+        // Arbeitsumfang % in C5 - nur füllen wenn leer
+        val arbeitsumfangCell = sheet.getRow(4)?.getCell(2)
+        if (isCellEmpty(arbeitsumfangCell)) {
+            arbeitsumfangCell?.setCellValue(settings.arbeitsumfangProzent / 100.0)
+        }
+
+        // Wochenstunden in C7 - nur füllen wenn leer
+        val wochenStundenCell = sheet.getRow(6)?.getCell(2)
+        if (isCellEmpty(wochenStundenCell)) {
+            val wochenStundenDecimal = TimeUtils.minutesToExcelTime(settings.wochenStundenMinuten)
+            wochenStundenCell?.setCellValue(wochenStundenDecimal)
+        }
+
+        // Ferienbetreuung in C8 - nur füllen wenn leer
+        val ferienbetreuungCell = sheet.getRow(7)?.getCell(2)
+        if (isCellEmpty(ferienbetreuungCell)) {
+            ferienbetreuungCell?.setCellValue(if (settings.ferienbetreuung) "ja" else "nein")
+        }
+
+        // Arbeitstage/Woche in C9 - nur füllen wenn leer
+        val arbeitsTageCell = sheet.getRow(8)?.getCell(2)
+        if (isCellEmpty(arbeitsTageCell)) {
+            arbeitsTageCell?.setCellValue(settings.arbeitsTageProWoche.toDouble())
+        }
 
         // Überstunden Vorjahr in C10 als Excel-Zeitwert
         // WICHTIG: Wir verwenden die Werte aus der VORLAGE, nicht aus App-Settings!
@@ -219,14 +237,28 @@ class ExcelExportManager(private val context: Context) {
         val letzterUebertragDecimal = TimeUtils.minutesToExcelTime(letzterUebertrag)
         sheet.getRow(10)?.getCell(2)?.setCellValue(letzterUebertragDecimal)
 
-        // Erster Montag im Jahr in C12 (für custom KW-Berechnung)
-        if (settings.ersterMontagImJahr != null) {
+        // Erster Montag im Jahr in C12 - nur füllen wenn leer
+        val ersterMontagCell = sheet.getRow(11)?.getCell(2)
+        if (isCellEmpty(ersterMontagCell) && settings.ersterMontagImJahr != null) {
             // Format: DD.MM.YYYY für Excel
             val parts = settings.ersterMontagImJahr.split("-")
             if (parts.size == 3) {
                 val formatted = "${parts[2]}.${parts[1]}.${parts[0]}"
-                sheet.getRow(11)?.getCell(2)?.setCellValue(formatted)
+                ersterMontagCell?.setCellValue(formatted)
             }
+        }
+    }
+
+    /**
+     * Prüft ob eine Zelle leer ist
+     */
+    private fun isCellEmpty(cell: org.apache.poi.ss.usermodel.Cell?): Boolean {
+        if (cell == null) return true
+        return when (cell.cellType) {
+            org.apache.poi.ss.usermodel.CellType.BLANK -> true
+            org.apache.poi.ss.usermodel.CellType.STRING -> cell.stringCellValue.isBlank()
+            org.apache.poi.ss.usermodel.CellType.NUMERIC -> false // Numerische Werte gelten als "gefüllt"
+            else -> true
         }
     }
 
@@ -370,6 +402,24 @@ class ExcelExportManager(private val context: Context) {
                 if (entry.arbeitszeitBereitschaft > 0) {
                     val cell = row.getCell(9) ?: row.createCell(9)
                     cell.setCellValue(TimeUtils.minutesToExcelTime(entry.arbeitszeitBereitschaft))
+                }
+
+                // Spalte P (Index 15): Notizen/Kommentare
+                if (entry.spalteP.isNotEmpty()) {
+                    val cell = row.getCell(15) ?: row.createCell(15)
+                    cell.setCellValue(entry.spalteP)
+                }
+
+                // Spalte Q (Index 16): Notizen/Kommentare
+                if (entry.spalteQ.isNotEmpty()) {
+                    val cell = row.getCell(16) ?: row.createCell(16)
+                    cell.setCellValue(entry.spalteQ)
+                }
+
+                // Spalte R (Index 17): Notizen/Kommentare
+                if (entry.spalteR.isNotEmpty()) {
+                    val cell = row.getCell(17) ?: row.createCell(17)
+                    cell.setCellValue(entry.spalteR)
                 }
             }
         }

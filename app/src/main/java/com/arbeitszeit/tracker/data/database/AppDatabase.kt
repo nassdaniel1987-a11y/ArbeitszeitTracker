@@ -33,7 +33,7 @@ import java.util.Locale
         WeekTemplateEntry::class,
         SollZeitVorlage::class
     ],
-    version = 15,  // Entfernt: Individuelle Sollzeiten aus UserSettings (jetzt in SollZeitVorlage)
+    version = 16,  // Hinzugefügt: spalteP, spalteQ, spalteR für Excel-Notizen/Kommentare (Spalten P, Q, R)
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -283,6 +283,21 @@ class ExcelImportManager(private val context: Context) {
             val bereitschaftDecimal = row.getCell(9)?.numericCellValue ?: 0.0
             val arbeitszeitBereitschaft = TimeUtils.excelTimeToMinutes(bereitschaftDecimal)
 
+            // Spalte P (Index 15): Notizen/Kommentare
+            val spalteP = row.getCell(15)?.let {
+                if (it.cellType == CellType.STRING) it.stringCellValue.trim() else ""
+            } ?: ""
+
+            // Spalte Q (Index 16): Notizen/Kommentare
+            val spalteQ = row.getCell(16)?.let {
+                if (it.cellType == CellType.STRING) it.stringCellValue.trim() else ""
+            } ?: ""
+
+            // Spalte R (Index 17): Notizen/Kommentare
+            val spalteR = row.getCell(17)?.let {
+                if (it.cellType == CellType.STRING) it.stringCellValue.trim() else ""
+            } ?: ""
+
             // Nur Eintrag erstellen wenn Daten vorhanden sind
             if (sollMinuten > 0 || startZeit != null || endZeit != null) {
                 return TimeEntry(
@@ -296,6 +311,9 @@ class ExcelImportManager(private val context: Context) {
                     sollMinuten = sollMinuten,
                     typ = typ,
                     arbeitszeitBereitschaft = arbeitszeitBereitschaft,
+                    spalteP = spalteP,
+                    spalteQ = spalteQ,
+                    spalteR = spalteR,
                     isManualEntry = true, // Import ist immer manuell
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis()
