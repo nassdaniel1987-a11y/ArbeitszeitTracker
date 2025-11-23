@@ -1,26 +1,30 @@
 package com.arbeitszeit.tracker.wear.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.material.*
 import com.arbeitszeit.tracker.wear.R
 
+@OptIn(ExperimentalWearFoundationApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val listState = rememberScalingLazyListState()
+    val focusRequester = rememberActiveFocusRequester()
 
     Scaffold(
         timeText = {
@@ -36,89 +40,87 @@ fun HomeScreen(
             }
         } else {
             ScalingLazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .focusRequester(focusRequester),
+                state = listState,
                 contentPadding = PaddingValues(
                     top = 32.dp,
                     start = 10.dp,
                     end = 10.dp,
                     bottom = 32.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                autoCentering = AutoCenteringParams(itemIndex = 0)
+                autoCentering = AutoCenteringParams(itemIndex = 1)
             ) {
-            // Title
+            // Header with status
             item {
-                Text(
-                    text = stringResource(R.string.home_title),
-                    style = MaterialTheme.typography.title3,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            // Status
-            item {
-                Text(
-                    text = if (uiState.isWorking) {
-                        stringResource(R.string.working)
-                    } else {
-                        stringResource(R.string.not_working)
-                    },
-                    style = MaterialTheme.typography.body2,
-                    color = if (uiState.isWorking) {
-                        MaterialTheme.colors.primary
-                    } else {
-                        MaterialTheme.colors.onSurface
-                    },
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            // Today's hours
-            item {
-                CompactChip(
-                    onClick = { },
-                    label = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(stringResource(R.string.today_hours))
-                            Text(
-                                text = formatMinutes(uiState.todayMinutes),
-                                style = MaterialTheme.typography.title3
-                            )
-                        }
-                    },
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
-                )
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_title),
+                        style = MaterialTheme.typography.title3,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (uiState.isWorking) {
+                            stringResource(R.string.working)
+                        } else {
+                            stringResource(R.string.not_working)
+                        },
+                        style = MaterialTheme.typography.caption1,
+                        color = if (uiState.isWorking) {
+                            MaterialTheme.colors.primary
+                        } else {
+                            MaterialTheme.colors.onSurfaceVariant
+                        },
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
-            // Week's hours
+            // Time info
             item {
-                CompactChip(
-                    onClick = { },
-                    label = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(stringResource(R.string.week_hours))
-                            Text(
-                                text = formatMinutes(uiState.weekMinutes),
-                                style = MaterialTheme.typography.title3
-                            )
-                        }
-                    },
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            // Spacer
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
+                ) {
+                    // Today
+                    Row(
+                        modifier = Modifier.fillMaxWidth(0.9f),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.today_hours),
+                            style = MaterialTheme.typography.body2
+                        )
+                        Text(
+                            text = formatMinutes(uiState.todayMinutes),
+                            style = MaterialTheme.typography.title2
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // Week
+                    Row(
+                        modifier = Modifier.fillMaxWidth(0.9f),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.week_hours),
+                            style = MaterialTheme.typography.body2
+                        )
+                        Text(
+                            text = formatMinutes(uiState.weekMinutes),
+                            style = MaterialTheme.typography.title2
+                        )
+                    }
+                }
             }
 
             // Check-in button
