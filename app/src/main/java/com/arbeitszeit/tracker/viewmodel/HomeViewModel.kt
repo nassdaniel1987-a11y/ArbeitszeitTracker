@@ -153,6 +153,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (existing == null) {
             val today = LocalDate.now()
             val settings = settingsDao.getSettings()
+            val defaultVorlage = sollZeitVorlageDao.getDefaultVorlage()
+
+            // Berechne Sollminuten: Entweder aus Default-Vorlage oder aus Settings
+            val dayOfWeek = today.dayOfWeek.value
+            val sollMinuten = if (defaultVorlage != null) {
+                defaultVorlage.getSollMinutenForDay(dayOfWeek)
+            } else {
+                calculateSollMinuten(today, settings)
+            }
 
             val entry = TimeEntry(
                 datum = todayDate,
@@ -162,7 +171,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 startZeit = null,
                 endZeit = null,
                 pauseMinuten = 0,
-                sollMinuten = calculateSollMinuten(today, settings),
+                sollMinuten = sollMinuten,
+                sollZeitVorlageName = defaultVorlage?.name,
                 typ = TimeEntry.TYP_NORMAL
             )
 
