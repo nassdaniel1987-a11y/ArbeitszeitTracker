@@ -1,7 +1,10 @@
 package com.arbeitszeit.tracker.export
 
+import android.content.ContentValues
 import android.content.Context
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.utils.DateUtils
@@ -146,17 +149,7 @@ class SimpleExcelExportManager(private val context: Context) {
         sheet.setColumnWidth(5, 8 * 256)   // Ist: 8 Zeichen
         sheet.setColumnWidth(6, 10 * 256)  // Typ: 10 Zeichen
 
-        // Datei speichern - verwende dedizierten Ordner im Download-Bereich
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            ?: context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-            ?: context.filesDir
-
-        // Erstelle dedizierten Unterordner "ArbeitszeitTracker"
-        val arbeitszeitDir = File(downloadsDir, "ArbeitszeitTracker")
-        if (!arbeitszeitDir.exists()) {
-            arbeitszeitDir.mkdirs()
-        }
-
+        // Bereite Dateinamen vor
         val fileName = if (!customFileName.isNullOrBlank()) {
             // Stelle sicher, dass .xlsx Extension vorhanden ist
             if (customFileName.endsWith(".xlsx", ignoreCase = true)) {
@@ -167,17 +160,69 @@ class SimpleExcelExportManager(private val context: Context) {
         } else {
             "Arbeitszeiten_${year}_KW${String.format("%02d", startKW)}-${String.format("%02d", endKW)}_Einfach.xlsx"
         }
-        val outputFile = File(arbeitszeitDir, fileName)
 
-        try {
-            FileOutputStream(outputFile).use { outputStream ->
-                workbook.write(outputStream)
+        // Speichere Datei - unterschiedliche Methode je nach Android-Version
+        val outputFile = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ (API 29+): Nutze MediaStore
+                saveViaMediaStore(workbook, fileName)
+            } else {
+                // Android 9 und älter: Nutze klassischen Weg
+                saveViaLegacyStorage(workbook, fileName)
             }
         } finally {
             workbook.close()
         }
 
         outputFile
+    }
+
+    /**
+     * Speichert Excel-Datei via MediaStore (Android 10+)
+     */
+    private fun saveViaMediaStore(workbook: Workbook, fileName: String): File {
+        val resolver = context.contentResolver
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/ArbeitszeitTracker")
+        }
+
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            ?: throw IllegalStateException("Konnte keine URI für Download erstellen")
+
+        resolver.openOutputStream(uri)?.use { outputStream ->
+            workbook.write(outputStream)
+        } ?: throw IllegalStateException("Konnte OutputStream nicht öffnen")
+
+        // Erstelle ein temporäres File-Objekt für Kompatibilität
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val arbeitszeitDir = File(downloadsDir, "ArbeitszeitTracker")
+        return File(arbeitszeitDir, fileName)
+    }
+
+    /**
+     * Speichert Excel-Datei via klassischer Methode (Android 9 und älter)
+     */
+    private fun saveViaLegacyStorage(workbook: Workbook, fileName: String): File {
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            ?: context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            ?: context.filesDir
+
+        // Erstelle dedizierten Unterordner "ArbeitszeitTracker"
+        val arbeitszeitDir = File(downloadsDir, "ArbeitszeitTracker")
+        if (!arbeitszeitDir.exists()) {
+            arbeitszeitDir.mkdirs()
+        }
+
+        val outputFile = File(arbeitszeitDir, fileName)
+
+        FileOutputStream(outputFile).use { outputStream ->
+            workbook.write(outputStream)
+        }
+
+        return outputFile
     }
 
     private fun createHeaderStyle(workbook: XSSFWorkbook) = workbook.createCellStyle().apply {

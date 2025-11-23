@@ -1,7 +1,10 @@
 package com.arbeitszeit.tracker.export
 
+import android.content.ContentValues
 import android.content.Context
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.template.TemplateManager
@@ -15,6 +18,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.io.OutputStream
 import java.time.LocalDate
 
 class ExcelExportManager(private val context: Context) {
@@ -57,15 +61,7 @@ class ExcelExportManager(private val context: Context) {
             // 5. Formeln zur Neuberechnung markieren
             workbook.setForceFormulaRecalculation(true)
 
-            // 6. Speichere Datei mit custom oder default Namen in dediziertem Ordner
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-
-            // Erstelle dedizierten Unterordner "ArbeitszeitTracker"
-            val arbeitszeitDir = File(downloadsDir, "ArbeitszeitTracker")
-            if (!arbeitszeitDir.exists()) {
-                arbeitszeitDir.mkdirs()
-            }
-
+            // 6. Bereite Dateinamen vor
             val fileName = if (!customFileName.isNullOrBlank()) {
                 // Stelle sicher, dass .xlsx Extension vorhanden ist
                 if (customFileName.endsWith(".xlsx", ignoreCase = true)) {
@@ -77,10 +73,13 @@ class ExcelExportManager(private val context: Context) {
                 "Arbeitszeit_${year}.xlsx"
             }
 
-            val outputFile = File(arbeitszeitDir, fileName)
-
-            FileOutputStream(outputFile).use { outputStream ->
-                workbook.write(outputStream)
+            // 7. Speichere Datei - unterschiedliche Methode je nach Android-Version
+            val outputFile = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ (API 29+): Nutze MediaStore
+                saveViaMediaStore(workbook, fileName)
+            } else {
+                // Android 9 und älter: Nutze klassischen Weg
+                saveViaLegacyStorage(workbook, fileName)
             }
 
             outputFile
@@ -89,7 +88,54 @@ class ExcelExportManager(private val context: Context) {
             templateStream.close()
         }
     }
-    
+
+    /**
+     * Speichert Excel-Datei via MediaStore (Android 10+)
+     */
+    private fun saveViaMediaStore(workbook: Workbook, fileName: String): File {
+        val resolver = context.contentResolver
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/ArbeitszeitTracker")
+        }
+
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            ?: throw  IllegalStateException("Konnte keine URI für Download erstellen")
+
+        resolver.openOutputStream(uri)?.use { outputStream ->
+            workbook.write(outputStream)
+        } ?: throw IllegalStateException("Konnte OutputStream nicht öffnen")
+
+        // Erstelle ein temporäres File-Objekt für Kompatibilität
+        // (für Share-Funktionen etc.)
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val arbeitszeitDir = File(downloadsDir, "ArbeitszeitTracker")
+        return File(arbeitszeitDir, fileName)
+    }
+
+    /**
+     * Speichert Excel-Datei via klassischer Methode (Android 9 und älter)
+     */
+    private fun saveViaLegacyStorage(workbook: Workbook, fileName: String): File {
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+
+        // Erstelle dedizierten Unterordner "ArbeitszeitTracker"
+        val arbeitszeitDir = File(downloadsDir, "ArbeitszeitTracker")
+        if (!arbeitszeitDir.exists()) {
+            arbeitszeitDir.mkdirs()
+        }
+
+        val outputFile = File(arbeitszeitDir, fileName)
+
+        FileOutputStream(outputFile).use { outputStream ->
+            workbook.write(outputStream)
+        }
+
+        return outputFile
+    }
+
     /**
      * Liest Überstunden Vorjahr aus der Vorlage
      */
