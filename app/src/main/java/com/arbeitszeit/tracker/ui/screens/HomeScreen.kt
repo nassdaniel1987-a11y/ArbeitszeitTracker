@@ -373,6 +373,12 @@ private fun PauseSliderDialog(
                 )
 
                 // Schnellauswahl-Buttons
+                Text(
+                    text = "Schnellauswahl:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -389,7 +395,17 @@ private fun PauseSliderDialog(
                                 }
                             )
                         ) {
-                            Text("$minutes")
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "$minutes",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Min",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
                         }
                     }
                 }
