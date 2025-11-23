@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arbeitszeit.tracker.ui.components.DarkModeCard
 import com.arbeitszeit.tracker.ui.sections.ArbeitszeitvorlagenSection
 import com.arbeitszeit.tracker.ui.sections.BackupSection
@@ -46,14 +47,17 @@ fun SettingsScreen(
         return
     }
 
-    // Hauptmenü (Android Settings-Style)
+    // Hauptmenü (Modern Style)
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Persönliche Daten
             item {
@@ -196,38 +200,51 @@ private fun SettingsMenuItem(
     onClick: () -> Unit,
     dangerous: Boolean = false
 ) {
-    Surface(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = if (dangerous) {
-            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-        } else {
-            MaterialTheme.colorScheme.surface
-        }
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = if (dangerous) {
-                    MaterialTheme.colorScheme.error
+            // Icon mit farbigem Background
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = if (dangerous) {
+                    MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
                 } else {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.primaryContainer
                 }
-            )
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(24.dp),
+                    tint = if (dangerous) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+            }
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (dangerous) {
                         MaterialTheme.colorScheme.error
                     } else {
@@ -236,7 +253,7 @@ private fun SettingsMenuItem(
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -244,24 +261,25 @@ private fun SettingsMenuItem(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
+                modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
-    HorizontalDivider()
 }
 
 /**
- * Section Header
+ * Modern Section Header
  */
 @Composable
 private fun SettingsMenuSection(title: String) {
     Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
+        text = title.uppercase(),
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-        fontWeight = FontWeight.Bold
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 0.5.sp
     )
 }
 
