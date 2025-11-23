@@ -134,39 +134,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    /**
-     * Aktualisiert nur individuelle Tages-Sollzeiten
-     * Alle anderen Felder werden beibehalten
-     */
-    fun updateSollzeiten(
-        montagSollMinuten: Int?,
-        dienstagSollMinuten: Int?,
-        mittwochSollMinuten: Int?,
-        donnerstagSollMinuten: Int?,
-        freitagSollMinuten: Int?,
-        samstagSollMinuten: Int?,
-        sonntagSollMinuten: Int?
-    ) {
-        viewModelScope.launch {
-            val existing = settingsDao.getSettings() ?: return@launch
-
-            val updated = existing.copy(
-                montagSollMinuten = montagSollMinuten,
-                dienstagSollMinuten = dienstagSollMinuten,
-                mittwochSollMinuten = mittwochSollMinuten,
-                donnerstagSollMinuten = donnerstagSollMinuten,
-                freitagSollMinuten = freitagSollMinuten,
-                samstagSollMinuten = samstagSollMinuten,
-                sonntagSollMinuten = sonntagSollMinuten,
-                updatedAt = System.currentTimeMillis()
-            )
-
-            settingsDao.insertOrUpdate(updated)
-
-            // Aktualisiere sollMinuten für alle bestehenden Einträge
-            updateSollMinutenForAllEntries(updated)
-        }
-    }
 
     /**
      * Aktualisiert die SollMinuten für alle bestehenden Zeiteinträge

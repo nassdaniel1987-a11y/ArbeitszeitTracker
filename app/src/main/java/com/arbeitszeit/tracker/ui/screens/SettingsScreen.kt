@@ -99,14 +99,6 @@ fun SettingsScreen(
             }
             item {
                 SettingsMenuItem(
-                    icon = Icons.Default.CalendarToday,
-                    title = "Individuelle Sollzeiten pro Tag",
-                    subtitle = if (settings?.hasIndividualDailyHours() == true) "Aktiv" else "Standard",
-                    onClick = { selectedSection = SettingsSection.DAILY_HOURS }
-                )
-            }
-            item {
-                SettingsMenuItem(
                     icon = Icons.Default.Layers,
                     title = "Arbeitszeitvorlagen",
                     subtitle = "Normal, Ferienbetreuung, etc.",
@@ -185,7 +177,6 @@ enum class SettingsSection {
     PERSONAL_DATA,
     DARK_MODE,
     WORK_TIME,
-    DAILY_HOURS,
     ARBEITSZEITVORLAGEN,
     HOLIDAYS,
     GEOFENCING,
@@ -297,7 +288,6 @@ private fun SettingsDetailScreen(
                             SettingsSection.PERSONAL_DATA -> "Persönliche Daten"
                             SettingsSection.DARK_MODE -> "Dark Mode"
                             SettingsSection.WORK_TIME -> "Arbeitszeit"
-                            SettingsSection.DAILY_HOURS -> "Sollzeiten"
                             SettingsSection.ARBEITSZEITVORLAGEN -> "Arbeitszeitvorlagen"
                             SettingsSection.HOLIDAYS -> "Feiertage"
                             SettingsSection.GEOFENCING -> "Geofencing & Orte"
@@ -325,7 +315,6 @@ private fun SettingsDetailScreen(
                 SettingsSection.PERSONAL_DATA -> PersonalDataSection(viewModel, settings, snackbarHostState)
                 SettingsSection.DARK_MODE -> DarkModeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.WORK_TIME -> WorkTimeSection(viewModel, settings, snackbarHostState)
-                SettingsSection.DAILY_HOURS -> DailyHoursSection(viewModel, settings, snackbarHostState)
                 SettingsSection.ARBEITSZEITVORLAGEN -> ArbeitszeitvorlagenSection(viewModel, snackbarHostState)
                 SettingsSection.HOLIDAYS -> HolidaysSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
@@ -674,166 +663,6 @@ private fun WorkTimeSection(
     snackbarHostState: SnackbarHostState
 ) {
     ArbeitszeitTab(viewModel, settings, snackbarHostState)
-}
-
-/**
- * Daily Hours Section
- */
-@Composable
-private fun DailyHoursSection(
-    viewModel: SettingsViewModel,
-    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
-    snackbarHostState: SnackbarHostState
-) {
-    var useIndividualDays by remember { mutableStateOf(false) }
-    var montagH by remember { mutableStateOf("") }
-    var montagM by remember { mutableStateOf("") }
-    var dienstagH by remember { mutableStateOf("") }
-    var dienstagM by remember { mutableStateOf("") }
-    var mittwochH by remember { mutableStateOf("") }
-    var mittwochM by remember { mutableStateOf("") }
-    var donnerstagH by remember { mutableStateOf("") }
-    var donnerstagM by remember { mutableStateOf("") }
-    var freitagH by remember { mutableStateOf("") }
-    var freitagM by remember { mutableStateOf("") }
-    var samstagH by remember { mutableStateOf("") }
-    var samstagM by remember { mutableStateOf("") }
-    var sonntagH by remember { mutableStateOf("") }
-    var sonntagM by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(settings) {
-        settings?.let {
-            useIndividualDays = it.hasIndividualDailyHours()
-
-            it.montagSollMinuten?.let { min ->
-                montagH = (min / 60).toString()
-                montagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.dienstagSollMinuten?.let { min ->
-                dienstagH = (min / 60).toString()
-                dienstagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.mittwochSollMinuten?.let { min ->
-                mittwochH = (min / 60).toString()
-                mittwochM = (min % 60).toString().padStart(2, '0')
-            }
-            it.donnerstagSollMinuten?.let { min ->
-                donnerstagH = (min / 60).toString()
-                donnerstagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.freitagSollMinuten?.let { min ->
-                freitagH = (min / 60).toString()
-                freitagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.samstagSollMinuten?.let { min ->
-                samstagH = (min / 60).toString()
-                samstagM = (min % 60).toString().padStart(2, '0')
-            }
-            it.sonntagSollMinuten?.let { min ->
-                sonntagH = (min / 60).toString()
-                sonntagM = (min % 60).toString().padStart(2, '0')
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Individuelle Soll-Zeiten pro Tag",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "Leer lassen für Standardberechnung",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = useIndividualDays,
-                onCheckedChange = { useIndividualDays = it }
-            )
-        }
-
-        if (useIndividualDays) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    DayTimeInput("Montag", montagH, montagM, { montagH = it }, { montagM = it })
-                    DayTimeInput("Dienstag", dienstagH, dienstagM, { dienstagH = it }, { dienstagM = it })
-                    DayTimeInput("Mittwoch", mittwochH, mittwochM, { mittwochH = it }, { mittwochM = it })
-                    DayTimeInput("Donnerstag", donnerstagH, donnerstagM, { donnerstagH = it }, { donnerstagM = it })
-                    DayTimeInput("Freitag", freitagH, freitagM, { freitagH = it }, { freitagM = it })
-                    DayTimeInput("Samstag", samstagH, samstagM, { samstagH = it }, { samstagM = it })
-                    DayTimeInput("Sonntag", sonntagH, sonntagM, { sonntagH = it }, { sonntagM = it })
-                }
-            }
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        Button(
-            onClick = {
-                val montagMin = if (useIndividualDays && montagH.isNotBlank()) {
-                    (montagH.toIntOrNull() ?: 0) * 60 + (montagM.toIntOrNull() ?: 0)
-                } else null
-
-                val dienstagMin = if (useIndividualDays && dienstagH.isNotBlank()) {
-                    (dienstagH.toIntOrNull() ?: 0) * 60 + (dienstagM.toIntOrNull() ?: 0)
-                } else null
-
-                val mittwochMin = if (useIndividualDays && mittwochH.isNotBlank()) {
-                    (mittwochH.toIntOrNull() ?: 0) * 60 + (mittwochM.toIntOrNull() ?: 0)
-                } else null
-
-                val donnerstagMin = if (useIndividualDays && donnerstagH.isNotBlank()) {
-                    (donnerstagH.toIntOrNull() ?: 0) * 60 + (donnerstagM.toIntOrNull() ?: 0)
-                } else null
-
-                val freitagMin = if (useIndividualDays && freitagH.isNotBlank()) {
-                    (freitagH.toIntOrNull() ?: 0) * 60 + (freitagM.toIntOrNull() ?: 0)
-                } else null
-
-                val samstagMin = if (useIndividualDays && samstagH.isNotBlank()) {
-                    (samstagH.toIntOrNull() ?: 0) * 60 + (samstagM.toIntOrNull() ?: 0)
-                } else null
-
-                val sonntagMin = if (useIndividualDays && sonntagH.isNotBlank()) {
-                    (sonntagH.toIntOrNull() ?: 0) * 60 + (sonntagM.toIntOrNull() ?: 0)
-                } else null
-
-                viewModel.updateSollzeiten(
-                    montagSollMinuten = montagMin,
-                    dienstagSollMinuten = dienstagMin,
-                    mittwochSollMinuten = mittwochMin,
-                    donnerstagSollMinuten = donnerstagMin,
-                    freitagSollMinuten = freitagMin,
-                    samstagSollMinuten = samstagMin,
-                    sonntagSollMinuten = sonntagMin
-                )
-                scope.launch {
-                    snackbarHostState.showSnackbar("Sollzeiten gespeichert")
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = useIndividualDays
-        ) {
-            Text("Speichern")
-        }
-    }
 }
 
 /**
@@ -1568,99 +1397,6 @@ private fun ArbeitszeitTab(
             modifier = Modifier.fillMaxWidth()
         )
 
-        HorizontalDivider()
-
-        // Individuelle Sollzeiten pro Tag (expandable)
-        var useIndividualDays by remember { mutableStateOf(false) }
-        var montagH by remember { mutableStateOf("") }
-        var montagM by remember { mutableStateOf("") }
-        var dienstagH by remember { mutableStateOf("") }
-        var dienstagM by remember { mutableStateOf("") }
-        var mittwochH by remember { mutableStateOf("") }
-        var mittwochM by remember { mutableStateOf("") }
-        var donnerstagH by remember { mutableStateOf("") }
-        var donnerstagM by remember { mutableStateOf("") }
-        var freitagH by remember { mutableStateOf("") }
-        var freitagM by remember { mutableStateOf("") }
-        var samstagH by remember { mutableStateOf("") }
-        var samstagM by remember { mutableStateOf("") }
-        var sonntagH by remember { mutableStateOf("") }
-        var sonntagM by remember { mutableStateOf("") }
-
-        LaunchedEffect(settings) {
-            settings?.let {
-                useIndividualDays = it.hasIndividualDailyHours()
-
-                it.montagSollMinuten?.let { min ->
-                    montagH = (min / 60).toString()
-                    montagM = (min % 60).toString().padStart(2, '0')
-                }
-                it.dienstagSollMinuten?.let { min ->
-                    dienstagH = (min / 60).toString()
-                    dienstagM = (min % 60).toString().padStart(2, '0')
-                }
-                it.mittwochSollMinuten?.let { min ->
-                    mittwochH = (min / 60).toString()
-                    mittwochM = (min % 60).toString().padStart(2, '0')
-                }
-                it.donnerstagSollMinuten?.let { min ->
-                    donnerstagH = (min / 60).toString()
-                    donnerstagM = (min % 60).toString().padStart(2, '0')
-                }
-                it.freitagSollMinuten?.let { min ->
-                    freitagH = (min / 60).toString()
-                    freitagM = (min % 60).toString().padStart(2, '0')
-                }
-                it.samstagSollMinuten?.let { min ->
-                    samstagH = (min / 60).toString()
-                    samstagM = (min % 60).toString().padStart(2, '0')
-                }
-                it.sonntagSollMinuten?.let { min ->
-                    sonntagH = (min / 60).toString()
-                    sonntagM = (min % 60).toString().padStart(2, '0')
-                }
-            }
-        }
-
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Individuelle Soll-Zeiten pro Tag",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "Leer lassen für Standardberechnung",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = useIndividualDays,
-                onCheckedChange = { useIndividualDays = it }
-            )
-        }
-
-        if (useIndividualDays) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    DayTimeInput("Montag", montagH, montagM, { montagH = it }, { montagM = it })
-                    DayTimeInput("Dienstag", dienstagH, dienstagM, { dienstagH = it }, { dienstagM = it })
-                    DayTimeInput("Mittwoch", mittwochH, mittwochM, { mittwochH = it }, { mittwochM = it })
-                    DayTimeInput("Donnerstag", donnerstagH, donnerstagM, { donnerstagH = it }, { donnerstagM = it })
-                    DayTimeInput("Freitag", freitagH, freitagM, { freitagH = it }, { freitagM = it })
-                    DayTimeInput("Samstag", samstagH, samstagM, { samstagH = it }, { samstagM = it })
-                    DayTimeInput("Sonntag", sonntagH, sonntagM, { sonntagH = it }, { sonntagM = it })
-                }
-            }
-        }
-
         Spacer(Modifier.weight(1f))
 
         Button(
@@ -1680,35 +1416,6 @@ private fun ArbeitszeitTab(
                 // Convert selectedWorkingDays to String (e.g., "12345" for Mo-Fr)
                 val workingDaysString = selectedWorkingDays.sorted().joinToString("")
 
-                // Sollzeiten berechnen
-                val montagMin = if (useIndividualDays && montagH.isNotBlank()) {
-                    (montagH.toIntOrNull() ?: 0) * 60 + (montagM.toIntOrNull() ?: 0)
-                } else null
-
-                val dienstagMin = if (useIndividualDays && dienstagH.isNotBlank()) {
-                    (dienstagH.toIntOrNull() ?: 0) * 60 + (dienstagM.toIntOrNull() ?: 0)
-                } else null
-
-                val mittwochMin = if (useIndividualDays && mittwochH.isNotBlank()) {
-                    (mittwochH.toIntOrNull() ?: 0) * 60 + (mittwochM.toIntOrNull() ?: 0)
-                } else null
-
-                val donnerstagMin = if (useIndividualDays && donnerstagH.isNotBlank()) {
-                    (donnerstagH.toIntOrNull() ?: 0) * 60 + (donnerstagM.toIntOrNull() ?: 0)
-                } else null
-
-                val freitagMin = if (useIndividualDays && freitagH.isNotBlank()) {
-                    (freitagH.toIntOrNull() ?: 0) * 60 + (freitagM.toIntOrNull() ?: 0)
-                } else null
-
-                val samstagMin = if (useIndividualDays && samstagH.isNotBlank()) {
-                    (samstagH.toIntOrNull() ?: 0) * 60 + (samstagM.toIntOrNull() ?: 0)
-                } else null
-
-                val sonntagMin = if (useIndividualDays && sonntagH.isNotBlank()) {
-                    (sonntagH.toIntOrNull() ?: 0) * 60 + (sonntagM.toIntOrNull() ?: 0)
-                } else null
-
                 viewModel.updateArbeitszeit(
                     arbeitsumfangProzent = prozent.toIntOrNull() ?: 100,
                     wochenStundenMinuten = wochenMinuten,
@@ -1716,17 +1423,6 @@ private fun ArbeitszeitTab(
                     ferienbetreuung = ferienbetreuung,
                     ersterMontagImJahr = ersterMontagFormatted,
                     workingDays = workingDaysString
-                )
-
-                // Sollzeiten speichern
-                viewModel.updateSollzeiten(
-                    montagSollMinuten = montagMin,
-                    dienstagSollMinuten = dienstagMin,
-                    mittwochSollMinuten = mittwochMin,
-                    donnerstagSollMinuten = donnerstagMin,
-                    freitagSollMinuten = freitagMin,
-                    samstagSollMinuten = samstagMin,
-                    sonntagSollMinuten = sonntagMin
                 )
 
                 scope.launch {
@@ -1835,92 +1531,6 @@ private fun AutomatisierungTab(
                     "• Du kannst mehrere Standorte definieren\n" +
                     "• Die Genauigkeit hängt vom GPS-Signal ab",
                     style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DayTimeInput(
-    dayName: String,
-    hours: String,
-    minutes: String,
-    onHoursChange: (String) -> Unit,
-    onMinutesChange: (String) -> Unit
-) {
-    // Validation
-    val hoursValue = hours.toIntOrNull()
-    val hoursError = when {
-        hours.isNotBlank() && hoursValue == null -> "Ungültig"
-        hours.isNotBlank() && hoursValue != null && hoursValue < 0 -> "Negativ"
-        else -> null
-    }
-
-    val minutesValue = minutes.toIntOrNull()
-    val minutesError = when {
-        minutes.isNotBlank() && minutesValue == null -> "Ungültig"
-        minutes.isNotBlank() && minutesValue != null && minutesValue < 0 -> "Negativ"
-        minutes.isNotBlank() && minutesValue != null && minutesValue > 59 -> "Max 59"
-        else -> null
-    }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-        ) {
-            Text(
-                text = dayName,
-                modifier = Modifier.width(80.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            OutlinedTextField(
-                value = hours,
-                onValueChange = onHoursChange,
-                label = { Text("h") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                isError = hoursError != null,
-                modifier = Modifier.weight(1f),
-                singleLine = true
-            )
-
-            Text(":", style = MaterialTheme.typography.bodyLarge)
-
-            OutlinedTextField(
-                value = minutes,
-                onValueChange = onMinutesChange,
-                label = { Text("m") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                isError = minutesError != null,
-                modifier = Modifier.weight(1f),
-                singleLine = true
-            )
-        }
-
-        // Show error messages if any
-        if (hoursError != null || minutesError != null) {
-            Row(
-                modifier = Modifier.padding(start = 88.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = hoursError ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(Modifier.width(16.dp))
-                Text(
-                    text = minutesError ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.weight(1f)
                 )
             }
         }

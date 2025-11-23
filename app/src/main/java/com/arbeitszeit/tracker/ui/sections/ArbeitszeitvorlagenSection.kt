@@ -347,27 +347,28 @@ private fun VorlageEditDialog(
 ) {
     var name by remember { mutableStateOf(vorlage?.name ?: "") }
 
-    // Tageszeiten (in Minuten)
-    var montagStd by remember { mutableStateOf((vorlage?.montagSollMinuten ?: 0) / 60) }
-    var montagMin by remember { mutableStateOf((vorlage?.montagSollMinuten ?: 0) % 60) }
-
-    var dienstagStd by remember { mutableStateOf((vorlage?.dienstagSollMinuten ?: 0) / 60) }
-    var dienstagMin by remember { mutableStateOf((vorlage?.dienstagSollMinuten ?: 0) % 60) }
-
-    var mittwochStd by remember { mutableStateOf((vorlage?.mittwochSollMinuten ?: 0) / 60) }
-    var mittwochMin by remember { mutableStateOf((vorlage?.mittwochSollMinuten ?: 0) % 60) }
-
-    var donnerstagStd by remember { mutableStateOf((vorlage?.donnerstagSollMinuten ?: 0) / 60) }
-    var donnerstagMin by remember { mutableStateOf((vorlage?.donnerstagSollMinuten ?: 0) % 60) }
-
-    var freitagStd by remember { mutableStateOf((vorlage?.freitagSollMinuten ?: 0) / 60) }
-    var freitagMin by remember { mutableStateOf((vorlage?.freitagSollMinuten ?: 0) % 60) }
-
-    var samstagStd by remember { mutableStateOf((vorlage?.samstagSollMinuten ?: 0) / 60) }
-    var samstagMin by remember { mutableStateOf((vorlage?.samstagSollMinuten ?: 0) % 60) }
-
-    var sonntagStd by remember { mutableStateOf((vorlage?.sonntagSollMinuten ?: 0) / 60) }
-    var sonntagMin by remember { mutableStateOf((vorlage?.sonntagSollMinuten ?: 0) % 60) }
+    // Tageszeiten als Text (z.B. "8:00" oder "800")
+    var montagText by remember {
+        mutableStateOf(formatMinutesToTimeString(vorlage?.montagSollMinuten ?: 0))
+    }
+    var dienstagText by remember {
+        mutableStateOf(formatMinutesToTimeString(vorlage?.dienstagSollMinuten ?: 0))
+    }
+    var mittwochText by remember {
+        mutableStateOf(formatMinutesToTimeString(vorlage?.mittwochSollMinuten ?: 0))
+    }
+    var donnerstagText by remember {
+        mutableStateOf(formatMinutesToTimeString(vorlage?.donnerstagSollMinuten ?: 0))
+    }
+    var freitagText by remember {
+        mutableStateOf(formatMinutesToTimeString(vorlage?.freitagSollMinuten ?: 0))
+    }
+    var samstagText by remember {
+        mutableStateOf(formatMinutesToTimeString(vorlage?.samstagSollMinuten ?: 0))
+    }
+    var sonntagText by remember {
+        mutableStateOf(formatMinutesToTimeString(vorlage?.sonntagSollMinuten ?: 0))
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -397,47 +398,32 @@ private fun VorlageEditDialog(
                     fontWeight = FontWeight.Bold
                 )
 
-                // Montag
-                DayTimeInput2("Montag", montagStd, montagMin,
-                    onStdChange = { montagStd = it },
-                    onMinChange = { montagMin = it }
+                Text(
+                    "Eingabe als Stunden:Minuten (z.B. 8:00 oder 800)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                // Montag
+                DayTimeInput("Montag", montagText) { montagText = it }
 
                 // Dienstag
-                DayTimeInput2("Dienstag", dienstagStd, dienstagMin,
-                    onStdChange = { dienstagStd = it },
-                    onMinChange = { dienstagMin = it }
-                )
+                DayTimeInput("Dienstag", dienstagText) { dienstagText = it }
 
                 // Mittwoch
-                DayTimeInput2("Mittwoch", mittwochStd, mittwochMin,
-                    onStdChange = { mittwochStd = it },
-                    onMinChange = { mittwochMin = it }
-                )
+                DayTimeInput("Mittwoch", mittwochText) { mittwochText = it }
 
                 // Donnerstag
-                DayTimeInput2("Donnerstag", donnerstagStd, donnerstagMin,
-                    onStdChange = { donnerstagStd = it },
-                    onMinChange = { donnerstagMin = it }
-                )
+                DayTimeInput("Donnerstag", donnerstagText) { donnerstagText = it }
 
                 // Freitag
-                DayTimeInput2("Freitag", freitagStd, freitagMin,
-                    onStdChange = { freitagStd = it },
-                    onMinChange = { freitagMin = it }
-                )
+                DayTimeInput("Freitag", freitagText) { freitagText = it }
 
                 // Samstag
-                DayTimeInput2("Samstag", samstagStd, samstagMin,
-                    onStdChange = { samstagStd = it },
-                    onMinChange = { samstagMin = it }
-                )
+                DayTimeInput("Samstag", samstagText) { samstagText = it }
 
                 // Sonntag
-                DayTimeInput2("Sonntag", sonntagStd, sonntagMin,
-                    onStdChange = { sonntagStd = it },
-                    onMinChange = { sonntagMin = it }
-                )
+                DayTimeInput("Sonntag", sonntagText) { sonntagText = it }
             }
         },
         confirmButton = {
@@ -446,13 +432,13 @@ private fun VorlageEditDialog(
                     val newVorlage = SollZeitVorlage(
                         id = vorlage?.id ?: 0,
                         name = name,
-                        montagSollMinuten = montagStd * 60 + montagMin,
-                        dienstagSollMinuten = dienstagStd * 60 + dienstagMin,
-                        mittwochSollMinuten = mittwochStd * 60 + mittwochMin,
-                        donnerstagSollMinuten = donnerstagStd * 60 + donnerstagMin,
-                        freitagSollMinuten = freitagStd * 60 + freitagMin,
-                        samstagSollMinuten = samstagStd * 60 + samstagMin,
-                        sonntagSollMinuten = sonntagStd * 60 + sonntagMin,
+                        montagSollMinuten = parseTimeStringToMinutes(montagText),
+                        dienstagSollMinuten = parseTimeStringToMinutes(dienstagText),
+                        mittwochSollMinuten = parseTimeStringToMinutes(mittwochText),
+                        donnerstagSollMinuten = parseTimeStringToMinutes(donnerstagText),
+                        freitagSollMinuten = parseTimeStringToMinutes(freitagText),
+                        samstagSollMinuten = parseTimeStringToMinutes(samstagText),
+                        sonntagSollMinuten = parseTimeStringToMinutes(sonntagText),
                         isDefault = vorlage?.isDefault ?: false
                     )
                     onSave(newVorlage)
@@ -470,14 +456,15 @@ private fun VorlageEditDialog(
     )
 }
 
-// Vereinfachte Tageseingabe ohne Auto-Checkbox
+/**
+ * Vereinfachte Tageseingabe mit nur einem Textfeld
+ * Akzeptiert Eingaben wie "8:00", "800", "8", "08:30"
+ */
 @Composable
-private fun DayTimeInput2(
+private fun DayTimeInput(
     dayName: String,
-    std: Int,
-    min: Int,
-    onStdChange: (Int) -> Unit,
-    onMinChange: (Int) -> Unit
+    timeText: String,
+    onTimeChange: (String) -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -491,19 +478,72 @@ private fun DayTimeInput2(
         )
 
         OutlinedTextField(
-            value = std.toString(),
-            onValueChange = { if (it.all { c -> c.isDigit() } && it.length <= 2) onStdChange(it.toIntOrNull() ?: 0) },
-            label = { Text("Std") },
-            modifier = Modifier.width(80.dp),
-            singleLine = true
+            value = timeText,
+            onValueChange = { newValue ->
+                // Nur Ziffern und Doppelpunkt erlauben, max 5 Zeichen (z.B. "12:30")
+                if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
+                    onTimeChange(newValue)
+                }
+            },
+            label = { Text("Zeit") },
+            placeholder = { Text("0:00") },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            )
         )
-        Text(":", modifier = Modifier.padding(horizontal = 4.dp))
-        OutlinedTextField(
-            value = String.format("%02d", min),
-            onValueChange = { if (it.all { c -> c.isDigit() } && it.length <= 2) onMinChange(it.toIntOrNull() ?: 0) },
-            label = { Text("Min") },
-            modifier = Modifier.width(80.dp),
-            singleLine = true
+
+        // Vorschau der berechneten Zeit
+        val minutes = parseTimeStringToMinutes(timeText)
+        Text(
+            "= ${minutes / 60}:${String.format("%02d", minutes % 60)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(60.dp)
         )
+    }
+}
+
+/**
+ * Konvertiert Minuten in einen Zeitstring (z.B. 480 -> "8:00")
+ */
+private fun formatMinutesToTimeString(minutes: Int): String {
+    if (minutes == 0) return "0:00"
+    val hours = minutes / 60
+    val mins = minutes % 60
+    return "$hours:${String.format("%02d", mins)}"
+}
+
+/**
+ * Parst einen Zeitstring in Minuten
+ * Unterstützt Formate: "8:00", "800", "8", "08:30"
+ */
+private fun parseTimeStringToMinutes(timeString: String): Int {
+    if (timeString.isBlank()) return 0
+
+    return try {
+        when {
+            // Format: "8:00" oder "08:30"
+            timeString.contains(":") -> {
+                val parts = timeString.split(":")
+                val hours = parts[0].toIntOrNull() ?: 0
+                val minutes = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                hours * 60 + minutes
+            }
+            // Format: "800" (3-4 Ziffern)
+            timeString.length >= 3 -> {
+                val hours = timeString.substring(0, timeString.length - 2).toIntOrNull() ?: 0
+                val minutes = timeString.substring(timeString.length - 2).toIntOrNull() ?: 0
+                hours * 60 + minutes
+            }
+            // Format: "8" (nur Stunden)
+            else -> {
+                val hours = timeString.toIntOrNull() ?: 0
+                hours * 60
+            }
+        }
+    } catch (e: Exception) {
+        0
     }
 }

@@ -33,7 +33,7 @@ import java.util.Locale
         WeekTemplateEntry::class,
         SollZeitVorlage::class
     ],
-    version = 14,  // Erhöht wegen sollZeitVorlageName-Feld in TimeEntry
+    version = 15,  // Entfernt: Individuelle Sollzeiten aus UserSettings (jetzt in SollZeitVorlage)
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
