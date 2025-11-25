@@ -53,7 +53,7 @@ fun GeofencingStatusCard(
                         is LocationStatus.NoLocations -> Icons.Default.AddLocation
                         is LocationStatus.NoPermission -> Icons.Default.GpsOff
                         is LocationStatus.LocationUnavailable -> Icons.Default.LocationSearching
-                        else -> Icons.AutoMirrored.Filled.Help
+                        else -> Icons.Filled.Help
                     },
                     contentDescription = null,
                     modifier = Modifier.size(32.dp),

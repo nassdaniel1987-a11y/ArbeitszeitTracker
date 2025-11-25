@@ -81,7 +81,7 @@ fun ExportScreen(viewModel: ExportViewModel) {
                         onClick = { viewModel.selectYear(selectedYear - 1) },
                         enabled = selectedYear > availableYears.first()
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Vorheriges Jahr")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Vorheriges Jahr")
                     }
 
                     Text(
@@ -96,7 +96,7 @@ fun ExportScreen(viewModel: ExportViewModel) {
                         onClick = { viewModel.selectYear(selectedYear + 1) },
                         enabled = selectedYear < availableYears.last()
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Nächstes Jahr")
+                        Icon(Icons.Filled.ArrowForward, contentDescription = "Nächstes Jahr")
                     }
                 }
 

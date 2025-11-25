@@ -317,7 +317,7 @@ private fun SettingsDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
+                        Icon(Icons.Filled.ArrowBack, "Zurück")
                     }
                 }
             )

@@ -58,14 +58,14 @@ fun WeekSummaryCard(summary: WeekSummary) {
                     // Status Icon
                     if (isOvertime) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                            imageVector = Icons.Filled.TrendingUp,
                             contentDescription = "Überstunden",
                             tint = OvertimeColor,
                             modifier = Modifier.size(20.dp)
                         )
                     } else if (isUndertime) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.TrendingDown,
+                            imageVector = Icons.Filled.TrendingDown,
                             contentDescription = "Fehlstunden",
                             tint = UndertimeColor,
                             modifier = Modifier.size(20.dp)

@@ -147,7 +147,7 @@ private fun GesamtUeberstundenCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = if (isPositive) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                imageVector = if (isPositive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
                 tint = textColor
@@ -588,7 +588,7 @@ private fun UeberstundenTrendChart(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ShowChart,
+                    Icons.Filled.ShowChart,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
