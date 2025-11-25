@@ -12,6 +12,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.arbeitszeit.tracker.MainActivity
+import com.arbeitszeit.tracker.R
 
 object NotificationHelper {
 
