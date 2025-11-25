@@ -282,26 +282,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     
     /**
      * Setzt Typ (NORMAL, U, K, F, AB)
+     * Zeiten bleiben erhalten, auch bei U/K/F/AB
      */
     fun setTyp(typ: String) {
         viewModelScope.launch {
             val entry = timeEntryDao.getEntryByDate(todayDate) ?: return@launch
-            
-            // Bei Typ != NORMAL: Zeiten löschen
-            if (typ != TimeEntry.TYP_NORMAL) {
-                timeEntryDao.update(entry.copy(
-                    typ = typ,
-                    startZeit = null,
-                    endZeit = null,
-                    pauseMinuten = 0,
-                    updatedAt = System.currentTimeMillis()
-                ))
-            } else {
-                timeEntryDao.update(entry.copy(
-                    typ = typ,
-                    updatedAt = System.currentTimeMillis()
-                ))
-            }
+
+            // Zeiten werden jetzt bei ALLEN Typen beibehalten (auch U/K/F/AB)
+            timeEntryDao.update(entry.copy(
+                typ = typ,
+                updatedAt = System.currentTimeMillis()
+            ))
         }
     }
     

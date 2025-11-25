@@ -68,10 +68,11 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     /**
      * Zeigt den Dialog für die Dateinamen-Eingabe
      */
-    fun showFileNameDialog(isSimpleExport: Boolean = false) {
+    fun showFileNameDialog(isSimpleExport: Boolean = false, isShareMode: Boolean = false) {
         _uiState.value = _uiState.value.copy(
             showFileNameDialog = true,
-            isSimpleExport = isSimpleExport
+            isSimpleExport = isSimpleExport,
+            isShareMode = isShareMode
         )
     }
 
@@ -553,7 +554,8 @@ data class ExportUiState(
     val error: String? = null,
     val previewData: ExportPreviewData? = null,
     val showFileNameDialog: Boolean = false,
-    val isSimpleExport: Boolean = false
+    val isSimpleExport: Boolean = false,
+    val isShareMode: Boolean = false  // Wenn true, wird nach Eingabe geteilt statt nur exportiert
 )
 
 data class ExportPreviewData(
