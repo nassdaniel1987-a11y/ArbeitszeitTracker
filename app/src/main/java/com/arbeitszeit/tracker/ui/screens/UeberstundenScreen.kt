@@ -147,7 +147,7 @@ private fun GesamtUeberstundenCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                imageVector = if (isPositive) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
                 tint = textColor
@@ -200,7 +200,7 @@ private fun DetailsCard(
                 fontWeight = FontWeight.Bold
             )
 
-            Divider()
+            HorizontalDivider()
 
             DetailRow(
                 label = "Laufendes Jahr",
@@ -443,7 +443,7 @@ private fun UrlaubsCard(
                 )
             }
 
-            Divider()
+            HorizontalDivider()
 
             // Hauptanzeige
             Row(
@@ -542,7 +542,7 @@ private fun UrlaubsCard(
 
             // Info-Text für Krankheitstage
             if (urlaubsSummary.krankheitstage > 0) {
-                Divider()
+                HorizontalDivider()
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -588,7 +588,7 @@ private fun UeberstundenTrendChart(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    Icons.Default.ShowChart,
+                    Icons.AutoMirrored.Filled.ShowChart,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )

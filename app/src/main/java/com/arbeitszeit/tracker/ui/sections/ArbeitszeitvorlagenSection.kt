@@ -278,7 +278,7 @@ private fun VorlageCard(
 
             // Erweiterte Details
             if (expanded) {
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // Wochentage Details
                 Text(

@@ -54,7 +54,7 @@ fun HelpScreen(
         ),
         HelpSection(
             title = "Überstunden-Tracking",
-            icon = Icons.Default.TrendingUp,
+            icon = Icons.AutoMirrored.Filled.TrendingUp,
             items = listOf(
                 HelpItem("Gesamtübersicht", "Zeigt kumulierte Überstunden/Minusstunden"),
                 HelpItem("Monatliche Aufschlüsselung", "Jeder Monat mit Soll/Ist-Vergleich"),
@@ -128,7 +128,7 @@ fun HelpScreen(
                 title = { Text("Hilfe & Funktionen") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
                     }
                 },
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(

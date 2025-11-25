@@ -39,7 +39,7 @@ object DatabaseMigrations {
      * ```
      */
     val MIGRATION_16_17 = object : Migration(16, 17) {
-        override fun migrate(database: SupportSQLiteDatabase) {
+        override fun migrate(db: SupportSQLiteDatabase) {
             // Beispiel-Migration (aktuell leer, da v17 noch nicht existiert)
             // Wenn v17 kommt, hier die SQL-Statements einfügen
         }

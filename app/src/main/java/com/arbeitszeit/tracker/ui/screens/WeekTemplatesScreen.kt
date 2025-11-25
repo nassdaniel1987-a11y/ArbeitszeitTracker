@@ -41,7 +41,7 @@ fun WeekTemplatesScreen(
                 title = { Text("Wochen-Vorlagen") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
                     }
                 },
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
@@ -397,10 +397,12 @@ private fun EditTemplateDialog(
                 val existingEntry = templateEntries.find { it.dayOfWeek == day }
                 if (existingEntry != null && existingEntry.startZeit != null && existingEntry.endZeit != null) {
                     // Konvertiere Minuten zu Stunden und Minuten
-                    val startHour = existingEntry.startZeit!! / 60
-                    val startMinute = existingEntry.startZeit!! % 60
-                    val endHour = existingEntry.endZeit!! / 60
-                    val endMinute = existingEntry.endZeit!! % 60
+                    val startZeit = existingEntry.startZeit
+                    val endZeit = existingEntry.endZeit
+                    val startHour = startZeit / 60
+                    val startMinute = startZeit % 60
+                    val endHour = endZeit / 60
+                    val endMinute = endZeit % 60
 
                     put(day, DayData(
                         enabled = true,

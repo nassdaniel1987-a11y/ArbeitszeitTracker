@@ -82,7 +82,7 @@ fun WeekEntryCard(entry: TimeEntry) {
                                 color = MaterialTheme.colorScheme.secondaryContainer
                             ) {
                                 Icon(
-                                    Icons.Default.Comment,
+                                    Icons.AutoMirrored.Filled.Comment,
                                     contentDescription = "Hat Notiz",
                                     modifier = Modifier
                                         .padding(2.dp)

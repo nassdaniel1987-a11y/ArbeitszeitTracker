@@ -463,7 +463,7 @@ private fun WeekNavigationHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onPreviousWeek) {
-                    Icon(Icons.Default.ArrowBack, "Vorherige Woche")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Vorherige Woche")
                 }
 
                 Column(
@@ -482,7 +482,7 @@ private fun WeekNavigationHeader(
                 }
 
                 IconButton(onClick = onNextWeek) {
-                    Icon(Icons.Default.ArrowForward, "Nächste Woche")
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, "Nächste Woche")
                 }
             }
 
