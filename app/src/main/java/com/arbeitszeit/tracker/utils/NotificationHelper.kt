@@ -98,7 +98,7 @@ object NotificationHelper {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_REMINDERS)
-            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setSmallIcon(R.drawable.ic_notification_time)
             .setContentTitle("Guten Morgen! ☀️")
             .setContentText("Zeit zum Einstempeln")
             .setStyle(NotificationCompat.BigTextStyle()
@@ -178,7 +178,7 @@ object NotificationHelper {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_REMINDERS)
-            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setSmallIcon(R.drawable.ic_notification_time)
             .setContentTitle("Feierabend? 🏠")
             .setContentText(infoText)
             .setStyle(NotificationCompat.BigTextStyle()
@@ -213,7 +213,7 @@ object NotificationHelper {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_REMINDERS)
-            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setSmallIcon(R.drawable.ic_notification_time)
             .setContentTitle("Fehlende Einträge")
             .setContentText("Du hast $count unvollständige Einträge")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -231,7 +231,7 @@ object NotificationHelper {
         if (!hasNotificationPermission(context)) return
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_EXPORT)
-            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setSmallIcon(R.drawable.ic_notification_time)
             .setContentTitle("Excel exportiert")
             .setContentText("Datei: $fileName")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -248,7 +248,7 @@ object NotificationHelper {
         if (!hasNotificationPermission(context)) return
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_EXPORT)
-            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setSmallIcon(R.drawable.ic_notification_time)
             .setContentTitle("Excel importiert")
             .setContentText("$entriesCount Zeiteinträge importiert")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
