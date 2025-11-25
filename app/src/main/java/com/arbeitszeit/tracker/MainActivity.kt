@@ -210,7 +210,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             NavigationDrawerItem(
-                                icon = { Icon(Icons.AutoMirrored.Filled.HelpOutline, null) },
+                                icon = { Icon(Icons.Filled.HelpOutline, null) },
                                 label = { Text("Hilfe") },
                                 selected = currentRoute == Screen.Help.route,
                                 onClick = {

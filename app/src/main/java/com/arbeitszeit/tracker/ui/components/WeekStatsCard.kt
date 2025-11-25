@@ -88,9 +88,9 @@ fun WeekStatsCard(
                     ) {
                         Icon(
                             imageVector = when {
-                                differenz > 0 -> Icons.AutoMirrored.Filled.TrendingUp
-                                differenz < 0 -> Icons.AutoMirrored.Filled.TrendingDown
-                                else -> Icons.AutoMirrored.Filled.TrendingFlat
+                                differenz > 0 -> Icons.Filled.TrendingUp
+                                differenz < 0 -> Icons.Filled.TrendingDown
+                                else -> Icons.Filled.TrendingFlat
                             },
                             contentDescription = null,
                             modifier = Modifier

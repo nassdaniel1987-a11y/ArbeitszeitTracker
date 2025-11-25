@@ -41,7 +41,7 @@ fun WeekTemplatesScreen(
                 title = { Text("Wochen-Vorlagen") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
+                        Icon(Icons.Filled.ArrowBack, "Zurück")
                     }
                 },
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
