@@ -33,8 +33,8 @@ import java.util.Locale
         WeekTemplateEntry::class,
         SollZeitVorlage::class
     ],
-    version = 16,  // Hinzugefügt: spalteP, spalteQ, spalteR für Excel-Notizen/Kommentare (Spalten P, Q, R)
-    exportSchema = false
+    version = 16,  // Current: spalteP, spalteQ, spalteR für Excel-Notizen/Kommentare (Spalten P, Q, R)
+    exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {
 
@@ -56,7 +56,11 @@ abstract class AppDatabase : RoomDatabase() {
                     "arbeitszeit_database"
                 )
                     .addCallback(DatabaseCallback(context))
-                    .fallbackToDestructiveMigration() // Für Entwicklung: DB wird bei Schema-Änderung neu erstellt
+                    // Migrations für zukünftige Versionen
+                    .addMigrations(*DatabaseMigrations.getAllMigrations())
+                    // Fallback NUR für alte Versionen (< 16) - ab v16 keine Datenverluste mehr!
+                    // Falls jemand von einer sehr alten Version upgraded, wird die DB neu erstellt
+                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                     .build()
                 INSTANCE = instance
                 instance
