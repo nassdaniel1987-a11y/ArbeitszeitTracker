@@ -93,10 +93,11 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             val entry = timeEntryDao.getEntryByDate(date) ?: return@launch
 
+            // Zeiten werden jetzt bei ALLEN Typen gespeichert (auch U/K/F/AB)
             timeEntryDao.update(entry.copy(
-                startZeit = if (typ == TimeEntry.TYP_NORMAL) startZeit else null,
-                endZeit = if (typ == TimeEntry.TYP_NORMAL) endZeit else null,
-                pauseMinuten = if (typ == TimeEntry.TYP_NORMAL) pauseMinuten else 0,
+                startZeit = startZeit,
+                endZeit = endZeit,
+                pauseMinuten = pauseMinuten,
                 typ = typ,
                 notiz = notiz,
                 isManualEntry = true,
