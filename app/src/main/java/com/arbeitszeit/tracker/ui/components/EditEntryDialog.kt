@@ -34,9 +34,7 @@ fun EditEntryDialog(
     var selectedTyp by remember { mutableStateOf(entry?.typ ?: TimeEntry.TYP_NORMAL) }
     var notiz by remember { mutableStateOf(entry?.notiz ?: "") }
 
-    // Dialog-States für TimePicker
-    var showStartTimePicker by remember { mutableStateOf(false) }
-    var showEndTimePicker by remember { mutableStateOf(false) }
+    // Dialog-States
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showPauseSlider by remember { mutableStateOf(false) }
 
@@ -58,7 +56,7 @@ fun EditEntryDialog(
             ) {
                 Text("Datum: $datum", style = MaterialTheme.typography.bodyMedium)
 
-                Divider()
+                HorizontalDivider()
 
                 // Typ-Auswahl
                 Text("Typ:", style = MaterialTheme.typography.labelMedium)
@@ -94,7 +92,7 @@ fun EditEntryDialog(
                 }
 
                 // Zeitfelder immer anzeigen (auch bei Urlaub/Krank/Feiertag)
-                Divider()
+                HorizontalDivider()
 
                 // Start-Zeit mit TimePicker
                 Text("Startzeit:", style = MaterialTheme.typography.labelMedium)
@@ -130,7 +128,7 @@ fun EditEntryDialog(
                     )
                 }
 
-                Divider()
+                HorizontalDivider()
 
                 // Notiz
                 OutlinedTextField(

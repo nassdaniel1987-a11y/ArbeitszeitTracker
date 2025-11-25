@@ -42,7 +42,7 @@ fun TemplateManagementScreen(viewModel: TemplateViewModel) {
     ) {
         Text("Excel-Vorlagen", style = MaterialTheme.typography.titleLarge)
 
-        Divider()
+        HorizontalDivider()
 
         // Info
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
@@ -71,7 +71,7 @@ fun TemplateManagementScreen(viewModel: TemplateViewModel) {
             Text("Neue Vorlage hochladen")
         }
 
-        Divider()
+        HorizontalDivider()
 
         // Verfügbare Vorlagen
         Text("Verfügbare Vorlagen", style = MaterialTheme.typography.titleMedium)

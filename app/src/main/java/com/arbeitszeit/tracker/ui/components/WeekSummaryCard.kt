@@ -58,14 +58,14 @@ fun WeekSummaryCard(summary: WeekSummary) {
                     // Status Icon
                     if (isOvertime) {
                         Icon(
-                            imageVector = Icons.Default.TrendingUp,
+                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                             contentDescription = "Überstunden",
                             tint = OvertimeColor,
                             modifier = Modifier.size(20.dp)
                         )
                     } else if (isUndertime) {
                         Icon(
-                            imageVector = Icons.Default.TrendingDown,
+                            imageVector = Icons.AutoMirrored.Filled.TrendingDown,
                             contentDescription = "Fehlstunden",
                             tint = UndertimeColor,
                             modifier = Modifier.size(20.dp)
@@ -155,7 +155,7 @@ fun WeekSummaryCard(summary: WeekSummary) {
             // Zusätzliche Info: Vollständigkeit
             if (summary.totalDays > 0) {
                 Spacer(Modifier.height(8.dp))
-                Divider()
+                HorizontalDivider()
                 Spacer(Modifier.height(8.dp))
 
                 Row(

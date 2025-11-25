@@ -317,7 +317,7 @@ private fun SettingsDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
                     }
                 }
             )
@@ -518,7 +518,7 @@ private fun HolidaysSection(
             }
         }
 
-        Divider()
+        HorizontalDivider()
 
         // Bundesland-Auswahl
         Text(
@@ -623,7 +623,7 @@ private fun HolidaysSection(
 
         // Vorschau der Feiertage für aktuelles Jahr
         if (selectedBundesland != null) {
-            Divider()
+            HorizontalDivider()
 
             Text(
                 "Feiertage ${java.time.LocalDate.now().year}",
@@ -657,7 +657,7 @@ private fun HolidaysSection(
                         }
                     }
 
-                    Divider()
+                    HorizontalDivider()
 
                     Text(
                         "Gesamt: ${holidays.size} Feiertage",
@@ -1403,7 +1403,7 @@ private fun ArbeitszeitTab(
             Switch(checked = ferienbetreuung, onCheckedChange = { ferienbetreuung = it })
         }
 
-        Divider()
+        HorizontalDivider()
 
         Text("Kalenderwochenberechnung", style = MaterialTheme.typography.labelMedium)
         OutlinedTextField(
