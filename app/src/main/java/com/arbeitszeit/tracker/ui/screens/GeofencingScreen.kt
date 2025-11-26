@@ -1,6 +1,7 @@
 package com.arbeitszeit.tracker.ui.screens
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -36,6 +37,11 @@ fun GeofencingScreen(
     var showPermissionInfo by remember { mutableStateOf(false) }
     val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // System-Back-Geste abfangen (vom Rand wischen)
+    BackHandler {
+        onNavigateBack()
+    }
 
     // Berechtigungsanfrage
     val permissionLauncher = rememberLauncherForActivityResult(
