@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")  // Compose Compiler Plugin für Kotlin 2.0+
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
 }
@@ -47,9 +48,7 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"  // Kompatibel mit Kotlin 1.9.24
-    }
+    // composeOptions nicht mehr nötig - Compose Compiler Plugin regelt das automatisch
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
