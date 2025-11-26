@@ -4,5 +4,5 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false  // Gradle 9 kompatibel
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.20" apply false  // Compose Compiler Plugin
     id("com.google.devtools.ksp") version "2.2.20-2.0.4" apply false  // KSP für Kotlin 2.2.20
-    id("com.google.dagger.hilt.android") version "2.51.1" apply false
+    id("com.google.dagger.hilt.android") version "2.57.1" apply false  // Kotlin 2.2.20 + KSP2 kompatibel
 }
