@@ -36,6 +36,29 @@
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
 
+# Google Drive API
+-keep class com.google.api.** { *; }
+-keep class com.google.api.client.** { *; }
+-keep class com.google.api.services.drive.** { *; }
+-dontwarn com.google.api.**
+
+# Google Drive API - Missing optional dependencies
+-dontwarn aQute.bnd.annotation.**
+-dontwarn edu.umd.cs.findbugs.annotations.**
+-dontwarn java.awt.**
+-dontwarn javax.swing.**
+-dontwarn org.osgi.framework.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn com.graphbuilder.**
+
+# Google HTTP Client
+-keep class com.google.http-client.** { *; }
+-dontwarn com.google.http-client.**
+
+# Google OAuth Client
+-keep class com.google.oauth-client.** { *; }
+-dontwarn com.google.oauth-client.**
+
 # OSMDroid
 -keep class org.osmdroid.** { *; }
 -dontwarn org.osmdroid.**
