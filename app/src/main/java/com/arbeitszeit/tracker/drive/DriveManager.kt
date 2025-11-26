@@ -196,7 +196,7 @@ class DriveManager(
  */
 private fun File.getSize(): Long? {
     return try {
-        this.size
+        this.size?.toLong()
     } catch (e: Exception) {
         null
     }
