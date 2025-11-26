@@ -1,6 +1,7 @@
 package com.arbeitszeit.tracker.ui.screens
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -26,6 +27,11 @@ fun TemplateManagementScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showYearPicker by remember { mutableStateOf(false) }
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+
+    // System-Back-Geste abfangen (vom Rand wischen)
+    BackHandler {
+        onNavigateBack()
+    }
 
     // File Picker
     val filePickerLauncher = rememberLauncherForActivityResult(
