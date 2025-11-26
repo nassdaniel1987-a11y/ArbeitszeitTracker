@@ -93,9 +93,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
 
-    // Hilt Dependency Injection
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    ksp("com.google.dagger:hilt-android-compiler:2.51.1")
+    // Hilt Dependency Injection - Kotlin 2.2.20 + KSP2 kompatibel
+    implementation("com.google.dagger:hilt-android:2.57.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.57.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")  // Hilt + Compose Navigation
     implementation("androidx.hilt:hilt-work:1.2.0")  // Hilt + WorkManager
     ksp("androidx.hilt:hilt-compiler:1.2.0")
@@ -142,8 +142,8 @@ dependencies {
     testImplementation("app.cash.turbine:turbine:1.1.0")  // Flow Testing
 
     // Hilt Testing
-    testImplementation("com.google.dagger:hilt-android-testing:2.51.1")
-    kspTest("com.google.dagger:hilt-android-compiler:2.51.1")
-    androidTestImplementation("com.google.dagger:hilt-android-testing:2.51.1")
-    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.51.1")
+    testImplementation("com.google.dagger:hilt-android-testing:2.57.1")
+    kspTest("com.google.dagger:hilt-android-compiler:2.57.1")
+    androidTestImplementation("com.google.dagger:hilt-android-testing:2.57.1")
+    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.57.1")
 }
