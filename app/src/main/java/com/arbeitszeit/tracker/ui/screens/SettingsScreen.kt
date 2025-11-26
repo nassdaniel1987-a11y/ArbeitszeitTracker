@@ -1,5 +1,6 @@
 package com.arbeitszeit.tracker.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -297,6 +298,11 @@ private fun SettingsDetailScreen(
     onNavigateToGeofencing: () -> Unit,
     onNavigateToTemplateManagement: () -> Unit
 ) {
+    // System-Back-Geste abfangen (vom Rand wischen)
+    BackHandler {
+        onNavigateBack()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
