@@ -117,7 +117,7 @@ fun SharedTransitionScope.WorkEntryListScreen(
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier
                                 .sharedElement(
-                                    state = rememberSharedContentState(key = "date-${entry.id}"),
+                                    rememberSharedContentState(key = "date-${entry.id}"),
                                     animatedVisibilityScope = animatedVisibilityScope
                                 )
                         )
@@ -128,7 +128,7 @@ fun SharedTransitionScope.WorkEntryListScreen(
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier
                                 .sharedElement(
-                                    state = rememberSharedContentState(key = "hours-${entry.id}"),
+                                    rememberSharedContentState(key = "hours-${entry.id}"),
                                     animatedVisibilityScope = animatedVisibilityScope
                                 )
                         )
@@ -182,7 +182,7 @@ fun SharedTransitionScope.WorkEntryDetailScreen(
                 style = MaterialTheme.typography.displaySmall,
                 modifier = Modifier
                     .sharedElement(
-                        state = rememberSharedContentState(key = "date-${entry.id}"),
+                        rememberSharedContentState(key = "date-${entry.id}"),
                         animatedVisibilityScope = animatedVisibilityScope
                     )
             )
@@ -193,7 +193,7 @@ fun SharedTransitionScope.WorkEntryDetailScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .sharedElement(
-                        state = rememberSharedContentState(key = "hours-${entry.id}"),
+                        rememberSharedContentState(key = "hours-${entry.id}"),
                         animatedVisibilityScope = animatedVisibilityScope
                     )
             )
