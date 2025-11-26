@@ -22,7 +22,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GeofencingScreen(viewModel: GeofencingViewModel) {
+fun GeofencingScreen(
+    viewModel: GeofencingViewModel,
+    onNavigateBack: () -> Unit = {}
+) {
     val workLocations by viewModel.workLocations.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val permissionStatus = remember { viewModel.checkPermissions() }
@@ -42,6 +45,16 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Automatische Zeiterfassung") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Zurück")
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         LazyColumn(
@@ -51,13 +64,6 @@ fun GeofencingScreen(viewModel: GeofencingViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            Text(
-                "Automatische Zeiterfassung",
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-
         item {
             Text(
                 "Starte und beende die Arbeitszeit automatisch basierend auf deinem Standort.",

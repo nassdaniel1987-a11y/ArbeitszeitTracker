@@ -71,12 +71,18 @@ fun NavGraph(
 
         composable(Screen.Geofencing.route) {
             val viewModel: GeofencingViewModel = viewModel()
-            GeofencingScreen(viewModel = viewModel)
+            GeofencingScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(Screen.TemplateManagement.route) {
             val viewModel: TemplateViewModel = viewModel()
-            TemplateManagementScreen(viewModel = viewModel)
+            TemplateManagementScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(Screen.WeekTemplates.route) {

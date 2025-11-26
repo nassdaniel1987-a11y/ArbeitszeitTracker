@@ -18,7 +18,10 @@ import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TemplateManagementScreen(viewModel: TemplateViewModel) {
+fun TemplateManagementScreen(
+    viewModel: TemplateViewModel,
+    onNavigateBack: () -> Unit = {}
+) {
     val availableYears by viewModel.availableYears.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     var showYearPicker by remember { mutableStateOf(false) }
@@ -34,13 +37,25 @@ fun TemplateManagementScreen(viewModel: TemplateViewModel) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text("Excel-Vorlagen", style = MaterialTheme.typography.titleLarge)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Excel-Vorlagen") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Zurück")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
 
         HorizontalDivider()
 
@@ -116,6 +131,7 @@ fun TemplateManagementScreen(viewModel: TemplateViewModel) {
                 )
             }
         }
+    }
     }
 
     // Year Picker Dialog
