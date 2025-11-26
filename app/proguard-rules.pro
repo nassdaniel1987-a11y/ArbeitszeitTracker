@@ -47,9 +47,11 @@
 -dontwarn edu.umd.cs.findbugs.annotations.**
 -dontwarn java.awt.**
 -dontwarn javax.swing.**
+-dontwarn javax.naming.**
 -dontwarn org.osgi.framework.**
 -dontwarn org.apache.logging.log4j.**
 -dontwarn com.graphbuilder.**
+-dontwarn org.apache.http.**
 
 # Google HTTP Client
 -keep class com.google.http-client.** { *; }
