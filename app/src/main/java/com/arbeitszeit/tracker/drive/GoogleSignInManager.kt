@@ -14,6 +14,7 @@ import com.google.api.services.drive.DriveScopes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.tasks.await
 
 /**
  * Google Sign-In Manager
@@ -154,11 +155,4 @@ class GoogleSignInManager(private val context: Context) {
         data class Success(val account: GoogleSignInAccount) : SignInResult()
         data class Error(val message: String) : SignInResult()
     }
-}
-
-/**
- * Extension: await() für Google Tasks
- */
-private suspend fun <T> com.google.android.gms.tasks.Task<T>.await(): T {
-    return kotlinx.coroutines.tasks.await(this)
 }
