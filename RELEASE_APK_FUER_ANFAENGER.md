@@ -101,10 +101,20 @@ cd C:\Users\DEINNAME
 3. Rechtsklick → **Einfügen**
 4. Drücke **Enter**
 
-5. Jetzt kopiere diesen Befehl:
+5. Jetzt kopiere diesen Befehl (**WICHTIG:** Den vollen Pfad zu keytool benutzen!):
+
+**Option A - Wenn Android Studio NORMAL installiert ist:**
 ```
-keytool -list -v -keystore arbeitszeit-release-key.jks -alias arbeitszeit-release
+"C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -list -v -keystore arbeitszeit-release-key.jks -alias arbeitszeit-release
 ```
+
+**Option B - Wenn du Android Studio WOANDERS installiert hast:**
+Finde deinen Android Studio Ordner und passe den Pfad an, z.B.:
+```
+"C:\Programme\Android Studio\jbr\bin\keytool.exe" -list -v -keystore arbeitszeit-release-key.jks -alias arbeitszeit-release
+```
+
+**💡 Tipp:** Die Anführungszeichen `"` sind WICHTIG wegen den Leerzeichen im Pfad!
 
 6. Klicke ins schwarze Fenster
 7. Rechtsklick → **Einfügen**
@@ -337,6 +347,22 @@ Bevor du die APK weitergibst:
 ---
 
 ## 🆘 Häufige Probleme
+
+### Problem: "keytool" wurde nicht gefunden / "Der Befehl keytool ist entweder falsch geschrieben..."
+
+**Ursache:** keytool ist nicht in deinem Windows PATH
+
+**Lösung:**
+Benutze den **vollen Pfad** zu keytool (siehe Teil 2, Schritt 2):
+```
+"C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -list -v -keystore arbeitszeit-release-key.jks -alias arbeitszeit-release
+```
+
+**Falls das nicht funktioniert:**
+1. Suche nach deinem Android Studio Installations-Ordner
+2. Gehe in den Ordner `jbr\bin\`
+3. Dort sollte `keytool.exe` sein
+4. Benutze den vollen Pfad in deinem Befehl
 
 ### Problem: "BUILD FAILED" beim Bauen
 
