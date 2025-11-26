@@ -65,10 +65,18 @@ android {
             // Exclude module-info files that cause jlink issues
             excludes += "module-info.class"
             excludes += "META-INF/versions/*/module-info.class"
+            // Google Drive API - INDEX.LIST Konflikt beheben
+            excludes += "META-INF/INDEX.LIST"
         }
         jniLibs {
             useLegacyPackaging = true
         }
+    }
+
+    lint {
+        // Lint-Bug in Kotlin 2.2.20 + Lifecycle 2.10.0 workaround
+        checkReleaseBuilds = false  // Deaktiviere Lint für Release-Builds
+        abortOnError = false
     }
 }
 
