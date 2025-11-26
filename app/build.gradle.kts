@@ -71,17 +71,17 @@ android {
 dependencies {
     // Core Android
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
     implementation("androidx.activity:activity-compose:1.9.2")
 
     // Compose & Material 3
-    implementation(platform("androidx.compose:compose-bom:2024.09.03"))  // Aktuellste BOM
+    implementation(platform("androidx.compose:compose-bom:2025.11.01"))  // Neueste BOM mit K2 Compiler Support
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:2.8.2")
+    implementation("androidx.navigation:navigation-compose:2.8.5")  // Type-safe Navigation Support
     implementation("androidx.compose.ui:ui-text-google-fonts:1.7.5")  // Google Fonts Support
 
     // Room Database - Kotlin 2.2.20 kompatibel
@@ -90,8 +90,8 @@ dependencies {
     ksp("androidx.room:room-compiler:2.8.4")
 
     // ViewModel & Lifecycle
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
 
     // Hilt Dependency Injection - Kotlin 2.2.20 + KSP2 kompatibel
     implementation("com.google.dagger:hilt-android:2.57.1")
@@ -130,7 +130,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.03"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.11.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
