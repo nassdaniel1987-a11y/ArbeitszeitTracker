@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")  // Compose Compiler Plugin für Kotlin 2.0+
+    id("org.jetbrains.kotlin.plugin.serialization")  // Kotlinx Serialization für Type-safe Navigation
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
 }
@@ -44,6 +45,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-Xcontext-receivers"  // Cleaner Code durch Context Receivers
+        )
     }
     buildFeatures {
         compose = true
@@ -80,8 +84,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0")  // Adaptive Navigation für Phone/Tablet/Desktop
+    implementation("androidx.compose.material3:material3-window-size-class:1.4.0")  // Window Size Classes
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.8.5")  // Type-safe Navigation Support
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")  // Kotlinx Serialization für Type-safe Routes
     implementation("androidx.compose.ui:ui-text-google-fonts:1.7.5")  // Google Fonts Support
 
     // Room Database - Kotlin 2.2.20 kompatibel

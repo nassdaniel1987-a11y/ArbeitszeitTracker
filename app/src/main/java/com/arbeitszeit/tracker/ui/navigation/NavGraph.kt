@@ -5,9 +5,24 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.arbeitszeit.tracker.ui.screens.*
 import com.arbeitszeit.tracker.viewmodel.*
+import kotlinx.serialization.Serializable
 
+// Type-safe Navigation mit Kotlin Serialization (Compose Navigation 2.8+)
+@Serializable object HomeRoute
+@Serializable object CalendarRoute
+@Serializable object UeberstundenRoute
+@Serializable object ExportRoute
+@Serializable object ImportRoute
+@Serializable object SettingsRoute
+@Serializable object GeofencingRoute
+@Serializable object TemplateManagementRoute
+@Serializable object WeekTemplatesRoute
+@Serializable object HelpRoute
+
+// Backwards compatibility - wird später entfernt
 sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Calendar : Screen("calendar")
