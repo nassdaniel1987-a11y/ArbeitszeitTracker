@@ -125,16 +125,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
      * Aktualisiert die SollMinuten für alle bestehenden Zeiteinträge
      * basierend auf den neuen Einstellungen
      *
-     * WICHTIG: Einträge mit sollZeitVorlageName == "IMPORT" werden übersprungen,
-     * da ihre sollMinuten aus dem Excel-Import stammen und nicht überschrieben werden sollen
+     * WICHTIG: Einträge mit sollZeitVorlageName (z.B. "IMPORT", "Normal", "Ferienbetreuung")
+     * werden übersprungen, da ihre sollMinuten manuell gesetzt wurden und nicht
+     * überschrieben werden sollen
      */
     private suspend fun updateSollMinutenForAllEntries(settings: UserSettings) {
         val allEntries = timeEntryDao.getAllEntriesFlow().first()
 
         allEntries.forEach { entry ->
-            // Überspringe importierte Einträge (sollMinuten stammen aus Excel-Import)
-            if (entry.sollZeitVorlageName == "IMPORT") {
-                android.util.Log.d("SettingsViewModel", "Überspringe importierten Eintrag: ${entry.datum}")
+            // Überspringe Einträge mit Vorlagennamen (Import oder Wochenvorlagen)
+            // Diese haben bewusst gesetzte sollMinuten und sollen nicht überschrieben werden
+            if (!entry.sollZeitVorlageName.isNullOrEmpty()) {
+                android.util.Log.d("SettingsViewModel", "Überspringe Eintrag mit Vorlage '${entry.sollZeitVorlageName}': ${entry.datum}")
                 return@forEach
             }
 
