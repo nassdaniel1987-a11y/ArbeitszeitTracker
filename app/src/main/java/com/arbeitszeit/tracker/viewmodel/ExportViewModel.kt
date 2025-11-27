@@ -230,35 +230,8 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
 
                 when (result) {
                     is ImportResult.Success -> {
-                        // Speichere importierte Stammdaten
-                        if (importStammdaten && result.userSettings != null) {
-                            // Lade existierende Settings um Geofencing-Einstellungen zu erhalten
-                            val existingSettings = settingsDao.getSettings()
-
-                            android.util.Log.d("ExportViewModel", "Import: importStammdaten=$importStammdaten")
-                            android.util.Log.d("ExportViewModel", "Importierte Settings: name=${result.userSettings.name}, " +
-                                    "einrichtung=${result.userSettings.einrichtung}, wochenstunden=${result.userSettings.wochenStundenMinuten}")
-                            android.util.Log.d("ExportViewModel", "Existierende Settings: name=${existingSettings?.name}, " +
-                                    "einrichtung=${existingSettings?.einrichtung}, wochenstunden=${existingSettings?.wochenStundenMinuten}")
-
-                            // Merge: Stammdaten aus Import, Geofencing-Einstellungen behalten
-                            val mergedSettings = result.userSettings.copy(
-                                geofencingEnabled = existingSettings?.geofencingEnabled ?: false,
-                                geofencingStartHour = existingSettings?.geofencingStartHour ?: 6,
-                                geofencingEndHour = existingSettings?.geofencingEndHour ?: 20,
-                                geofencingActiveDays = existingSettings?.geofencingActiveDays ?: "12345"
-                            )
-
-                            android.util.Log.d("ExportViewModel", "Merged Settings: name=${mergedSettings.name}, " +
-                                    "einrichtung=${mergedSettings.einrichtung}, wochenstunden=${mergedSettings.wochenStundenMinuten}")
-
-                            settingsDao.insertOrUpdate(mergedSettings)
-
-                            android.util.Log.d("ExportViewModel", "Settings gespeichert!")
-
-                            // Aktualisiere sollMinuten für alle bestehenden Einträge basierend auf neuen Stammdaten
-                            updateSollMinutenForAllEntries(mergedSettings)
-                        }
+                        // Sammle Datumsangaben der importierten Einträge
+                        val importedDates = result.entries.map { it.datum }.toSet()
 
                         // Speichere importierte Zeiteinträge
                         // Prüfe für jeden Eintrag, ob bereits einer für dieses Datum existiert
@@ -285,6 +258,36 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                                 // Füge neuen Eintrag hinzu
                                 timeEntryDao.insert(importedEntry)
                             }
+                        }
+
+                        // Speichere importierte Stammdaten und aktualisiere andere Einträge
+                        if (importStammdaten && result.userSettings != null) {
+                            // Lade existierende Settings um Geofencing-Einstellungen zu erhalten
+                            val existingSettings = settingsDao.getSettings()
+
+                            android.util.Log.d("ExportViewModel", "Import: importStammdaten=$importStammdaten")
+                            android.util.Log.d("ExportViewModel", "Importierte Settings: name=${result.userSettings.name}, " +
+                                    "einrichtung=${result.userSettings.einrichtung}, wochenstunden=${result.userSettings.wochenStundenMinuten}")
+                            android.util.Log.d("ExportViewModel", "Existierende Settings: name=${existingSettings?.name}, " +
+                                    "einrichtung=${existingSettings?.einrichtung}, wochenstunden=${existingSettings?.wochenStundenMinuten}")
+
+                            // Merge: Stammdaten aus Import, Geofencing-Einstellungen behalten
+                            val mergedSettings = result.userSettings.copy(
+                                geofencingEnabled = existingSettings?.geofencingEnabled ?: false,
+                                geofencingStartHour = existingSettings?.geofencingStartHour ?: 6,
+                                geofencingEndHour = existingSettings?.geofencingEndHour ?: 20,
+                                geofencingActiveDays = existingSettings?.geofencingActiveDays ?: "12345"
+                            )
+
+                            android.util.Log.d("ExportViewModel", "Merged Settings: name=${mergedSettings.name}, " +
+                                    "einrichtung=${mergedSettings.einrichtung}, wochenstunden=${mergedSettings.wochenStundenMinuten}")
+
+                            settingsDao.insertOrUpdate(mergedSettings)
+
+                            android.util.Log.d("ExportViewModel", "Settings gespeichert!")
+
+                            // Aktualisiere sollMinuten für bestehende Einträge (AUSSER die gerade importierten)
+                            updateSollMinutenForAllEntries(mergedSettings, excludeDates = importedDates)
                         }
 
                         _uiState.value = _uiState.value.copy(
@@ -326,12 +329,24 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     /**
      * Aktualisiert sollMinuten für alle Einträge basierend auf neuen Stammdaten
      * Wird nach Import von Stammdaten aufgerufen
+     *
+     * @param settings Die UserSettings mit den neuen Stammdaten
+     * @param excludeDates Set von Datumsangaben, die NICHT aktualisiert werden sollen (z.B. importierte Einträge)
      */
-    private suspend fun updateSollMinutenForAllEntries(settings: com.arbeitszeit.tracker.data.entity.UserSettings) {
+    private suspend fun updateSollMinutenForAllEntries(
+        settings: com.arbeitszeit.tracker.data.entity.UserSettings,
+        excludeDates: Set<String> = emptySet()
+    ) {
         val year = java.time.LocalDate.now().year
         val allEntries = timeEntryDao.getEntriesByYear(year)
 
         allEntries.forEach { entry ->
+            // Überspringe importierte Einträge (deren sollMinuten aus dem Import stammen)
+            if (entry.datum in excludeDates) {
+                android.util.Log.d("ExportViewModel", "Überspringe importierten Eintrag: ${entry.datum}")
+                return@forEach
+            }
+
             // Berechne neue sollMinuten basierend auf Settings
             val date = java.time.LocalDate.parse(entry.datum)
             val dayOfWeek = date.dayOfWeek.value
