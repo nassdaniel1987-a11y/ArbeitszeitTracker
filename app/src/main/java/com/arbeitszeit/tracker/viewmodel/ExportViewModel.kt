@@ -334,8 +334,9 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
      * @param settings Die UserSettings mit den neuen Stammdaten
      * @param excludeDates Set von Datumsangaben, die NICHT aktualisiert werden sollen (z.B. importierte Einträge)
      *
-     * WICHTIG: Einträge mit sollZeitVorlageName == "IMPORT" werden übersprungen,
-     * da ihre sollMinuten aus dem Excel-Import stammen und nicht überschrieben werden sollen
+     * WICHTIG: Einträge mit sollZeitVorlageName (z.B. "IMPORT", "Normal", "Ferienbetreuung")
+     * werden übersprungen, da ihre sollMinuten manuell gesetzt wurden und nicht
+     * überschrieben werden sollen
      */
     private suspend fun updateSollMinutenForAllEntries(
         settings: com.arbeitszeit.tracker.data.entity.UserSettings,
@@ -345,9 +346,10 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
         val allEntries = timeEntryDao.getEntriesByYear(year)
 
         allEntries.forEach { entry ->
-            // Überspringe importierte Einträge (deren sollMinuten aus dem Import stammen)
-            if (entry.datum in excludeDates || entry.sollZeitVorlageName == "IMPORT") {
-                android.util.Log.d("ExportViewModel", "Überspringe importierten Eintrag: ${entry.datum}")
+            // Überspringe Einträge mit Vorlagennamen (Import oder Wochenvorlagen)
+            // Diese haben bewusst gesetzte sollMinuten und sollen nicht überschrieben werden
+            if (entry.datum in excludeDates || !entry.sollZeitVorlageName.isNullOrEmpty()) {
+                android.util.Log.d("ExportViewModel", "Überspringe Eintrag mit Vorlage '${entry.sollZeitVorlageName}': ${entry.datum}")
                 return@forEach
             }
 
