@@ -85,6 +85,32 @@
 # Preserve generic signatures
 -keepattributes Signature
 
+# Kotlinx Serialization
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keep,includedescriptorclasses class com.arbeitszeit.tracker.**$$serializer { *; }
+-keepclassmembers class com.arbeitszeit.tracker.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.arbeitszeit.tracker.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Gson (falls verwendet)
+-keepattributes Signature
+-keepattributes *Annotation*
+-dontwarn sun.misc.**
+-keep class com.google.gson.** { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+
 # Preserve Serializable classes
 -keepnames class * implements java.io.Serializable
 -keepclassmembers class * implements java.io.Serializable {
