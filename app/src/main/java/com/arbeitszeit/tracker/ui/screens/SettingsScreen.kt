@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arbeitszeit.tracker.ui.components.DarkModeCard
 import com.arbeitszeit.tracker.ui.sections.ArbeitszeitvorlagenSection
-import com.arbeitszeit.tracker.ui.sections.BackupSection
+import com.arbeitszeit.tracker.ui.sections.CloudBackupSection
 import com.arbeitszeit.tracker.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 
@@ -342,7 +342,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.ARBEITSZEITVORLAGEN -> ArbeitszeitvorlagenSection(viewModel, snackbarHostState)
                 SettingsSection.HOLIDAYS -> HolidaysSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
-                SettingsSection.BACKUP -> BackupSection(viewModel, snackbarHostState)
+                SettingsSection.BACKUP -> CloudBackupSection(viewModel, snackbarHostState)
                 SettingsSection.EXCEL_TEMPLATES -> ExcelTemplatesSection(onNavigateToTemplateManagement)
                 SettingsSection.DELETE_DATA -> DeleteDataSection(viewModel, snackbarHostState, onNavigateBack)
             }
