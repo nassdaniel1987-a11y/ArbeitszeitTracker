@@ -248,6 +248,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                                     endZeit = importedEntry.endZeit,
                                     pauseMinuten = importedEntry.pauseMinuten,
                                     sollMinuten = importedEntry.sollMinuten,
+                                    sollZeitVorlageName = "IMPORT", // Markiere als Import
                                     typ = importedEntry.typ,
                                     notiz = importedEntry.notiz,
                                     arbeitszeitBereitschaft = importedEntry.arbeitszeitBereitschaft,
@@ -255,7 +256,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                                     updatedAt = System.currentTimeMillis()
                                 ))
                             } else {
-                                // Füge neuen Eintrag hinzu
+                                // Füge neuen Eintrag hinzu (bereits mit sollZeitVorlageName = "IMPORT" markiert)
                                 timeEntryDao.insert(importedEntry)
                             }
                         }
@@ -332,6 +333,9 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
      *
      * @param settings Die UserSettings mit den neuen Stammdaten
      * @param excludeDates Set von Datumsangaben, die NICHT aktualisiert werden sollen (z.B. importierte Einträge)
+     *
+     * WICHTIG: Einträge mit sollZeitVorlageName == "IMPORT" werden übersprungen,
+     * da ihre sollMinuten aus dem Excel-Import stammen und nicht überschrieben werden sollen
      */
     private suspend fun updateSollMinutenForAllEntries(
         settings: com.arbeitszeit.tracker.data.entity.UserSettings,
@@ -342,7 +346,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
 
         allEntries.forEach { entry ->
             // Überspringe importierte Einträge (deren sollMinuten aus dem Import stammen)
-            if (entry.datum in excludeDates) {
+            if (entry.datum in excludeDates || entry.sollZeitVorlageName == "IMPORT") {
                 android.util.Log.d("ExportViewModel", "Überspringe importierten Eintrag: ${entry.datum}")
                 return@forEach
             }

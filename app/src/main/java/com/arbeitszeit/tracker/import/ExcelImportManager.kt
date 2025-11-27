@@ -309,6 +309,7 @@ class ExcelImportManager(private val context: Context) {
                     endZeit = endZeit,
                     pauseMinuten = pauseMinuten,
                     sollMinuten = sollMinuten,
+                    sollZeitVorlageName = "IMPORT", // Markiere als Import -> sollMinuten nicht überschreiben!
                     typ = typ,
                     arbeitszeitBereitschaft = arbeitszeitBereitschaft,
                     spalteP = spalteP,
