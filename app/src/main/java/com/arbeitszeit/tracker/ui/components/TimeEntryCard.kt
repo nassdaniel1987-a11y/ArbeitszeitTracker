@@ -102,9 +102,56 @@ fun TimeEntryCard(
                         }
                     }
 
-                    // Große Zeit-Anzeige bei Arbeit
+                    // Progress Circle + Zeit-Anzeige bei Arbeit
                     if (entry?.typ == TimeEntry.TYP_NORMAL) {
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(16.dp))
+
+                        // Progress Circle
+                        val progress = if (entry.sollMinuten > 0) {
+                            (entry.getIstMinuten().toFloat() / entry.sollMinuten.toFloat()).coerceIn(0f, 1.5f)
+                        } else 0f
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier.size(140.dp),
+                                color = Color.White,
+                                strokeWidth = 12.dp,
+                                trackColor = Color.White.copy(alpha = 0.2f),
+                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    TimeUtils.minutesToHoursMinutes(entry.getIstMinuten()),
+                                    style = MaterialTheme.typography.displayMedium,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "von ${TimeUtils.minutesToHoursMinutes(entry.sollMinuten)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                                if (entry.getDifferenzMinuten() != 0) {
+                                    Text(
+                                        TimeUtils.formatDifferenz(entry.getDifferenzMinuten()),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = if (entry.getDifferenzMinuten() > 0)
+                                            Color(0xFF4CAF50) else Color(0xFFFF5252),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // Kleine Zeit-Badges
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
