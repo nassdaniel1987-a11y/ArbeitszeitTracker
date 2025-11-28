@@ -7,6 +7,15 @@ plugins {
     id("com.google.dagger.hilt.android")
 }
 
+// Gemini API Key aus local.properties lesen
+val localProperties = java.util.Properties().apply {
+    val localPropertiesFile = File(rootProject.projectDir, "local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
+}
+val geminiApiKey: String = localProperties.getProperty("GEMINI_API_KEY", "")
+
 android {
     namespace = "com.arbeitszeit.tracker"
     compileSdk = 35  // Android 15 (Zukunftssicher)
@@ -28,16 +37,8 @@ android {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
 
-        // Gemini API Key aus local.properties lesen
-        val localProperties = File(rootProject.projectDir, "local.properties")
-        if (localProperties.exists()) {
-            val properties = java.util.Properties()
-            properties.load(localProperties.inputStream())
-            val apiKey = properties.getProperty("GEMINI_API_KEY", "")
-            buildConfigField("String", "GEMINI_API_KEY", "\"$apiKey\"")
-        } else {
-            buildConfigField("String", "GEMINI_API_KEY", "\"\"")
-        }
+        // Gemini API Key in BuildConfig verfügbar machen
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {
@@ -54,11 +55,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += listOf(
-            "-Xcontext-receivers"  // Cleaner Code durch Context Receivers
-        )
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.add("-Xcontext-receivers")  // Cleaner Code durch Context Receivers
+        }
     }
     buildFeatures {
         compose = true
