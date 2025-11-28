@@ -1,6 +1,7 @@
 package com.arbeitszeit.tracker.data.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -12,7 +13,13 @@ import androidx.room.PrimaryKey
  * Diese Tage werden automatisch als "Pflicht-Urlaub" markiert
  * und in der KI-Urlaubsplanung berücksichtigt.
  */
-@Entity(tableName = "closing_days")
+@Entity(
+    tableName = "closing_days",
+    indices = [
+        Index(value = ["year"]),
+        Index(value = ["startDate", "endDate"])
+    ]
+)
 data class ClosingDay(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

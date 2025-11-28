@@ -1,6 +1,7 @@
 package com.arbeitszeit.tracker.data.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.time.LocalDate
 
@@ -12,7 +13,13 @@ import java.time.LocalDate
  * - Optimale Urlaubszeiten vorzuschlagen (Schulferien + ein paar Tage = super lange frei!)
  * - Konflikte mit Ferienbetreuung zu erkennen
  */
-@Entity(tableName = "school_holidays")
+@Entity(
+    tableName = "school_holidays",
+    indices = [
+        Index(value = ["bundesland", "year"]),
+        Index(value = ["startDate", "endDate"])
+    ]
+)
 data class SchoolHoliday(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
