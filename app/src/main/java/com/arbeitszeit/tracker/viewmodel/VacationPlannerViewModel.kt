@@ -1,0 +1,211 @@
+package com.arbeitszeit.tracker.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.arbeitszeit.tracker.ai.GeminiClient
+import com.arbeitszeit.tracker.data.database.AppDatabase
+import com.arbeitszeit.tracker.data.entity.ClosingDay
+import com.arbeitszeit.tracker.data.entity.SchoolHoliday
+import com.arbeitszeit.tracker.data.entity.TimeEntry
+import com.arbeitszeit.tracker.data.entity.UserSettings
+import com.arbeitszeit.tracker.vacation.SchoolHolidayManager
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+
+/**
+ * ViewModel für die KI-gestützte Urlaubsplanung
+ */
+class VacationPlannerViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val database = AppDatabase.getDatabase(application)
+    private val settingsDao = database.userSettingsDao()
+    private val timeEntryDao = database.timeEntryDao()
+    private val closingDayDao = database.closingDayDao()
+    private val schoolHolidayDao = database.schoolHolidayDao()
+
+    private val geminiClient = GeminiClient()
+    private val schoolHolidayManager = SchoolHolidayManager(schoolHolidayDao)
+
+    // User Settings
+    val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    // UI State
+    private val _selectedYear = MutableStateFlow(LocalDate.now().year)
+    val selectedYear: StateFlow<Int> = _selectedYear
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _aiSuggestion = MutableStateFlow<String?>(null)
+    val aiSuggestion: StateFlow<String?> = _aiSuggestion
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+
+    /**
+     * Schließtage für das ausgewählte Jahr
+     */
+    val closingDays: StateFlow<List<ClosingDay>> = selectedYear
+        .flatMapLatest { year ->
+            closingDayDao.getClosingDaysByYearFlow(year)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    /**
+     * Schulferien für das ausgewählte Jahr
+     */
+    val schoolHolidays: StateFlow<List<SchoolHoliday>> = combine(
+        selectedYear,
+        userSettings
+    ) { year, settings ->
+        Pair(year, settings?.bundesland)
+    }
+        .flatMapLatest { (year, bundesland) ->
+            if (bundesland != null) {
+                // Initialisiere Schulferien falls nötig
+                viewModelScope.launch {
+                    schoolHolidayManager.initializeHolidays(bundesland, year)
+                }
+                schoolHolidayDao.getHolidaysByBundeslandAndYearFlow(bundesland, year)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    /**
+     * Urlaubstage im ausgewählten Jahr
+     */
+    val vacationDays: StateFlow<List<TimeEntry>> = selectedYear
+        .flatMapLatest { year ->
+            val startDate = "$year-01-01"
+            val endDate = "$year-12-31"
+            timeEntryDao.getEntriesByDateRangeFlow(startDate, endDate)
+        }
+        .map { entries ->
+            entries.filter { it.typ == TimeEntry.TYP_URLAUB }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    /**
+     * Verfügbare Urlaubstage (Anspruch - Genommen)
+     */
+    val availableVacationDays: StateFlow<Int> = combine(
+        userSettings,
+        vacationDays
+    ) { settings, taken ->
+        val anspruch = settings?.urlaubsanspruchTage ?: 30
+        val genommen = taken.size
+        (anspruch - genommen).coerceAtLeast(0)
+    }
+        .stateIn(viewModelScope, SharingStarted.Lazily, 30)
+
+    /**
+     * Wechselt das Jahr
+     */
+    fun setYear(year: Int) {
+        _selectedYear.value = year
+        _aiSuggestion.value = null  // Reset AI suggestion
+        _errorMessage.value = null
+    }
+
+    /**
+     * Startet KI-Optimierung
+     */
+    fun optimizeVacation(preferences: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _errorMessage.value = null
+
+                val settings = userSettings.value
+                if (settings == null) {
+                    _errorMessage.value = "Bitte erst Einstellungen ausfüllen"
+                    return@launch
+                }
+
+                if (settings.bundesland.isNullOrEmpty()) {
+                    _errorMessage.value = "Bitte Bundesland in Einstellungen auswählen"
+                    return@launch
+                }
+
+                if (!geminiClient.isConfigured()) {
+                    _errorMessage.value = "Gemini API Key nicht konfiguriert. Bitte in local.properties eintragen."
+                    return@launch
+                }
+
+                // Bereite Schließtage für Prompt vor
+                val closingDayStrings = closingDays.value.map { closingDay ->
+                    "${closingDay.getFormattedDateRange()}: ${closingDay.title}"
+                }
+
+                // Rufe Gemini API auf
+                val result = geminiClient.optimizeVacation(
+                    availableVacationDays = availableVacationDays.value,
+                    bundesland = settings.bundesland!!,
+                    closingDays = closingDayStrings,
+                    preferences = preferences,
+                    year = selectedYear.value
+                )
+
+                result.fold(
+                    onSuccess = { suggestion ->
+                        _aiSuggestion.value = suggestion
+                    },
+                    onFailure = { error ->
+                        _errorMessage.value = "KI-Fehler: ${error.message}"
+                    }
+                )
+
+            } catch (e: Exception) {
+                _errorMessage.value = "Fehler: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * Löscht Fehlermeldung
+     */
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
+    /**
+     * Löscht KI-Vorschlag
+     */
+    fun clearAiSuggestion() {
+        _aiSuggestion.value = null
+    }
+
+    /**
+     * Berechnet gesamte Urlaubsstatistik
+     */
+    data class VacationStats(
+        val anspruch: Int,
+        val genommen: Int,
+        val verfuegbar: Int,
+        val closingDayCount: Int,
+        val holidayPeriods: Int
+    )
+
+    val vacationStats: StateFlow<VacationStats> = combine(
+        userSettings,
+        vacationDays,
+        closingDays,
+        schoolHolidays
+    ) { settings, taken, closing, holidays ->
+        VacationStats(
+            anspruch = settings?.urlaubsanspruchTage ?: 30,
+            genommen = taken.size,
+            verfuegbar = (settings?.urlaubsanspruchTage ?: 30) - taken.size,
+            closingDayCount = closing.sumOf { it.getDurationDays() },
+            holidayPeriods = holidays.size
+        )
+    }
+        .stateIn(viewModelScope, SharingStarted.Lazily, VacationStats(30, 0, 30, 0, 0))
+}

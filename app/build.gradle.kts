@@ -27,6 +27,17 @@ android {
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
+
+        // Gemini API Key aus local.properties lesen
+        val localProperties = File(rootProject.projectDir, "local.properties")
+        if (localProperties.exists()) {
+            val properties = java.util.Properties()
+            properties.load(localProperties.inputStream())
+            val apiKey = properties.getProperty("GEMINI_API_KEY", "")
+            buildConfigField("String", "GEMINI_API_KEY", "\"$apiKey\"")
+        } else {
+            buildConfigField("String", "GEMINI_API_KEY", "\"\"")
+        }
     }
 
     buildTypes {
@@ -51,6 +62,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true  // Aktiviere BuildConfig für API Keys
     }
     // composeOptions nicht mehr nötig - Compose Compiler Plugin regelt das automatisch
     packaging {
@@ -144,6 +156,9 @@ dependencies {
 
     // Google Plus Codes (Open Location Code)
     implementation("com.google.openlocationcode:openlocationcode:1.0.4")
+
+    // Gemini AI - KI-gestützte Urlaubsplanung
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")  // Neueste Version
 
     // Testing
     testImplementation("junit:junit:4.13.2")
