@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.ui.theme.*
 import com.arbeitszeit.tracker.utils.DateUtils
+import com.arbeitszeit.tracker.utils.HolidayUtils
 import com.arbeitszeit.tracker.viewmodel.VacationPlannerViewModel
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -865,7 +866,7 @@ fun NextVacationCountdownCard(viewModel: VacationPlannerViewModel) {
  */
 @Composable
 fun BridgeDaysCard(year: Int) {
-    val bridgeDays = remember(year) { calculateBestBridgeDays(year) }
+    val bridgeDays = remember(year) { HolidayUtils.calculateBestBridgeDays(year, null) }
 
     if (bridgeDays.isNotEmpty()) {
         Card(
@@ -914,16 +915,8 @@ fun BridgeDaysCard(year: Int) {
     }
 }
 
-data class BridgeDay(
-    val name: String,
-    val urlaubsTage: Int,
-    val freieTage: Int,
-    val zeitraum: String,
-    val effizienz: Float
-)
-
 @Composable
-fun BridgeDayItem(bridge: BridgeDay) {
+fun BridgeDayItem(bridge: HolidayUtils.BridgeDay) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -1308,49 +1301,123 @@ fun getResturlaubVerfallsDatum(year: Int): String {
 
 /**
  * Berechnet die besten Brückentage für ein Jahr
+ * Funktioniert automatisch für JEDES Jahr (2025, 2026, 2027, ...)
  */
 fun calculateBestBridgeDays(year: Int): List<BridgeDay> {
-    // Deutsche Feiertage 2025
-    val holidays = mapOf(
-        LocalDate.of(2025, 1, 1) to "Neujahr",
-        LocalDate.of(2025, 4, 18) to "Karfreitag",
-        LocalDate.of(2025, 4, 21) to "Ostermontag",
-        LocalDate.of(2025, 5, 1) to "Tag der Arbeit",
-        LocalDate.of(2025, 5, 29) to "Christi Himmelfahrt",
-        LocalDate.of(2025, 6, 9) to "Pfingstmontag",
-        LocalDate.of(2025, 10, 3) to "Tag der Deutschen Einheit",
-        LocalDate.of(2025, 12, 25) to "1. Weihnachtstag",
-        LocalDate.of(2025, 12, 26) to "2. Weihnachtstag"
-    )
+    // Berechne deutsche Feiertage für das Jahr
+    val holidays = calculateGermanHolidays(year)
 
     val bridgeDays = mutableListOf<BridgeDay>()
 
-    // Himmelfahrt Brückentag (Freitag nach Donnerstag-Feiertag)
-    if (year == 2025) {
-        bridgeDays.add(BridgeDay(
-            name = "Christi Himmelfahrt",
-            urlaubsTage = 1,
-            freieTage = 4,
-            zeitraum = "29.05. - 01.06.",
-            effizienz = 4.0f
-        ))
+    // Analysiere jeden Feiertag auf Brückentag-Potenzial
+    holidays.forEach { (date, name) ->
+        val dayOfWeek = date.dayOfWeek
 
+        when (dayOfWeek) {
+            // Donnerstag-Feiertag → Freitag = Brückentag
+            DayOfWeek.THURSDAY -> {
+                val friday = date.plusDays(1)
+                bridgeDays.add(BridgeDay(
+                    name = name,
+                    urlaubsTage = 1,
+                    freieTage = 4, // Do (Feiertag) + Fr (Urlaub) + Sa + So
+                    zeitraum = "${date.dayOfMonth}.${date.monthValue.toString().padStart(2, '0')}. - ${friday.plusDays(2).dayOfMonth}.${friday.plusDays(2).monthValue.toString().padStart(2, '0')}.",
+                    effizienz = 4.0f
+                ))
+            }
+            // Dienstag-Feiertag → Montag = Brückentag
+            DayOfWeek.TUESDAY -> {
+                val monday = date.minusDays(1)
+                bridgeDays.add(BridgeDay(
+                    name = name,
+                    urlaubsTage = 1,
+                    freieTage = 4, // Sa + So + Mo (Urlaub) + Di (Feiertag)
+                    zeitraum = "${monday.minusDays(2).dayOfMonth}.${monday.minusDays(2).monthValue.toString().padStart(2, '0')}. - ${date.dayOfMonth}.${date.monthValue.toString().padStart(2, '0')}.",
+                    effizienz = 4.0f
+                ))
+            }
+            else -> {
+                // Andere Tage könnten auch analysiert werden
+            }
+        }
+    }
+
+    // Spezial-Analyse: Pfingsten (Montag) → 4 Tage für 9 Tage frei
+    val pfingstmontag = holidays.entries.find { it.value == "Pfingstmontag" }?.key
+    if (pfingstmontag != null) {
+        val tuesday = pfingstmontag.plusDays(1)
+        val friday = pfingstmontag.plusDays(4)
         bridgeDays.add(BridgeDay(
-            name = "Pfingsten",
-            urlaubsTage = 4,
-            freieTage = 9,
-            zeitraum = "06.06. - 14.06.",
+            name = "Pfingsten (Woche)",
+            urlaubsTage = 4, // Di-Fr
+            freieTage = 9, // Sa + So + Mo (Feiertag) + Di-Fr (Urlaub) + Sa + So
+            zeitraum = "${pfingstmontag.minusDays(1).dayOfMonth}.${pfingstmontag.monthValue.toString().padStart(2, '0')}. - ${friday.plusDays(2).dayOfMonth}.${friday.plusDays(2).monthValue.toString().padStart(2, '0')}.",
             effizienz = 2.25f
-        ))
-
-        bridgeDays.add(BridgeDay(
-            name = "Tag der Arbeit",
-            urlaubsTage = 1,
-            freieTage = 4,
-            zeitraum = "01.05. - 04.05.",
-            effizienz = 4.0f
         ))
     }
 
-    return bridgeDays.sortedByDescending { it.effizienz }
+    // Spezial-Analyse: Ostern (Karfreitag + Ostermontag) → 4 Tage für 10 Tage frei
+    val karfreitag = holidays.entries.find { it.value == "Karfreitag" }?.key
+    if (karfreitag != null) {
+        val ostermontag = karfreitag.plusDays(3)
+        val tuesday = ostermontag.plusDays(1)
+        val friday = ostermontag.plusDays(4)
+        bridgeDays.add(BridgeDay(
+            name = "Ostern (Woche)",
+            urlaubsTage = 4, // Di-Fr nach Ostermontag
+            freieTage = 10, // Karfreitag + Sa + So + Ostermontag + Di-Fr (Urlaub) + Sa + So
+            zeitraum = "${karfreitag.dayOfMonth}.${karfreitag.monthValue.toString().padStart(2, '0')}. - ${friday.plusDays(2).dayOfMonth}.${friday.plusDays(2).monthValue.toString().padStart(2, '0')}.",
+            effizienz = 2.5f
+        ))
+    }
+
+    return bridgeDays.sortedByDescending { it.effizienz }.distinctBy { it.name }
+}
+
+/**
+ * Berechnet deutsche bundesweite Feiertage für ein Jahr
+ * Unterstützt bewegliche Feiertage (Ostern, Pfingsten, etc.)
+ */
+fun calculateGermanHolidays(year: Int): Map<LocalDate, String> {
+    val holidays = mutableMapOf<LocalDate, String>()
+
+    // Feste Feiertage
+    holidays[LocalDate.of(year, 1, 1)] = "Neujahr"
+    holidays[LocalDate.of(year, 5, 1)] = "Tag der Arbeit"
+    holidays[LocalDate.of(year, 10, 3)] = "Tag der Deutschen Einheit"
+    holidays[LocalDate.of(year, 12, 25)] = "1. Weihnachtstag"
+    holidays[LocalDate.of(year, 12, 26)] = "2. Weihnachtstag"
+
+    // Bewegliche Feiertage (berechnet über Ostersonntag)
+    val easterSunday = calculateEasterSunday(year)
+
+    holidays[easterSunday.minusDays(2)] = "Karfreitag"
+    holidays[easterSunday.plusDays(1)] = "Ostermontag"
+    holidays[easterSunday.plusDays(39)] = "Christi Himmelfahrt"
+    holidays[easterSunday.plusDays(50)] = "Pfingstmontag"
+
+    return holidays
+}
+
+/**
+ * Berechnet den Ostersonntag für ein Jahr
+ * Verwendet die Gaußsche Osterformel (funktioniert für 1583-4099)
+ */
+fun calculateEasterSunday(year: Int): LocalDate {
+    val a = year % 19
+    val b = year / 100
+    val c = year % 100
+    val d = b / 4
+    val e = b % 4
+    val f = (b + 8) / 25
+    val g = (b - f + 1) / 3
+    val h = (19 * a + b - d - g + 15) % 30
+    val i = c / 4
+    val k = c % 4
+    val l = (32 + 2 * e + 2 * i - h - k) % 7
+    val m = (a + 11 * h + 22 * l) / 451
+    val month = (h + l - 7 * m + 114) / 31
+    val day = ((h + l - 7 * m + 114) % 31) + 1
+
+    return LocalDate.of(year, month, day)
 }
