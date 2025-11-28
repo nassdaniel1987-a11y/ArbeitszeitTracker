@@ -28,7 +28,7 @@ class GeminiClient {
 
     companion object {
         private const val TAG = "GeminiClient"
-        private const val MODEL_NAME = "gemini-1.5-flash"  // Stabile Flash-Version für Android SDK
+        private const val MODEL_NAME = "gemini-2.5-flash"  // Neueste Flash-Version (2025)
     }
 
     /**
