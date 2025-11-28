@@ -148,7 +148,7 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
 
                 // Bereite genommene Urlaubstage für Prompt vor
                 val takenVacationStrings = vacationDays.value.map { entry ->
-                    "${entry.date}: ${entry.note ?: "Urlaub"}"
+                    "${entry.datum}: ${entry.notiz.ifEmpty { "Urlaub" }}"
                 }
 
                 // Rufe Gemini API auf
