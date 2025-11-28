@@ -8,13 +8,17 @@ plugins {
 }
 
 // Gemini API Key aus local.properties lesen
-val localProperties = java.util.Properties().apply {
-    val localPropertiesFile = File(rootProject.projectDir, "local.properties")
+val geminiApiKey: String = run {
+    val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
-        load(localPropertiesFile.inputStream())
+        localPropertiesFile.readLines()
+            .firstOrNull { it.startsWith("GEMINI_API_KEY=") }
+            ?.substringAfter("=")
+            ?: ""
+    } else {
+        ""
     }
 }
-val geminiApiKey: String = localProperties.getProperty("GEMINI_API_KEY", "")
 
 android {
     namespace = "com.arbeitszeit.tracker"
