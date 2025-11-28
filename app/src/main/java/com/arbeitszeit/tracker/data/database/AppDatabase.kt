@@ -66,9 +66,9 @@ abstract class AppDatabase : RoomDatabase() {
                     .addCallback(DatabaseCallback(context))
                     // Migrations für zukünftige Versionen
                     .addMigrations(*DatabaseMigrations.getAllMigrations())
-                    // Fallback NUR für alte Versionen (< 18) - ab v18 keine Datenverluste mehr!
+                    // Fallback NUR für alte Versionen (< 16) - ab v16 keine Datenverluste mehr!
                     // Falls jemand von einer sehr alten Version upgraded, wird die DB neu erstellt
-                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17)
+                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
                     .build()
                 INSTANCE = instance
                 instance
