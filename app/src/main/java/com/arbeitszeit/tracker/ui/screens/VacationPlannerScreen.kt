@@ -60,20 +60,6 @@ fun VacationPlannerScreen(
     var selectedTab by remember { mutableStateOf(0) }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Urlaubsplaner") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                actions = {
-                    IconButton(onClick = onNavigateToClosingDays) {
-                        Icon(Icons.Default.Settings, "Schließtage verwalten")
-                    }
-                }
-            )
-        },
         floatingActionButton = {
             if (!isLoading && aiSuggestion == null) {
                 ExtendedFloatingActionButton(
@@ -92,7 +78,34 @@ fun VacationPlannerScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
+
+            // Kompakter Header
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.BeachAccess,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Urlaubsplaner",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    IconButton(onClick = onNavigateToClosingDays) {
+                        Icon(Icons.Default.Settings, "Schließtage verwalten")
+                    }
+                }
+            }
 
             // Jahr-Auswahl
             item {

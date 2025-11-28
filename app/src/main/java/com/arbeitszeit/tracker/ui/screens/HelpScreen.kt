@@ -37,7 +37,9 @@ fun HelpScreen(
                 HelpItem("Monatswechsel", "Swipen oder Pfeile nutzen zum Wechseln"),
                 HelpItem("Eintrag bearbeiten", "Auf Datum tippen zum Bearbeiten"),
                 HelpItem("Eintrag löschen", "Nach links wischen für Löschen mit Undo-Funktion"),
-                HelpItem("Farbcodierung", "Grün = Soll erfüllt, Orange = Teilzeit, Rot = Fehlzeit, Blau = Urlaub/Krank/Feiertag")
+                HelpItem("Farbcodierung", "Grün = Soll erfüllt, Orange = Teilzeit, Rot = Fehlzeit, Blau = Urlaub/Krank/Feiertag"),
+                HelpItem("Feiertags-Badge", "Goldener Stern ⭐ markiert Feiertage basierend auf deinem Bundesland"),
+                HelpItem("Überstunden-Badge", "Rechts oben: +/-Stunden für jeden Tag")
             )
         ),
         HelpSection(
@@ -127,12 +129,14 @@ fun HelpScreen(
             title = "Tipps & Tricks",
             icon = Icons.Default.Lightbulb,
             items = listOf(
-                HelpItem("Schnellzugriff TopBar", "⚡ für Typen-Eingabe, ⋮ für Vorlagen und Hilfe"),
-                HelpItem("Undo-Funktion", "Nach Löschen erscheint Snackbar mit Rückgängig-Option"),
-                HelpItem("Wochenansicht", "Im Kalender: Nur deine Arbeitstage werden angezeigt"),
-                HelpItem("Vorlagen-Button", "In der Wochennavigation: 'Vorlage anwenden' für schnelle Wocheneintragung"),
-                HelpItem("Dienstplan-Vorlagen", "Erstelle Vorlagen für Früh-/Spät-/Nachtdienst mit festen Zeiten"),
-                HelpItem("Export-Backup", "Regelmäßige Excel-Exporte als Datensicherung nutzen")
+                HelpItem("Schnellzugriff", "⚡ für Urlaub/Krank/Feiertag, ⋮ für Vorlagen"),
+                HelpItem("Undo-Funktion", "Nach Löschen: Rückgängig-Option in Snackbar"),
+                HelpItem("Tab-Navigation", "Urlaubsplaner mit 3 Tabs: Übersicht, Planen, Brückentage"),
+                HelpItem("KI nutzen", "KI-Optimierung im Urlaubsplaner für beste Urlaubsplanung"),
+                HelpItem("Brückentage", "Effizienz-Score zeigt: 1 Tag Urlaub → 4 Tage frei"),
+                HelpItem("Bundesland", "In Einstellungen setzen für korrekte Feiertage & Schulferien"),
+                HelpItem("Dienstplan-Vorlagen", "Erstelle Vorlagen für Früh-/Spät-/Nachtdienst"),
+                HelpItem("Export-Backup", "Regelmäßige Excel-Exporte als Datensicherung")
             )
         )
     )
