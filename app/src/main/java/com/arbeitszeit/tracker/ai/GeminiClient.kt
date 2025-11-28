@@ -1,9 +1,9 @@
 package com.arbeitszeit.tracker.ai
 
 import android.util.Log
-import com.google.firebase.vertexai.FirebaseVertexAI
-import com.google.firebase.vertexai.type.BlockThreshold
-import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.Firebase
+import com.google.firebase.vertexai.vertexAI
+import com.google.firebase.vertexai.type.HarmBlockThreshold
 import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.generationConfig
@@ -40,7 +40,7 @@ class GeminiClient {
      */
     fun isConfigured(): Boolean {
         return try {
-            FirebaseVertexAI.getInstance()
+            Firebase.vertexAI
             true
         } catch (e: Exception) {
             Log.e(TAG, "Firebase Vertex AI nicht verfügbar", e)
@@ -51,7 +51,7 @@ class GeminiClient {
     /**
      * Erstellt das Gemini-Modell mit optimalen Einstellungen via Firebase
      */
-    private fun createModel() = FirebaseVertexAI.getInstance().generativeModel(
+    private fun createModel() = Firebase.vertexAI.generativeModel(
         modelName = MODEL_NAME,
         generationConfig = generationConfig {
             temperature = 0.7f  // Kreativ aber nicht zu wild
@@ -61,10 +61,10 @@ class GeminiClient {
         },
         safetySettings = listOf(
             // Safety Settings gelockert - Urlaubsplanung ist harmlos
-            SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE),
-            SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.NONE),
-            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.NONE),
-            SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.NONE),
+            SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.NONE),
+            SafetySetting(HarmCategory.HATE_SPEECH, HarmBlockThreshold.NONE),
+            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, HarmBlockThreshold.NONE),
+            SafetySetting(HarmCategory.DANGEROUS_CONTENT, HarmBlockThreshold.NONE),
         )
     )
 
