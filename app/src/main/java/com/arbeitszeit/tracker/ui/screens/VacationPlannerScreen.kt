@@ -876,10 +876,9 @@ fun NextVacationCountdownCard(viewModel: VacationPlannerViewModel) {
                         )
                         Text(
                             text = if (daysUntil == 1) "Tag" else "Tage",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.9f)
-                            )
-                        }
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
                     }
                 }
             }
