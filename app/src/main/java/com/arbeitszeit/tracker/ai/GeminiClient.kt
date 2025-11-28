@@ -124,7 +124,7 @@ class GeminiClient {
                     temperature = 0.7f,
                     topK = 40,
                     topP = 0.95f,
-                    maxOutputTokens = 2048
+                    maxOutputTokens = 8192  // Maximum für Gemini 2.5 Flash
                 ),
                 safetySettings = listOf(
                     SafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_NONE"),
