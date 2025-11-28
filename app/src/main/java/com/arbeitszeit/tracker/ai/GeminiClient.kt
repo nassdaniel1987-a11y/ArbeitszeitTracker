@@ -1,72 +1,82 @@
 package com.arbeitszeit.tracker.ai
 
 import android.util.Log
-import com.google.firebase.Firebase
-import com.google.firebase.vertexai.vertexAI
-import com.google.firebase.vertexai.type.HarmBlockThreshold
-import com.google.firebase.vertexai.type.HarmCategory
-import com.google.firebase.vertexai.type.SafetySetting
-import com.google.firebase.vertexai.type.generationConfig
+import com.arbeitszeit.tracker.BuildConfig
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
- * Firebase Vertex AI Client für intelligente Urlaubsplanung
+ * Gemini AI Client mit direkten HTTP-Requests
  *
- * Verwendet Google's Gemini 2.5 Flash via Firebase Vertex AI um:
- * - Optimale Urlaubstage vorzuschlagen
- * - Brückentage zu identifizieren
- * - Schulferien zu berücksichtigen
- * - Schließtage der Einrichtung einzubeziehen
+ * Verwendet Google's Gemini REST API (v1beta) für KI-gestützte Urlaubsplanung:
+ * - Optimale Urlaubstage vorschlagen
+ * - Brückentage identifizieren
+ * - Schulferien berücksichtigen
+ * - Schließtage der Einrichtung einbeziehen
  *
- * Vorteile Firebase Vertex AI:
- * - ✅ Offiziell supported von Google (2025+)
- * - ✅ Kein API Key nötig (Firebase Auth)
- * - ✅ Volle Gemini 2.5 Flash Unterstützung
- * - ✅ Automatische Updates & Sicherheit
+ * Vorteile direkte REST API:
+ * - ✅ KOSTENLOS mit API Key (1500 Anfragen/Tag)
+ * - ✅ Kein Firebase/Blaze-Plan nötig
+ * - ✅ Keine deprecated SDK
+ * - ✅ Volle Kontrolle über Requests
+ * - ✅ Gemini 2.5 Flash vollständig unterstützt
  *
- * Kosten: KOSTENLOS (1500 Anfragen/Tag)
+ * API Key Setup:
+ * 1. Gehe zu https://aistudio.google.com/apikey
+ * 2. Erstelle einen API Key
+ * 3. Füge in local.properties hinzu: GEMINI_API_KEY=dein_key_hier
+ *
  * Datenschutz: Nur anonymisierte Daten (Anzahl Tage, Bundesland, Präferenzen)
  */
 class GeminiClient {
 
+    private val apiKey: String = BuildConfig.GEMINI_API_KEY
+
     companion object {
         private const val TAG = "GeminiClient"
-        private const val MODEL_NAME = "gemini-2.5-flash"  // Neueste Flash-Version via Firebase
+        private const val MODEL_NAME = "gemini-2.5-flash"
+        private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
     }
 
-    /**
-     * Prüft ob Firebase Vertex AI verfügbar ist
-     */
-    fun isConfigured(): Boolean {
-        return try {
-            Firebase.vertexAI
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Firebase Vertex AI nicht verfügbar", e)
-            false
+    // Ktor HTTP Client mit JSON Support
+    private val httpClient = HttpClient(Android) {
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+                isLenient = true
+            })
+        }
+        install(Logging) {
+            logger = object : Logger {
+                override fun log(message: String) {
+                    Log.d(TAG, "HTTP: $message")
+                }
+            }
+            level = LogLevel.INFO
         }
     }
 
     /**
-     * Erstellt das Gemini-Modell mit optimalen Einstellungen via Firebase
+     * Prüft ob API Key konfiguriert ist
      */
-    private fun createModel() = Firebase.vertexAI.generativeModel(
-        modelName = MODEL_NAME,
-        generationConfig = generationConfig {
-            temperature = 0.7f  // Kreativ aber nicht zu wild
-            topK = 40
-            topP = 0.95f
-            maxOutputTokens = 2048  // Genug für detaillierte Antworten
-        },
-        safetySettings = listOf(
-            // Safety Settings gelockert - Urlaubsplanung ist harmlos
-            SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.NONE),
-            SafetySetting(HarmCategory.HATE_SPEECH, HarmBlockThreshold.NONE),
-            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, HarmBlockThreshold.NONE),
-            SafetySetting(HarmCategory.DANGEROUS_CONTENT, HarmBlockThreshold.NONE),
-        )
-    )
+    fun isConfigured(): Boolean {
+        return apiKey.isNotEmpty() && apiKey != "YOUR_API_KEY_HERE"
+    }
 
     /**
      * Optimiert Urlaubsplanung basierend auf Präferenzen
@@ -89,11 +99,9 @@ class GeminiClient {
         try {
             if (!isConfigured()) {
                 return@withContext Result.failure(
-                    Exception("Firebase Vertex AI nicht konfiguriert. Bitte google-services.json im app/ Ordner ablegen.")
+                    Exception("Gemini API Key nicht konfiguriert.\n\nBitte:\n1. Gehe zu https://aistudio.google.com/apikey\n2. Erstelle einen API Key\n3. Füge in local.properties hinzu:\n   GEMINI_API_KEY=dein_key_hier")
                 )
             }
-
-            val model = createModel()
 
             val prompt = buildVacationPrompt(
                 availableVacationDays = availableVacationDays,
@@ -103,26 +111,49 @@ class GeminiClient {
                 year = year
             )
 
-            Log.d(TAG, "Sende Anfrage an Firebase Vertex AI...")
+            Log.d(TAG, "Sende Anfrage an Gemini REST API...")
             Log.d(TAG, "Model: $MODEL_NAME")
 
-            val response = model.generateContent(prompt)
+            val requestBody = GeminiRequest(
+                contents = listOf(
+                    Content(
+                        parts = listOf(Part(text = prompt))
+                    )
+                ),
+                generationConfig = GenerationConfig(
+                    temperature = 0.7f,
+                    topK = 40,
+                    topP = 0.95f,
+                    maxOutputTokens = 2048
+                ),
+                safetySettings = listOf(
+                    SafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_NONE"),
+                    SafetySetting("HARM_CATEGORY_HATE_SPEECH", "BLOCK_NONE"),
+                    SafetySetting("HARM_CATEGORY_SEXUALLY_EXPLICIT", "BLOCK_NONE"),
+                    SafetySetting("HARM_CATEGORY_DANGEROUS_CONTENT", "BLOCK_NONE")
+                )
+            )
 
-            Log.d(TAG, "Response erhalten")
+            val url = "$BASE_URL/$MODEL_NAME:generateContent?key=$apiKey"
 
-            val resultText = response.text ?: run {
-                Log.e(TAG, "Response.text ist null!")
-                Log.e(TAG, "Candidates: ${response.candidates}")
-                "Keine Antwort erhalten - möglicherweise durch Safety Filter blockiert"
-            }
+            val response: GeminiResponse = httpClient.post(url) {
+                contentType(ContentType.Application.Json)
+                setBody(requestBody)
+            }.body()
+
+            Log.d(TAG, "Response erhalten: ${response.candidates.size} candidates")
+
+            val resultText = response.candidates.firstOrNull()
+                ?.content?.parts?.firstOrNull()?.text
+                ?: "Keine Antwort erhalten"
 
             Log.d(TAG, "Erfolgreich: ${resultText.length} Zeichen")
 
             Result.success(resultText)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Fehler bei Firebase Vertex AI Anfrage", e)
-            Result.failure(Exception("Fehler bei KI-Anfrage: ${e.message}"))
+            Log.e(TAG, "Fehler bei Gemini API Anfrage", e)
+            Result.failure(Exception("KI-Anfrage fehlgeschlagen: ${e.message}"))
         }
     }
 
@@ -205,11 +236,9 @@ Sei konkret, präzise und optimiere für maximale Erholung bei minimalen Urlaubs
         try {
             if (!isConfigured()) {
                 return@withContext Result.failure(
-                    Exception("Firebase Vertex AI nicht konfiguriert.")
+                    Exception("Gemini API Key nicht konfiguriert.")
                 )
             }
-
-            val model = createModel()
 
             val prompt = """
 Erkläre kurz (max. 2-3 Sätze) den Feiertag "$holidayName" am $date:
@@ -220,8 +249,20 @@ Erkläre kurz (max. 2-3 Sätze) den Feiertag "$holidayName" am $date:
 Antworte auf Deutsch, freundlich und informativ.
             """.trimIndent()
 
-            val response = model.generateContent(prompt)
-            val resultText = response.text ?: "Keine Erklärung verfügbar"
+            val requestBody = GeminiRequest(
+                contents = listOf(Content(parts = listOf(Part(text = prompt))))
+            )
+
+            val url = "$BASE_URL/$MODEL_NAME:generateContent?key=$apiKey"
+
+            val response: GeminiResponse = httpClient.post(url) {
+                contentType(ContentType.Application.Json)
+                setBody(requestBody)
+            }.body()
+
+            val resultText = response.candidates.firstOrNull()
+                ?.content?.parts?.firstOrNull()?.text
+                ?: "Keine Erklärung verfügbar"
 
             Result.success(resultText)
 
@@ -242,11 +283,9 @@ Antworte auf Deutsch, freundlich und informativ.
         try {
             if (!isConfigured()) {
                 return@withContext Result.failure(
-                    Exception("Firebase Vertex AI nicht konfiguriert.")
+                    Exception("Gemini API Key nicht konfiguriert.")
                 )
             }
-
-            val model = createModel()
 
             val prompt = """
 Der gewünschte Urlaubstermin $desiredDate ist nicht verfügbar.
@@ -260,8 +299,20 @@ Schlage 3 alternative Zeiträume vor:
 Antworte prägnant und hilfreich auf Deutsch.
             """.trimIndent()
 
-            val response = model.generateContent(prompt)
-            val resultText = response.text ?: "Keine Alternativen gefunden"
+            val requestBody = GeminiRequest(
+                contents = listOf(Content(parts = listOf(Part(text = prompt))))
+            )
+
+            val url = "$BASE_URL/$MODEL_NAME:generateContent?key=$apiKey"
+
+            val response: GeminiResponse = httpClient.post(url) {
+                contentType(ContentType.Application.Json)
+                setBody(requestBody)
+            }.body()
+
+            val resultText = response.candidates.firstOrNull()
+                ?.content?.parts?.firstOrNull()?.text
+                ?: "Keine Alternativen gefunden"
 
             Result.success(resultText)
 
@@ -270,4 +321,62 @@ Antworte prägnant und hilfreich auf Deutsch.
             Result.failure(e)
         }
     }
+
+    // JSON Data Classes für Gemini REST API
+
+    @Serializable
+    data class GeminiRequest(
+        val contents: List<Content>,
+        val generationConfig: GenerationConfig? = null,
+        val safetySettings: List<SafetySetting>? = null
+    )
+
+    @Serializable
+    data class Content(
+        val parts: List<Part>,
+        val role: String = "user"
+    )
+
+    @Serializable
+    data class Part(
+        val text: String
+    )
+
+    @Serializable
+    data class GenerationConfig(
+        val temperature: Float,
+        val topK: Int,
+        val topP: Float,
+        val maxOutputTokens: Int
+    )
+
+    @Serializable
+    data class SafetySetting(
+        val category: String,
+        val threshold: String
+    )
+
+    @Serializable
+    data class GeminiResponse(
+        val candidates: List<Candidate> = emptyList(),
+        @SerialName("promptFeedback") val promptFeedback: PromptFeedback? = null
+    )
+
+    @Serializable
+    data class Candidate(
+        val content: Content,
+        val finishReason: String? = null,
+        val safetyRatings: List<SafetyRating>? = null
+    )
+
+    @Serializable
+    data class SafetyRating(
+        val category: String,
+        val probability: String
+    )
+
+    @Serializable
+    data class PromptFeedback(
+        val safetyRatings: List<SafetyRating>? = null
+    )
 }

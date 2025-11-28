@@ -5,7 +5,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")  // Kotlinx Serialization für Type-safe Navigation
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
-    id("com.google.gms.google-services")  // Firebase Google Services
 }
 
 // Gemini API Key aus local.properties lesen
@@ -163,11 +162,11 @@ dependencies {
     // Google Plus Codes (Open Location Code)
     implementation("com.google.openlocationcode:openlocationcode:1.0.4")
 
-    // Firebase BoM (Bill of Materials) - Versionsverwaltung für Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))  // Neueste Firebase BoM (Nov 2025)
-
-    // Firebase Vertex AI - Gemini 2.5 Flash Support
-    implementation("com.google.firebase:firebase-vertexai")  // Version wird durch BoM verwaltet
+    // Ktor Client für direkte Gemini API HTTP-Requests (kostenlos!)
+    implementation("io.ktor:ktor-client-android:3.0.2")  // Android HTTP Client
+    implementation("io.ktor:ktor-client-content-negotiation:3.0.2")  // JSON Support
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.2")  // Kotlinx Serialization
+    implementation("io.ktor:ktor-client-logging:3.0.2")  // Logging für Debugging
 
     // Testing
     testImplementation("junit:junit:4.13.2")
