@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")  // Kotlinx Serialization für Type-safe Navigation
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")  // Firebase Google Services
 }
 
 // Gemini API Key aus local.properties lesen
@@ -162,8 +163,11 @@ dependencies {
     // Google Plus Codes (Open Location Code)
     implementation("com.google.openlocationcode:openlocationcode:1.0.4")
 
-    // Gemini AI - KI-gestützte Urlaubsplanung
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")  // Neueste Version
+    // Firebase BoM (Bill of Materials) - Versionsverwaltung für Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))  // Neueste Firebase BoM (Nov 2025)
+
+    // Firebase Vertex AI - Gemini 2.5 Flash Support
+    implementation("com.google.firebase:firebase-vertexai")  // Version wird durch BoM verwaltet
 
     // Testing
     testImplementation("junit:junit:4.13.2")

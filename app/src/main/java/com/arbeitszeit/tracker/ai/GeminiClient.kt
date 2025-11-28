@@ -1,69 +1,72 @@
 package com.arbeitszeit.tracker.ai
 
 import android.util.Log
-import com.arbeitszeit.tracker.BuildConfig
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.BlockThreshold
-import com.google.ai.client.generativeai.type.GenerationConfig
-import com.google.ai.client.generativeai.type.HarmCategory
-import com.google.ai.client.generativeai.type.SafetySetting
+import com.google.firebase.vertexai.FirebaseVertexAI
+import com.google.firebase.vertexai.type.BlockThreshold
+import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.HarmCategory
+import com.google.firebase.vertexai.type.SafetySetting
+import com.google.firebase.vertexai.type.generationConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Gemini AI Client für intelligente Urlaubsplanung
+ * Firebase Vertex AI Client für intelligente Urlaubsplanung
  *
- * Verwendet Google's Gemini API um:
+ * Verwendet Google's Gemini 2.5 Flash via Firebase Vertex AI um:
  * - Optimale Urlaubstage vorzuschlagen
  * - Brückentage zu identifizieren
  * - Schulferien zu berücksichtigen
  * - Schließtage der Einrichtung einzubeziehen
+ *
+ * Vorteile Firebase Vertex AI:
+ * - ✅ Offiziell supported von Google (2025+)
+ * - ✅ Kein API Key nötig (Firebase Auth)
+ * - ✅ Volle Gemini 2.5 Flash Unterstützung
+ * - ✅ Automatische Updates & Sicherheit
  *
  * Kosten: KOSTENLOS (1500 Anfragen/Tag)
  * Datenschutz: Nur anonymisierte Daten (Anzahl Tage, Bundesland, Präferenzen)
  */
 class GeminiClient {
 
-    private val apiKey: String = BuildConfig.GEMINI_API_KEY
-
     companion object {
         private const val TAG = "GeminiClient"
-        private const val MODEL_NAME = "gemini-2.5-flash"  // Neueste Flash-Version (2025)
+        private const val MODEL_NAME = "gemini-2.5-flash"  // Neueste Flash-Version via Firebase
     }
 
     /**
-     * Prüft ob API Key vorhanden ist
+     * Prüft ob Firebase Vertex AI verfügbar ist
      */
     fun isConfigured(): Boolean {
-        return apiKey.isNotEmpty() && apiKey != "YOUR_API_KEY_HERE"
+        return try {
+            FirebaseVertexAI.getInstance()
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Firebase Vertex AI nicht verfügbar", e)
+            false
+        }
     }
 
     /**
-     * Erstellt das Gemini-Modell mit optimalen Einstellungen
+     * Erstellt das Gemini-Modell mit optimalen Einstellungen via Firebase
      */
-    private fun createModel(): GenerativeModel {
-        val generationConfig = GenerationConfig.builder().apply {
+    private fun createModel() = FirebaseVertexAI.getInstance().generativeModel(
+        modelName = MODEL_NAME,
+        generationConfig = generationConfig {
             temperature = 0.7f  // Kreativ aber nicht zu wild
             topK = 40
             topP = 0.95f
             maxOutputTokens = 2048  // Genug für detaillierte Antworten
-        }.build()
-
-        // Safety Settings gelockert - Urlaubsplanung ist harmlos
-        val safetySettings = listOf(
+        },
+        safetySettings = listOf(
+            // Safety Settings gelockert - Urlaubsplanung ist harmlos
             SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE),
             SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.NONE),
             SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.NONE),
             SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.NONE),
         )
-
-        return GenerativeModel(
-            modelName = MODEL_NAME,
-            apiKey = apiKey,
-            generationConfig = generationConfig,
-            safetySettings = safetySettings
-        )
-    }
+    )
 
     /**
      * Optimiert Urlaubsplanung basierend auf Präferenzen
@@ -86,7 +89,7 @@ class GeminiClient {
         try {
             if (!isConfigured()) {
                 return@withContext Result.failure(
-                    Exception("Gemini API Key nicht konfiguriert. Bitte in local.properties eintragen.")
+                    Exception("Firebase Vertex AI nicht konfiguriert. Bitte google-services.json im app/ Ordner ablegen.")
                 )
             }
 
@@ -100,17 +103,16 @@ class GeminiClient {
                 year = year
             )
 
-            Log.d(TAG, "Sende Anfrage an Gemini API...")
+            Log.d(TAG, "Sende Anfrage an Firebase Vertex AI...")
             Log.d(TAG, "Model: $MODEL_NAME")
 
             val response = model.generateContent(prompt)
 
-            Log.d(TAG, "Response erhalten: ${response.candidates.size} candidates")
+            Log.d(TAG, "Response erhalten")
 
             val resultText = response.text ?: run {
                 Log.e(TAG, "Response.text ist null!")
                 Log.e(TAG, "Candidates: ${response.candidates}")
-                Log.e(TAG, "Prompt feedback: ${response.promptFeedback}")
                 "Keine Antwort erhalten - möglicherweise durch Safety Filter blockiert"
             }
 
@@ -118,12 +120,9 @@ class GeminiClient {
 
             Result.success(resultText)
 
-        } catch (e: com.google.ai.client.generativeai.type.SerializationException) {
-            Log.e(TAG, "Serialisierungs-Fehler bei Gemini API", e)
-            Result.failure(Exception("Die API-Antwort konnte nicht verarbeitet werden. Möglicherweise ist das Modell '$MODEL_NAME' nicht verfügbar oder die Antwort wurde blockiert."))
         } catch (e: Exception) {
-            Log.e(TAG, "Fehler bei Gemini API Anfrage", e)
-            Result.failure(e)
+            Log.e(TAG, "Fehler bei Firebase Vertex AI Anfrage", e)
+            Result.failure(Exception("Fehler bei KI-Anfrage: ${e.message}"))
         }
     }
 
@@ -206,7 +205,7 @@ Sei konkret, präzise und optimiere für maximale Erholung bei minimalen Urlaubs
         try {
             if (!isConfigured()) {
                 return@withContext Result.failure(
-                    Exception("Gemini API Key nicht konfiguriert.")
+                    Exception("Firebase Vertex AI nicht konfiguriert.")
                 )
             }
 
@@ -243,7 +242,7 @@ Antworte auf Deutsch, freundlich und informativ.
         try {
             if (!isConfigured()) {
                 return@withContext Result.failure(
-                    Exception("Gemini API Key nicht konfiguriert.")
+                    Exception("Firebase Vertex AI nicht konfiguriert.")
                 )
             }
 
