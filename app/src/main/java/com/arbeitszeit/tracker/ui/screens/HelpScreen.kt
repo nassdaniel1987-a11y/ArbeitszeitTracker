@@ -85,6 +85,19 @@ fun HelpScreen(
             )
         ),
         HelpSection(
+            title = "Urlaubsplaner (mit KI)",
+            icon = Icons.Default.BeachAccess,
+            items = listOf(
+                HelpItem("Übersicht-Tab", "Verfügbare/genommene Urlaubstage, Countdown zum nächsten Urlaub, Resturlaub-Warnung"),
+                HelpItem("Planen-Tab", "Interaktiver Urlaubskalender: Tippe auf Tag um Urlaub einzutragen oder zu entfernen"),
+                HelpItem("Brückentage-Tab", "Automatische Berechnung der effizientesten Brückentage für alle Jahre (2025, 2026, ...)"),
+                HelpItem("KI-Optimierung", "Gemini AI analysiert Schulferien, Schließtage & Feiertage für optimale Urlaubsplanung"),
+                HelpItem("Feiertage", "Bundesland-spezifische Feiertage mit goldenem Stern-Badge im Kalender"),
+                HelpItem("Jahr wechseln", "Pfeile (◀ 2026 ▶) zum Navigieren zwischen Jahren"),
+                HelpItem("Effizienz-Score", "Brückentage zeigen 'Urlaubstage→Freie Tage' (z.B. 1→4 bei Donnerstag-Feiertag)")
+            )
+        ),
+        HelpSection(
             title = "Einstellungen",
             icon = Icons.Default.Settings,
             items = listOf(
@@ -92,6 +105,8 @@ fun HelpScreen(
                 HelpItem("Arbeitszeit", "Wochenstunden, Arbeitstage, Arbeitsumfang in %"),
                 HelpItem("Arbeitstage", "Wähle deine individuellen Arbeitstage (Mo-So)"),
                 HelpItem("Individuelle Sollzeiten", "Unterschiedliche Soll-Stunden pro Wochentag"),
+                HelpItem("Bundesland", "Für Schulferien & bundeslandspezifische Feiertage"),
+                HelpItem("Urlaubsanspruch", "Jahresurlaub in Tagen (Standard: 30 Tage)"),
                 HelpItem("Dark Mode", "Hell, Dunkel oder System-Einstellung"),
                 HelpItem("Ferienbetreuung", "Spezielle Berechnung für Ferienbetreuung"),
                 HelpItem("Kalenderwoche", "Custom KW-Start oder ISO 8601 Standard")
@@ -179,6 +194,25 @@ fun HelpScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "Version 2.0.0",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                "Letzte Aktualisierung: ${java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"))}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
                     }
                 }
             }
