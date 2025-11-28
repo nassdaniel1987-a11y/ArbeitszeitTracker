@@ -143,9 +143,22 @@ class GeminiClient {
 
             Log.d(TAG, "Response erhalten: ${response.candidates.size} candidates")
 
-            val resultText = response.candidates.firstOrNull()
-                ?.content?.parts?.firstOrNull()?.text
-                ?: "Keine Antwort erhalten"
+            val candidate = response.candidates.firstOrNull()
+            if (candidate == null) {
+                Log.w(TAG, "Keine Candidates in Response!")
+                Log.w(TAG, "PromptFeedback: ${response.promptFeedback}")
+                return@withContext Result.failure(Exception("API hat keine Antwort generiert. Möglicherweise durch Safety Filter blockiert."))
+            }
+
+            val parts = candidate.content.parts
+            if (parts == null || parts.isEmpty()) {
+                Log.w(TAG, "Content.parts ist leer oder null!")
+                Log.w(TAG, "FinishReason: ${candidate.finishReason}")
+                Log.w(TAG, "SafetyRatings: ${candidate.safetyRatings}")
+                return@withContext Result.failure(Exception("API-Antwort wurde blockiert.\n\nGrund: ${candidate.finishReason ?: "Unknown"}\n\nDie Anfrage wurde möglicherweise als unsicher eingestuft. Versuche eine andere Formulierung."))
+            }
+
+            val resultText = parts.firstOrNull()?.text ?: "Keine Antwort erhalten"
 
             Log.d(TAG, "Erfolgreich: ${resultText.length} Zeichen")
 
@@ -333,7 +346,7 @@ Antworte prägnant und hilfreich auf Deutsch.
 
     @Serializable
     data class Content(
-        val parts: List<Part>,
+        val parts: List<Part>? = null,  // Optional - kann bei blockierten Antworten leer sein
         val role: String = "user"
     )
 
