@@ -115,7 +115,11 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
     /**
      * Startet KI-Optimierung
      */
-    fun optimizeVacation(preferences: String) {
+    fun optimizeVacation(
+        preferences: String,
+        customStartDate: String? = null,
+        customEndDate: String? = null
+    ) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
@@ -142,13 +146,21 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
                     "${closingDay.getFormattedDateRange()}: ${closingDay.title}"
                 }
 
+                // Bereite genommene Urlaubstage für Prompt vor
+                val takenVacationStrings = vacationDays.value.map { entry ->
+                    "${entry.date}: ${entry.note ?: "Urlaub"}"
+                }
+
                 // Rufe Gemini API auf
                 val result = geminiClient.optimizeVacation(
                     availableVacationDays = availableVacationDays.value,
                     bundesland = settings.bundesland!!,
                     closingDays = closingDayStrings,
+                    takenVacationDays = takenVacationStrings,
                     preferences = preferences,
-                    year = selectedYear.value
+                    year = selectedYear.value,
+                    customStartDate = customStartDate,
+                    customEndDate = customEndDate
                 )
 
                 result.fold(
