@@ -28,7 +28,7 @@ class GeminiClient {
 
     companion object {
         private const val TAG = "GeminiClient"
-        private const val MODEL_NAME = "gemini-2.5-flash"  // Neueste Flash-Version (2025)
+        private const val MODEL_NAME = "gemini-1.5-flash"  // Stabile Flash-Version für Android SDK
     }
 
     /**
@@ -49,11 +49,12 @@ class GeminiClient {
             maxOutputTokens = 2048  // Genug für detaillierte Antworten
         }.build()
 
+        // Safety Settings gelockert - Urlaubsplanung ist harmlos
         val safetySettings = listOf(
-            SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.MEDIUM_AND_ABOVE),
-            SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.MEDIUM_AND_ABOVE),
-            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.MEDIUM_AND_ABOVE),
-            SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.MEDIUM_AND_ABOVE),
+            SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE),
+            SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.NONE),
+            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.NONE),
+            SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.NONE),
         )
 
         return GenerativeModel(
@@ -100,14 +101,26 @@ class GeminiClient {
             )
 
             Log.d(TAG, "Sende Anfrage an Gemini API...")
+            Log.d(TAG, "Model: $MODEL_NAME")
 
             val response = model.generateContent(prompt)
-            val resultText = response.text ?: "Keine Antwort erhalten"
+
+            Log.d(TAG, "Response erhalten: ${response.candidates.size} candidates")
+
+            val resultText = response.text ?: run {
+                Log.e(TAG, "Response.text ist null!")
+                Log.e(TAG, "Candidates: ${response.candidates}")
+                Log.e(TAG, "Prompt feedback: ${response.promptFeedback}")
+                "Keine Antwort erhalten - möglicherweise durch Safety Filter blockiert"
+            }
 
             Log.d(TAG, "Erfolgreich: ${resultText.length} Zeichen")
 
             Result.success(resultText)
 
+        } catch (e: com.google.ai.client.generativeai.type.SerializationException) {
+            Log.e(TAG, "Serialisierungs-Fehler bei Gemini API", e)
+            Result.failure(Exception("Die API-Antwort konnte nicht verarbeitet werden. Möglicherweise ist das Modell '$MODEL_NAME' nicht verfügbar oder die Antwort wurde blockiert."))
         } catch (e: Exception) {
             Log.e(TAG, "Fehler bei Gemini API Anfrage", e)
             Result.failure(e)
