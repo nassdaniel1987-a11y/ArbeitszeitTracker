@@ -228,4 +228,91 @@ object HolidayUtils {
         val allHolidays = years.flatMap { getHolidaysForYear(it, bundesland) }
         return allHolidays.filter { it.date in startDate..endDate }
     }
+
+    // ============================================
+    // BRÜCKENTAGE-FUNKTIONEN
+    // ============================================
+
+    /**
+     * Daten-Klasse für Brückentage
+     */
+    data class BridgeDay(
+        val name: String,
+        val urlaubsTage: Int,
+        val freieTage: Int,
+        val zeitraum: String,
+        val effizienz: Float
+    )
+
+    /**
+     * Berechnet die besten Brückentage für ein Jahr und Bundesland
+     * Funktioniert automatisch für JEDES Jahr (2025, 2026, 2027, ...)
+     */
+    fun calculateBestBridgeDays(year: Int, bundesland: Bundesland?): List<BridgeDay> {
+        val holidays = getHolidaysForYear(year, bundesland)
+        val bridgeDays = mutableListOf<BridgeDay>()
+
+        // Analysiere jeden Feiertag auf Brückentag-Potenzial
+        holidays.forEach { holiday ->
+            val date = holiday.date
+            val dayOfWeek = date.dayOfWeek
+
+            when (dayOfWeek) {
+                // Donnerstag-Feiertag → Freitag = Brückentag
+                java.time.DayOfWeek.THURSDAY -> {
+                    val friday = date.plusDays(1)
+                    bridgeDays.add(BridgeDay(
+                        name = holiday.name,
+                        urlaubsTage = 1,
+                        freieTage = 4, // Do (Feiertag) + Fr (Urlaub) + Sa + So
+                        zeitraum = "${date.dayOfMonth}.${date.monthValue.toString().padStart(2, '0')}. - ${friday.plusDays(2).dayOfMonth}.${friday.plusDays(2).monthValue.toString().padStart(2, '0')}.",
+                        effizienz = 4.0f
+                    ))
+                }
+                // Dienstag-Feiertag → Montag = Brückentag
+                java.time.DayOfWeek.TUESDAY -> {
+                    val monday = date.minusDays(1)
+                    bridgeDays.add(BridgeDay(
+                        name = holiday.name,
+                        urlaubsTage = 1,
+                        freieTage = 4, // Sa + So + Mo (Urlaub) + Di (Feiertag)
+                        zeitraum = "${monday.minusDays(2).dayOfMonth}.${monday.minusDays(2).monthValue.toString().padStart(2, '0')}. - ${date.dayOfMonth}.${date.monthValue.toString().padStart(2, '0')}.",
+                        effizienz = 4.0f
+                    ))
+                }
+                else -> {
+                    // Andere Tage könnten auch analysiert werden
+                }
+            }
+        }
+
+        // Spezial-Analyse: Pfingsten (Montag) → 4 Tage für 9 Tage frei
+        val pfingstmontag = holidays.find { it.name == "Pfingstmontag" }?.date
+        if (pfingstmontag != null) {
+            val friday = pfingstmontag.plusDays(4)
+            bridgeDays.add(BridgeDay(
+                name = "Pfingsten (Woche)",
+                urlaubsTage = 4, // Di-Fr
+                freieTage = 9, // Sa + So + Mo (Feiertag) + Di-Fr (Urlaub) + Sa + So
+                zeitraum = "${pfingstmontag.minusDays(1).dayOfMonth}.${pfingstmontag.monthValue.toString().padStart(2, '0')}. - ${friday.plusDays(2).dayOfMonth}.${friday.plusDays(2).monthValue.toString().padStart(2, '0')}.",
+                effizienz = 2.25f
+            ))
+        }
+
+        // Spezial-Analyse: Ostern (Karfreitag + Ostermontag) → 4 Tage für 10 Tage frei
+        val karfreitag = holidays.find { it.name == "Karfreitag" }?.date
+        if (karfreitag != null) {
+            val ostermontag = karfreitag.plusDays(3)
+            val friday = ostermontag.plusDays(4)
+            bridgeDays.add(BridgeDay(
+                name = "Ostern (Woche)",
+                urlaubsTage = 4, // Di-Fr nach Ostermontag
+                freieTage = 10, // Karfreitag + Sa + So + Ostermontag + Di-Fr (Urlaub) + Sa + So
+                zeitraum = "${karfreitag.dayOfMonth}.${karfreitag.monthValue.toString().padStart(2, '0')}. - ${friday.plusDays(2).dayOfMonth}.${friday.plusDays(2).monthValue.toString().padStart(2, '0')}.",
+                effizienz = 2.5f
+            ))
+        }
+
+        return bridgeDays.sortedByDescending { it.effizienz }.distinctBy { it.name }
+    }
 }

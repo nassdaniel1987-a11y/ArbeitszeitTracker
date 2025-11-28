@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.ui.theme.*
 import com.arbeitszeit.tracker.utils.DateUtils
+import com.arbeitszeit.tracker.utils.HolidayUtils
 import com.arbeitszeit.tracker.viewmodel.VacationPlannerViewModel
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -865,7 +866,7 @@ fun NextVacationCountdownCard(viewModel: VacationPlannerViewModel) {
  */
 @Composable
 fun BridgeDaysCard(year: Int) {
-    val bridgeDays = remember(year) { calculateBestBridgeDays(year) }
+    val bridgeDays = remember(year) { HolidayUtils.calculateBestBridgeDays(year, null) }
 
     if (bridgeDays.isNotEmpty()) {
         Card(
@@ -914,16 +915,8 @@ fun BridgeDaysCard(year: Int) {
     }
 }
 
-data class BridgeDay(
-    val name: String,
-    val urlaubsTage: Int,
-    val freieTage: Int,
-    val zeitraum: String,
-    val effizienz: Float
-)
-
 @Composable
-fun BridgeDayItem(bridge: BridgeDay) {
+fun BridgeDayItem(bridge: HolidayUtils.BridgeDay) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
