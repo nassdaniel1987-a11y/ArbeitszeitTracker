@@ -84,8 +84,11 @@ class GeminiClient {
      * @param availableVacationDays Verfügbare Urlaubstage (z.B. 30)
      * @param bundesland Bundesland-Code für Schulferien (z.B. "BW")
      * @param closingDays Liste der Schließtage (z.B. "24.12.2025 - 26.12.2025: Weihnachtsferien")
+     * @param takenVacationDays Liste der bereits genommenen Urlaubstage (z.B. "2025-01-15: Urlaub")
      * @param preferences Benutzer-Präferenzen (z.B. "Lange am Stück", "Viele kurze Auszeiten", "Brückentage nutzen")
      * @param year Jahr für Planung (z.B. 2025)
+     * @param customStartDate Optionaler Start-Zeitpunkt (z.B. "01.10.2024")
+     * @param customEndDate Optionaler End-Zeitpunkt (z.B. "31.03.2025")
      *
      * @return Optimierungsvorschläge als formatierter Text
      */
@@ -93,8 +96,11 @@ class GeminiClient {
         availableVacationDays: Int,
         bundesland: String,
         closingDays: List<String>,
+        takenVacationDays: List<String>,
         preferences: String,
-        year: Int
+        year: Int,
+        customStartDate: String? = null,
+        customEndDate: String? = null
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
             if (!isConfigured()) {
@@ -107,8 +113,11 @@ class GeminiClient {
                 availableVacationDays = availableVacationDays,
                 bundesland = bundesland,
                 closingDays = closingDays,
+                takenVacationDays = takenVacationDays,
                 preferences = preferences,
-                year = year
+                year = year,
+                customStartDate = customStartDate,
+                customEndDate = customEndDate
             )
 
             Log.d(TAG, "Sende Anfrage an Gemini REST API...")
@@ -177,30 +186,49 @@ class GeminiClient {
         availableVacationDays: Int,
         bundesland: String,
         closingDays: List<String>,
+        takenVacationDays: List<String>,
         preferences: String,
-        year: Int
+        year: Int,
+        customStartDate: String?,
+        customEndDate: String?
     ): String {
+        val zeitraumInfo = if (customStartDate != null && customEndDate != null) {
+            "- **WICHTIG:** Plane NUR für den Zeitraum $customStartDate bis $customEndDate!"
+        } else if (customStartDate != null) {
+            "- **WICHTIG:** Plane NUR ab dem $customStartDate!"
+        } else if (customEndDate != null) {
+            "- **WICHTIG:** Plane NUR bis zum $customEndDate!"
+        } else {
+            "- Zeitraum: Ganzes Jahr $year"
+        }
+
         return """
 Du bist ein intelligenter Urlaubsplaner für Lehrer an Ganztagsschulen in Deutschland.
 
 **KONTEXT:**
 - Jahr: $year
+$zeitraumInfo
 - Verfügbare Urlaubstage: $availableVacationDays
 - Bundesland: $bundesland (für Schulferien)
 - Präferenz: $preferences
+
+**BEREITS GENOMMENE URLAUBSTAGE:**
+${if (takenVacationDays.isEmpty()) "Keine" else takenVacationDays.joinToString("\n")}
 
 **SCHLIESTAGE DER EINRICHTUNG:**
 ${if (closingDays.isEmpty()) "Keine" else closingDays.joinToString("\n")}
 
 **AUFGABE:**
-Erstelle eine optimale Urlaubsplanung für das Jahr $year.
+Erstelle eine optimale Urlaubsplanung${if (customStartDate != null || customEndDate != null) " für den angegebenen Zeitraum" else " für das Jahr $year"}.
 
 **BEACHTE:**
-1. Schulferien in $bundesland (recherchiere aktuelle Termine für $year)
-2. Gesetzliche Feiertage in $bundesland
-3. Brückentage (Feiertage + 1 Urlaubstag = langes Wochenende)
-4. Schließtage der Einrichtung (diese MÜSSEN als Urlaub genommen werden)
-5. Benutzer-Präferenz: $preferences
+1. **BEREITS GENOMMENE TAGE:** Diese Tage sind schon verplant - schlage sie NICHT nochmal vor!
+2. **VERFÜGBARE TAGE:** Nur $availableVacationDays Tage sind noch verfügbar
+3. Schulferien in $bundesland (recherchiere aktuelle Termine für $year)
+4. Gesetzliche Feiertage in $bundesland
+5. Brückentage (Feiertage + 1 Urlaubstag = langes Wochenende)
+6. Schließtage der Einrichtung (diese MÜSSEN als Urlaub genommen werden)
+7. Benutzer-Präferenz: $preferences
 
 **FORMAT DER ANTWORT:**
 

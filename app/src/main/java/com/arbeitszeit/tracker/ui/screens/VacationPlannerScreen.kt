@@ -35,6 +35,8 @@ fun VacationPlannerScreen(
 
     var showOptimizationDialog by remember { mutableStateOf(false) }
     var selectedPreference by remember { mutableStateOf("Lange am Stück") }
+    var customStartDate by remember { mutableStateOf<String?>(null) }
+    var customEndDate by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -252,8 +254,14 @@ fun VacationPlannerScreen(
             selectedPreference = selectedPreference,
             onPreferenceChange = { selectedPreference = it },
             onDismiss = { showOptimizationDialog = false },
-            onConfirm = {
-                viewModel.optimizeVacation(selectedPreference)
+            onConfirm = { startDate, endDate ->
+                customStartDate = startDate
+                customEndDate = endDate
+                viewModel.optimizeVacation(
+                    preferences = selectedPreference,
+                    customStartDate = startDate,
+                    customEndDate = endDate
+                )
                 showOptimizationDialog = false
             }
         )
@@ -492,7 +500,7 @@ fun OptimizationDialog(
     selectedPreference: String,
     onPreferenceChange: (String) -> Unit,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: (startDate: String?, endDate: String?) -> Unit
 ) {
     val preferences = listOf(
         "Lange am Stück" to "Maximale Erholung durch lange Zeiträume",
@@ -500,6 +508,10 @@ fun OptimizationDialog(
         "Viele kurze Auszeiten" to "Regelmäßige Pausen übers Jahr verteilt",
         "Nur Schulferien" to "Urlaub in Schulferien für Familie"
     )
+
+    var useCustomRange by remember { mutableStateOf(false) }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -545,10 +557,78 @@ fun OptimizationDialog(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Zeitraum-Eingrenzung
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Zeitraum eingrenzen",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Switch(
+                                checked = useCustomRange,
+                                onCheckedChange = { useCustomRange = it }
+                            )
+                        }
+
+                        if (useCustomRange) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "z.B. für Resturlaub bis 31.03.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = startDate,
+                                onValueChange = { startDate = it },
+                                label = { Text("Von (TT.MM.JJJJ)") },
+                                placeholder = { Text("01.10.2024") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            OutlinedTextField(
+                                value = endDate,
+                                onValueChange = { endDate = it },
+                                label = { Text("Bis (TT.MM.JJJJ)") },
+                                placeholder = { Text("31.03.2025") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm) {
+            Button(onClick = {
+                onConfirm(
+                    if (useCustomRange && startDate.isNotBlank()) startDate else null,
+                    if (useCustomRange && endDate.isNotBlank()) endDate else null
+                )
+            }) {
                 Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Optimieren")
