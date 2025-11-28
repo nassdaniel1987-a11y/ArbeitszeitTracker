@@ -5,11 +5,15 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.arbeitszeit.tracker.data.dao.ClosingDayDao
+import com.arbeitszeit.tracker.data.dao.SchoolHolidayDao
 import com.arbeitszeit.tracker.data.dao.SollZeitVorlageDao
 import com.arbeitszeit.tracker.data.dao.TimeEntryDao
 import com.arbeitszeit.tracker.data.dao.UserSettingsDao
 import com.arbeitszeit.tracker.data.dao.WeekTemplateDao
 import com.arbeitszeit.tracker.data.dao.WorkLocationDao
+import com.arbeitszeit.tracker.data.entity.ClosingDay
+import com.arbeitszeit.tracker.data.entity.SchoolHoliday
 import com.arbeitszeit.tracker.data.entity.SollZeitVorlage
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
@@ -31,9 +35,11 @@ import java.util.Locale
         WorkLocation::class,
         WeekTemplate::class,
         WeekTemplateEntry::class,
-        SollZeitVorlage::class
+        SollZeitVorlage::class,
+        ClosingDay::class,
+        SchoolHoliday::class
     ],
-    version = 16,  // Current: spalteP, spalteQ, spalteR für Excel-Notizen/Kommentare (Spalten P, Q, R)
+    version = 18,  // Current: SchoolHoliday-Tabelle für Schulferien
     exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -43,6 +49,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workLocationDao(): WorkLocationDao
     abstract fun weekTemplateDao(): WeekTemplateDao
     abstract fun sollZeitVorlageDao(): SollZeitVorlageDao
+    abstract fun closingDayDao(): ClosingDayDao
+    abstract fun schoolHolidayDao(): SchoolHolidayDao
 
     companion object {
         @Volatile
@@ -58,9 +66,9 @@ abstract class AppDatabase : RoomDatabase() {
                     .addCallback(DatabaseCallback(context))
                     // Migrations für zukünftige Versionen
                     .addMigrations(*DatabaseMigrations.getAllMigrations())
-                    // Fallback NUR für alte Versionen (< 16) - ab v16 keine Datenverluste mehr!
+                    // Fallback NUR für alte Versionen (< 18) - ab v18 keine Datenverluste mehr!
                     // Falls jemand von einer sehr alten Version upgraded, wird die DB neu erstellt
-                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+                    .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17)
                     .build()
                 INSTANCE = instance
                 instance
