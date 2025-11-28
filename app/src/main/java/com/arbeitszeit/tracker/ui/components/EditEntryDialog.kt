@@ -3,6 +3,7 @@ package com.arbeitszeit.tracker.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material3.*
@@ -264,9 +265,14 @@ private fun TimePickerButton(
     // TimePicker Dialog
     if (showTimePicker) {
         TimePickerDialog(
+            timePickerState = timePickerState,
             onDismiss = { showTimePicker = false },
             onConfirm = {
                 val minutes = timePickerState.hour * 60 + timePickerState.minute
+                onTimeSelected(minutes)
+                showTimePicker = false
+            },
+            onQuickTimeSelect = { minutes ->
                 onTimeSelected(minutes)
                 showTimePicker = false
             }
@@ -277,16 +283,75 @@ private fun TimePickerButton(
 }
 
 /**
- * Dialog für TimePicker
+ * Dialog für TimePicker mit Quick-Time-Buttons
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimePickerDialog(
+    timePickerState: TimePickerState,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
+    onQuickTimeSelect: (Int) -> Unit,
     content: @Composable () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Zeit auswählen")
+
+                // Quick-Time-Buttons
+                Text(
+                    "Schnellauswahl:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = {
+                            val now = TimeUtils.currentTimeInMinutes()
+                            onQuickTimeSelect(now)
+                        },
+                        label = { Text("Jetzt", style = MaterialTheme.typography.labelMedium) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.AccessTime,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    AssistChip(
+                        onClick = {
+                            val time = TimeUtils.currentTimeInMinutes() - 30
+                            onQuickTimeSelect(time.coerceAtLeast(0))
+                        },
+                        label = { Text("-30min", style = MaterialTheme.typography.labelMedium) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    AssistChip(
+                        onClick = {
+                            val time = TimeUtils.currentTimeInMinutes() - 60
+                            onQuickTimeSelect(time.coerceAtLeast(0))
+                        },
+                        label = { Text("-1h", style = MaterialTheme.typography.labelMedium) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                HorizontalDivider()
+
+                Text(
+                    "Oder manuell einstellen:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Abbrechen")

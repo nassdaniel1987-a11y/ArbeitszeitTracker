@@ -298,10 +298,10 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                             )
                         ) {
                             Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                                modifier = Modifier.fillMaxSize()
                             ) {
                                 Column(
+                                    modifier = Modifier.fillMaxSize(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
@@ -325,6 +325,31 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                                             modifier = Modifier.size(16.dp),
                                             tint = Color.White.copy(alpha = 0.8f)
                                         )
+                                    }
+                                }
+
+                                // Mini-Badge mit Überstunden (rechts oben)
+                                if (entry != null && entry.typ == TimeEntry.TYP_NORMAL) {
+                                    val diff = entry.getDifferenzMinuten()
+                                    if (diff != 0) {
+                                        Surface(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(2.dp),
+                                            color = if (diff > 0)
+                                                Color(0xFF4CAF50)  // Grün für Plus
+                                            else
+                                                Color(0xFFFF5252),  // Rot für Minus
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = TimeUtils.formatDifferenz(diff),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
