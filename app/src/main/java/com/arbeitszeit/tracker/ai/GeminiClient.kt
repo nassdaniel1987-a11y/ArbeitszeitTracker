@@ -28,7 +28,7 @@ class GeminiClient {
 
     companion object {
         private const val TAG = "GeminiClient"
-        private const val MODEL_NAME = "gemini-1.5-flash-latest"  // Schnell & kostenlos
+        private const val MODEL_NAME = "gemini-1.5-pro"  // Stabile Pro-Version
     }
 
     /**
