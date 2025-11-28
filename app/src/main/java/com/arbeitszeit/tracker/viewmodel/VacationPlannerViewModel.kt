@@ -195,6 +195,69 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
     }
 
     /**
+     * Fügt einen Urlaubstag hinzu oder entfernt ihn wenn schon vorhanden
+     */
+    fun toggleVacationDay(date: LocalDate, note: String = "") {
+        viewModelScope.launch {
+            try {
+                val dateString = com.arbeitszeit.tracker.utils.DateUtils.dateToString(date)
+
+                // Prüfe ob schon ein Eintrag existiert
+                val existingEntry = timeEntryDao.getEntryByDate(dateString)
+
+                if (existingEntry != null && existingEntry.typ == TimeEntry.TYP_URLAUB) {
+                    // Urlaub entfernen: Setze Typ zurück auf NORMAL
+                    timeEntryDao.update(
+                        existingEntry.copy(
+                            typ = TimeEntry.TYP_NORMAL,
+                            notiz = "",
+                            startZeit = null,
+                            endZeit = null,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                    )
+                } else {
+                    val settings = userSettings.value ?: return@launch
+                    val sollMinuten = if (settings.isWorkingDay(date.dayOfWeek.value)) {
+                        settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+                    } else {
+                        0
+                    }
+
+                    if (existingEntry != null) {
+                        // Update existierenden Eintrag zu Urlaub
+                        timeEntryDao.update(
+                            existingEntry.copy(
+                                typ = TimeEntry.TYP_URLAUB,
+                                notiz = note,
+                                startZeit = null,
+                                endZeit = null,
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        )
+                    } else {
+                        // Neuen Urlaubs-Eintrag erstellen
+                        val entry = TimeEntry(
+                            datum = dateString,
+                            wochentag = com.arbeitszeit.tracker.utils.DateUtils.getWeekdayShort(date),
+                            kalenderwoche = com.arbeitszeit.tracker.utils.DateUtils.getWeekOfYear(date),
+                            jahr = date.year,
+                            startZeit = null,
+                            endZeit = null,
+                            sollMinuten = sollMinuten,
+                            typ = TimeEntry.TYP_URLAUB,
+                            notiz = note
+                        )
+                        timeEntryDao.insert(entry)
+                    }
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Fehler beim Speichern: ${e.message}"
+            }
+        }
+    }
+
+    /**
      * Berechnet gesamte Urlaubsstatistik
      */
     data class VacationStats(

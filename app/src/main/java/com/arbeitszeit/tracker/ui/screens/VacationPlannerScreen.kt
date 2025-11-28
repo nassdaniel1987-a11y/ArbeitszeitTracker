@@ -57,6 +57,7 @@ fun VacationPlannerScreen(
     var selectedPreference by remember { mutableStateOf("Lange am Stück") }
     var customStartDate by remember { mutableStateOf<String?>(null) }
     var customEndDate by remember { mutableStateOf<String?>(null) }
+    var selectedTab by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -101,77 +102,119 @@ fun VacationPlannerScreen(
                 )
             }
 
-            // Statistik-Karten
+            // Tabs
             item {
-                VacationStatsCards(stats = vacationStats)
-            }
-
-            // Resturlaub-Warning (wenn Urlaubstage bald verfallen)
-            if (vacationStats.verfuegbar > 0 && shouldShowResturlaubWarning(selectedYear)) {
-                item {
-                    ResturlaubWarningCard(
-                        verfuegbareTage = vacationStats.verfuegbar,
-                        verfallsDatum = getResturlaubVerfallsDatum(selectedYear)
+                androidx.compose.material3.TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = MaterialTheme.colorScheme.surface
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text("Übersicht") },
+                        icon = { Icon(Icons.Default.Analytics, null) }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = { Text("Planen") },
+                        icon = { Icon(Icons.Default.CalendarMonth, null) }
+                    )
+                    Tab(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        text = { Text("Brückentage") },
+                        icon = { Icon(Icons.Default.TrendingUp, null) }
                     )
                 }
             }
 
-            // Countdown zum nächsten Urlaub
-            item {
-                NextVacationCountdownCard(viewModel = viewModel)
-            }
-
-            // Brückentage-Finder
-            item {
-                BridgeDaysCard(year = selectedYear)
-            }
-
-            // Urlaubs-Kalender (separater Kalender für Urlaubsplanung)
-            item {
-                VacationCalendarCard(
-                    year = selectedYear,
-                    viewModel = viewModel
-                )
-            }
-
-            // Info wenn Bundesland fehlt
-            if (userSettings?.bundesland.isNullOrEmpty()) {
+            // ============================================
+            // TAB 0: ÜBERSICHT
+            // ============================================
+            if (selectedTab == 0) {
+                // Statistik-Karten
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
+                    VacationStatsCards(stats = vacationStats)
+                }
+
+                // Resturlaub-Warning (wenn Urlaubstage bald verfallen)
+                if (vacationStats.verfuegbar > 0 && shouldShowResturlaubWarning(selectedYear)) {
+                    item {
+                        ResturlaubWarningCard(
+                            verfuegbareTage = vacationStats.verfuegbar,
+                            verfallsDatum = getResturlaubVerfallsDatum(selectedYear)
                         )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Bitte wähle dein Bundesland in den Einstellungen aus, um Schulferien anzuzeigen.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
+                    }
+                }
+
+                // Countdown zum nächsten Urlaub
+                item {
+                    NextVacationCountdownCard(viewModel = viewModel)
+                }
+
+                // KI-Vorschlag
+                aiSuggestion?.let { suggestion ->
+                    item {
+                        AiSuggestionCard(
+                            suggestion = suggestion,
+                            onDismiss = { viewModel.clearAiSuggestion() }
+                        )
                     }
                 }
             }
 
-            // KI-Vorschlag
-            aiSuggestion?.let { suggestion ->
+            // ============================================
+            // TAB 1: PLANEN (Urlaubskalender)
+            // ============================================
+            if (selectedTab == 1) {
+                // Urlaubs-Kalender (separater Kalender für Urlaubsplanung)
                 item {
-                    AiSuggestionCard(
-                        suggestion = suggestion,
-                        onDismiss = { viewModel.clearAiSuggestion() }
+                    VacationCalendarCard(
+                        year = selectedYear,
+                        viewModel = viewModel
                     )
+                }
+            }
+
+            // ============================================
+            // TAB 2: BRÜCKENTAGE
+            // ============================================
+            if (selectedTab == 2) {
+                // Info wenn Bundesland fehlt
+                if (userSettings?.bundesland.isNullOrEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Bitte wähle dein Bundesland in den Einstellungen aus.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Brückentage-Finder
+                item {
+                    BridgeDaysCard(year = selectedYear)
                 }
             }
 
@@ -398,25 +441,25 @@ fun StatsCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 icon,
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(20.dp)
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = color.copy(alpha = 0.8f)
             )
         }
@@ -712,35 +755,28 @@ fun ResturlaubWarningCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 Icons.Default.Warning,
                 contentDescription = null,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.error
             )
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "⚠️ Resturlaub verfällt!",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.error
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Du hast noch $verfuegbareTage Urlaubstag${if (verfuegbareTage > 1) "e" else ""}, die am $verfallsDatum verfallen.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "💡 Nutze die KI-Optimierung um diese Tage optimal zu planen!",
+                    text = "$verfuegbareTage Tag${if (verfuegbareTage > 1) "e" else ""} bis $verfallsDatum",
                     style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
         }
@@ -783,72 +819,63 @@ fun NextVacationCountdownCard(viewModel: VacationPlannerViewModel) {
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer
             )
         ) {
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
-                                MaterialTheme.colorScheme.tertiaryContainer
-                            )
-                        )
-                    )
-                    .padding(24.dp)
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        Icons.Default.BeachAccess,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.BeachAccess,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Nächster Urlaub",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Nächster Urlaub",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                        )
                         Text(
                             text = nextVacation.notiz.ifEmpty { "Urlaub" },
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.9f)
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                         Text(
                             text = DateUtils.formatForDisplay(nextDate),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
                         )
                     }
+                }
 
-                    // Countdown Circle
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(
-                                color = Color.White.copy(alpha = 0.2f),
-                                shape = CircleShape
-                            )
+                // Countdown Badge
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiary,
+                    shape = CircleShape,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = daysUntil.toString(),
-                                style = MaterialTheme.typography.displaySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Text(
-                                text = if (daysUntil == 1) "Tag" else "Tage",
+                        Text(
+                            text = daysUntil.toString(),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiary
+                        )
+                        Text(
+                            text = if (daysUntil == 1) "Tag" else "Tage",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.White.copy(alpha = 0.9f)
                             )
@@ -878,33 +905,32 @@ fun BridgeDaysCard(year: Int) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Celebration,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "🌉 Top Brückentage $year",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "🌉 Top Brückentage $year",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = "Maximale Erholung mit minimalen Urlaubstagen",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "Maximale Erholung mit minimalen Urlaubstagen",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 bridgeDays.take(3).forEach { bridge ->
                     BridgeDayItem(bridge)
@@ -919,66 +945,41 @@ fun BridgeDaysCard(year: Int) {
 fun BridgeDayItem(bridge: HolidayUtils.BridgeDay) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         color = Color.White.copy(alpha = 0.3f)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = bridge.name,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
                     text = bridge.zeitraum,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
-                ) {
-                    Text(
-                        text = "${bridge.urlaubsTage} Tag${if (bridge.urlaubsTage > 1) "e" else ""} Urlaub",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-
-                Icon(
-                    Icons.Default.ArrowForward,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(16.dp)
+                Text(
+                    text = "${bridge.urlaubsTage}→${bridge.freieTage}",
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primary
-                ) {
-                    Text(
-                        text = "${bridge.freieTage} Tag${if (bridge.freieTage > 1) "e" else ""} frei",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
             }
         }
     }
@@ -1007,39 +1008,32 @@ fun VacationCalendarCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(12.dp)
         ) {
             // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
                     Text(
                         text = "Urlaubskalender",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Plane deinen Urlaub direkt im Kalender",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Plane deinen Urlaub direkt im Kalender",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Monatsnavigation
             Row(
@@ -1109,7 +1103,7 @@ fun VacationCalendarCard(
             date = selectedDate!!,
             onDismiss = { showAddDialog = false },
             onConfirm = { note ->
-                // TODO: Urlaub hinzufügen über ViewModel
+                viewModel.toggleVacationDay(selectedDate!!, note)
                 showAddDialog = false
             }
         )
