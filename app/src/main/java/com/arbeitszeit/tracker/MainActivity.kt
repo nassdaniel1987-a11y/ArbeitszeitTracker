@@ -154,6 +154,19 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
 
+                            NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.BeachAccess, null) },
+                                label = { Text("Urlaubsplaner") },
+                                selected = currentRoute == Screen.VacationPlanner.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.VacationPlanner.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                             NavigationDrawerItem(
@@ -230,6 +243,7 @@ class MainActivity : ComponentActivity() {
                                 Screen.Home.route,
                                 Screen.Ueberstunden.route,
                                 Screen.Calendar.route,
+                                Screen.VacationPlanner.route,
                                 Screen.Export.route,
                                 Screen.Import.route,
                                 Screen.Settings.route
@@ -243,6 +257,7 @@ class MainActivity : ComponentActivity() {
                                                 Screen.Home.route -> "Home"
                                                 Screen.Ueberstunden.route -> "Überstunden"
                                                 Screen.Calendar.route -> "Kalender"
+                                                Screen.VacationPlanner.route -> "Urlaubsplaner"
                                                 Screen.Export.route -> "Export"
                                                 Screen.Import.route -> "Import"
                                                 Screen.Settings.route -> "Einstellungen"
