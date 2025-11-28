@@ -5,10 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.data.entity.TimeEntry
+import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.utils.DateUtils
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
@@ -18,7 +17,11 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
-    
+
+    // User Settings mit Bundesland für Feiertage
+    val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
     private val _currentMonth = MutableStateFlow(YearMonth.now())
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
     

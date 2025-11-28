@@ -38,6 +38,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     val month by viewModel.currentMonth.collectAsState()
     val entries by viewModel.monthEntries.collectAsState()
     val deletedEntry by viewModel.deletedEntry.collectAsState()
+    val userSettings by viewModel.userSettings.collectAsState()
 
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<String?>(null) }
@@ -301,9 +302,10 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                             Box(
                                 modifier = Modifier.fillMaxSize()
                             ) {
-                                // Prüfe ob Tag ein Feiertag ist
-                                val isHoliday = HolidayUtils.isHoliday(date, null)
-                                val holidayName = HolidayUtils.getHolidayName(date, null)
+                                // Prüfe ob Tag ein Feiertag ist (mit Bundesland-Filter)
+                                val bundesland = HolidayUtils.Bundesland.fromShortCode(userSettings?.bundesland)
+                                val isHoliday = HolidayUtils.isHoliday(date, bundesland)
+                                val holidayName = HolidayUtils.getHolidayName(date, bundesland)
 
                                 Column(
                                     modifier = Modifier.fillMaxSize(),
