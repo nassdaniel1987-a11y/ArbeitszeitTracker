@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.ui.components.EditEntryDialog
 import com.arbeitszeit.tracker.ui.theme.*
+import com.arbeitszeit.tracker.utils.HolidayUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
 import com.arbeitszeit.tracker.viewmodel.CalendarViewModel
 import com.arbeitszeit.tracker.viewmodel.EntryStatus
@@ -300,6 +301,10 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                             Box(
                                 modifier = Modifier.fillMaxSize()
                             ) {
+                                // Prüfe ob Tag ein Feiertag ist
+                                val isHoliday = HolidayUtils.isHoliday(date, null)
+                                val holidayName = HolidayUtils.getHolidayName(date, null)
+
                                 Column(
                                     modifier = Modifier.fillMaxSize(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -324,6 +329,26 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                                             contentDescription = entry.typ,
                                             modifier = Modifier.size(16.dp),
                                             tint = Color.White.copy(alpha = 0.8f)
+                                        )
+                                    }
+                                }
+
+                                // Feiertags-Badge (links oben) 🎉
+                                if (isHoliday) {
+                                    Surface(
+                                        modifier = Modifier
+                                            .align(Alignment.TopStart)
+                                            .padding(2.dp),
+                                        color = Color(0xFFFFD700),  // Gold
+                                        shape = CircleShape
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Star,
+                                            contentDescription = holidayName,
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                                .padding(2.dp),
+                                            tint = Color.White
                                         )
                                     }
                                 }
