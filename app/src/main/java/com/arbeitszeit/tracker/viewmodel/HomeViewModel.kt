@@ -26,6 +26,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
+    private val yearSettingsDao = database.yearSettingsDao()
     private val workLocationDao = database.workLocationDao()
     private val sollZeitVorlageDao = database.sollZeitVorlageDao()
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
@@ -48,6 +49,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     // Settings
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    // Active Year Settings
+    private val activeYear = yearSettingsDao.getActiveYearFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     // Alle verfügbaren Arbeitszeitvorlagen
@@ -155,6 +160,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (existing == null) {
             val today = LocalDate.now()
             val settings = settingsDao.getSettings()
+            val yearSettings = yearSettingsDao.getActiveYear()
             val defaultVorlage = sollZeitVorlageDao.getDefaultVorlage()
 
             // Berechne Sollminuten: Entweder aus Default-Vorlage oder aus Settings
@@ -168,8 +174,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val entry = TimeEntry(
                 datum = todayDate,
                 wochentag = DateUtils.getWeekdayShort(today),
-                kalenderwoche = DateUtils.getCustomWeekOfYear(today, settings?.ersterMontagImJahr),
-                jahr = DateUtils.getCustomWeekBasedYear(today, settings?.ersterMontagImJahr),
+                kalenderwoche = DateUtils.getCustomWeekOfYear(today, yearSettings?.ersterMontagImJahr),
+                jahr = DateUtils.getCustomWeekBasedYear(today, yearSettings?.ersterMontagImJahr),
                 startZeit = null,
                 endZeit = null,
                 pauseMinuten = 0,
@@ -385,8 +391,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      * Prüft ob die aktuelle Woche angezeigt wird
      */
     fun isCurrentWeek(): Boolean {
-        val settings = userSettings.value
-        val firstMonday = settings?.ersterMontagImJahr
+        val yearSettings = activeYear.value
+        val firstMonday = yearSettings?.ersterMontagImJahr
 
         val selectedWeek = DateUtils.getCustomWeekOfYear(_selectedWeekDate.value, firstMonday)
         val selectedYear = DateUtils.getCustomWeekBasedYear(_selectedWeekDate.value, firstMonday)

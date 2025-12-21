@@ -24,6 +24,7 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
     private val timeEntryDao = database.timeEntryDao()
     private val closingDayDao = database.closingDayDao()
     private val schoolHolidayDao = database.schoolHolidayDao()
+    private val yearSettingsDao = database.yearSettingsDao()
 
     private val geminiClient = GeminiClient()
     private val schoolHolidayManager = SchoolHolidayManager(schoolHolidayDao)
@@ -32,9 +33,15 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
-    // UI State
+    // Active Year Settings
+    private val activeYear = yearSettingsDao.getActiveYearFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    // UI State - selectedYear wird vom aktiven Jahr überschrieben
     private val _selectedYear = MutableStateFlow(LocalDate.now().year)
-    val selectedYear: StateFlow<Int> = _selectedYear
+    val selectedYear: StateFlow<Int> = activeYear
+        .map { it?.year ?: LocalDate.now().year }
+        .stateIn(viewModelScope, SharingStarted.Lazily, LocalDate.now().year)
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -94,10 +101,10 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
      * Verfügbare Urlaubstage (Anspruch - Genommen)
      */
     val availableVacationDays: StateFlow<Int> = combine(
-        userSettings,
+        activeYear,
         vacationDays
-    ) { settings, taken ->
-        val anspruch = settings?.urlaubsanspruchTage ?: 30
+    ) { yearSettings, taken ->
+        val anspruch = yearSettings?.urlaubsanspruchTage ?: 30
         val genommen = taken.size
         (anspruch - genommen).coerceAtLeast(0)
     }
@@ -269,15 +276,15 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
     )
 
     val vacationStats: StateFlow<VacationStats> = combine(
-        userSettings,
+        activeYear,
         vacationDays,
         closingDays,
         schoolHolidays
-    ) { settings, taken, closing, holidays ->
+    ) { yearSettings, taken, closing, holidays ->
         VacationStats(
-            anspruch = settings?.urlaubsanspruchTage ?: 30,
+            anspruch = yearSettings?.urlaubsanspruchTage ?: 30,
             genommen = taken.size,
-            verfuegbar = (settings?.urlaubsanspruchTage ?: 30) - taken.size,
+            verfuegbar = (yearSettings?.urlaubsanspruchTage ?: 30) - taken.size,
             closingDayCount = closing.sumOf { it.getDurationDays() },
             holidayPeriods = holidays.size
         )
