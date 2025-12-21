@@ -702,7 +702,8 @@ private fun WorkTimeSection(
     settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
     snackbarHostState: SnackbarHostState
 ) {
-    ArbeitszeitTab(viewModel, settings, snackbarHostState)
+    val activeYear by viewModel.activeYear.collectAsState()
+    ArbeitszeitTab(viewModel, settings, activeYear, snackbarHostState)
 }
 
 /**
@@ -1368,6 +1369,7 @@ private fun AllgemeinTab(
 private fun ArbeitszeitTab(
     viewModel: SettingsViewModel,
     settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    activeYear: com.arbeitszeit.tracker.data.entity.YearSettings?,
     snackbarHostState: SnackbarHostState
 ) {
     var prozent by remember { mutableStateOf(settings?.arbeitsumfangProzent?.toString() ?: "100") }
@@ -1420,7 +1422,7 @@ private fun ArbeitszeitTab(
 
     val hasErrors = prozentError != null || stundenError != null || minutenError != null || arbeitsTageError != null
 
-    LaunchedEffect(settings) {
+    LaunchedEffect(settings, activeYear) {
         settings?.let {
             prozent = it.arbeitsumfangProzent.toString()
             stunden = (it.wochenStundenMinuten / 60).toString()
@@ -1430,12 +1432,14 @@ private fun ArbeitszeitTab(
 
             // Lade Arbeitstage aus Settings
             selectedWorkingDays = it.workingDays.map { char -> char.toString().toInt() }.toSet()
+        }
 
-            it.ersterMontagImJahr?.let { datum ->
-                val parts = datum.split("-")
-                if (parts.size == 3) {
-                    ersterMontag = "${parts[2]}.${parts[1]}.${parts[0]}"
-                }
+        // Lade ersterMontag aus YearSettings (jahr-spezifisch!)
+        activeYear?.let { year ->
+            val datum = year.ersterMontagImJahr
+            val parts = datum.split("-")
+            if (parts.size == 3) {
+                ersterMontag = "${parts[2]}.${parts[1]}.${parts[0]}"
             }
         }
     }
@@ -1609,9 +1613,11 @@ private fun ArbeitszeitTab(
                     wochenStundenMinuten = wochenMinuten,
                     arbeitsTageProWoche = selectedWorkingDays.size,
                     ferienbetreuung = ferienbetreuung,
-                    ersterMontagImJahr = ersterMontagFormatted,
                     workingDays = workingDaysString
                 )
+
+                // Speichere ersterMontag separat in YearSettings (jahr-spezifisch!)
+                ersterMontagFormatted?.let { viewModel.updateErsterMontag(it) }
 
                 scope.launch {
                     snackbarHostState.showSnackbar("Einstellungen erfolgreich gespeichert")
