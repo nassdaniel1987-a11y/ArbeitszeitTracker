@@ -11,7 +11,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - v16: Baseline (spalteP, spalteQ, spalteR hinzugefügt)
  * - v17: ClosingDay-Tabelle für Schließtage der Einrichtung
  * - v18: SchoolHoliday-Tabelle für Schulferien
- * - v19+: Future migrations with proper schema preservation
+ * - v19: YearSettings-Tabelle für Jahres-Management-System
+ * - v20+: Future migrations with proper schema preservation
  *
  * WICHTIG: Ab v16 werden ALLE Migrations hier dokumentiert und implementiert!
  */
@@ -92,6 +93,169 @@ object DatabaseMigrations {
     }
 
     /**
+     * Migration v18 -> v19: YearSettings-Tabelle für Jahres-Management-System
+     *
+     * Diese Migration führt das neue Jahres-Management-System ein:
+     * - Jedes Jahr hat eigene Einstellungen (erster Montag, Urlaubsanspruch, Vorjahresübertrag)
+     * - Automatische Erkennung aller Jahre aus vorhandenen TimeEntries
+     * - Intelligente Übertragung der aktuellen Einstellungen
+     * - Automatische Berechnung von Vorjahresüberträgen
+     *
+     * Vorteile:
+     * - Konsistente KW/Überstunden/Urlaub-Berechnung pro Jahr
+     * - Automatischer Überstunden-Übertrag (kein manuelles Eintragen mehr)
+     * - Jahr-spezifische Excel-Vorlagen
+     * - Klare Trennung zwischen Jahren beim Jahreswechsel
+     */
+    val MIGRATION_18_19 = object : Migration(18, 19) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // 1. YearSettings-Tabelle erstellen
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS year_settings (
+                    year INTEGER PRIMARY KEY NOT NULL,
+                    ersterMontagImJahr TEXT NOT NULL,
+                    urlaubsanspruchTage INTEGER NOT NULL,
+                    vorjahresUebertragMinuten INTEGER NOT NULL,
+                    hasExcelTemplate INTEGER NOT NULL,
+                    isActive INTEGER NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    isArchived INTEGER NOT NULL DEFAULT 0
+                )
+            """)
+
+            // 2. Index für aktives Jahr (für schnelle Abfragen)
+            db.execSQL("""
+                CREATE INDEX IF NOT EXISTS index_year_settings_active
+                ON year_settings(isActive)
+            """)
+
+            // 3. Finde alle Jahre aus vorhandenen TimeEntries
+            val yearsCursor = db.query("SELECT DISTINCT jahr FROM time_entries ORDER BY jahr")
+            val years = mutableListOf<Int>()
+            while (yearsCursor.moveToNext()) {
+                years.add(yearsCursor.getInt(0))
+            }
+            yearsCursor.close()
+
+            // 4. Lade aktuelle Einstellungen aus UserSettings
+            val settingsCursor = db.query("SELECT ersterMontagImJahr, urlaubsanspruchTage, ueberstundenVorjahrMinuten FROM user_settings LIMIT 1")
+            var currentErsterMontag: String? = null
+            var currentUrlaubsanspruch = 30  // Default
+            var currentVorjahresUebertrag = 0
+
+            if (settingsCursor.moveToFirst()) {
+                currentErsterMontag = settingsCursor.getString(0)
+                currentUrlaubsanspruch = settingsCursor.getInt(1)
+                currentVorjahresUebertrag = settingsCursor.getInt(2)
+            }
+            settingsCursor.close()
+
+            // 5. Erstelle YearSettings für jedes gefundene Jahr
+            val currentYear = java.time.LocalDate.now().year
+            years.forEach { year ->
+                // Finde erster Montag für dieses Jahr
+                val ersterMontag = if (year == currentYear && currentErsterMontag != null) {
+                    // Aktuelles Jahr: Nutze Einstellung aus UserSettings
+                    currentErsterMontag
+                } else {
+                    // Vergangene/zukünftige Jahre: Berechne ersten Montag
+                    findFirstMonday(year)
+                }
+
+                // Berechne Vorjahresübertrag (aus Differenz des Vorjahres)
+                val vorjahresUebertrag = if (year == currentYear) {
+                    // Aktuelles Jahr: Nutze aus UserSettings
+                    currentVorjahresUebertrag
+                } else {
+                    // Andere Jahre: Berechne aus Vorjahr
+                    calculateYearCarryOver(db, year - 1)
+                }
+
+                // Prüfe ob Excel-Vorlage existiert (template_JAHR.xlsx)
+                // Hinweis: Wird später vom TemplateManager korrekt gesetzt
+                val hasTemplate = 0  // false, wird später aktualisiert
+
+                // Aktuelles Jahr = aktiv
+                val isActive = if (year == currentYear) 1 else 0
+
+                // YearSettings einfügen
+                db.execSQL("""
+                    INSERT INTO year_settings
+                    (year, ersterMontagImJahr, urlaubsanspruchTage, vorjahresUebertragMinuten,
+                     hasExcelTemplate, isActive, createdAt, isArchived)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+                """, arrayOf(
+                    year,
+                    ersterMontag,
+                    currentUrlaubsanspruch,
+                    vorjahresUebertrag,
+                    hasTemplate,
+                    isActive,
+                    System.currentTimeMillis()
+                ))
+            }
+
+            // 6. Falls keine Jahre gefunden wurden, erstelle aktuelles Jahr
+            if (years.isEmpty()) {
+                val ersterMontag = currentErsterMontag ?: findFirstMonday(currentYear)
+                db.execSQL("""
+                    INSERT INTO year_settings
+                    (year, ersterMontagImJahr, urlaubsanspruchTage, vorjahresUebertragMinuten,
+                     hasExcelTemplate, isActive, createdAt, isArchived)
+                    VALUES (?, ?, ?, ?, 0, 1, ?, 0)
+                """, arrayOf(
+                    currentYear,
+                    ersterMontag,
+                    currentUrlaubsanspruch,
+                    currentVorjahresUebertrag,
+                    System.currentTimeMillis()
+                ))
+            }
+        }
+
+        /**
+         * Findet den ersten Montag eines Jahres
+         */
+        private fun findFirstMonday(year: Int): String {
+            var date = java.time.LocalDate.of(year, 1, 1)
+            while (date.dayOfWeek != java.time.DayOfWeek.MONDAY) {
+                date = date.plusDays(1)
+            }
+            return date.toString()  // yyyy-MM-dd
+        }
+
+        /**
+         * Berechnet den Überstunden-Übertrag eines Jahres
+         * (Summe aller Differenzen = Soll - Ist)
+         */
+        private fun calculateYearCarryOver(db: SupportSQLiteDatabase, year: Int): Int {
+            val cursor = db.query("""
+                SELECT
+                    COALESCE(SUM(sollMinuten), 0) as totalSoll,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN startZeit IS NOT NULL AND endZeit IS NOT NULL
+                            THEN (strftime('%s', endZeit) - strftime('%s', startZeit)) / 60 - pauseMinuten
+                            ELSE 0
+                        END
+                    ), 0) as totalIst
+                FROM time_entries
+                WHERE jahr = ?
+            """, arrayOf(year))
+
+            var carryOver = 0
+            if (cursor.moveToFirst()) {
+                val soll = cursor.getInt(0)
+                val ist = cursor.getInt(1)
+                carryOver = ist - soll  // Positive = Plus-Stunden, Negative = Minus-Stunden
+            }
+            cursor.close()
+
+            return carryOver
+        }
+    }
+
+    /**
      * Gibt alle verfügbaren Migrations zurück
      *
      * Wenn neue Migrations hinzugefügt werden, hier in der Liste eintragen!
@@ -100,9 +264,10 @@ object DatabaseMigrations {
         return arrayOf(
             MIGRATION_16_17,
             MIGRATION_17_18,
+            MIGRATION_18_19,
             // Zukünftige Migrations hier hinzufügen:
-            // MIGRATION_18_19,
             // MIGRATION_19_20,
+            // MIGRATION_20_21,
             // etc.
         )
     }
