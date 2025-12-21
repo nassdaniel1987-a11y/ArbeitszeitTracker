@@ -19,6 +19,10 @@ data class YearUiState(
     val isLoading: Boolean = false,
     val showNewYearDialog: Boolean = false,
     val newYearSuggestion: NewYearSuggestion? = null,
+    val showEditYearDialog: Boolean = false,
+    val editYear: YearSettings? = null,
+    val showDeleteConfirmDialog: Boolean = false,
+    val deleteYear: YearSettings? = null,
     val error: String? = null,
     val success: String? = null
 )
@@ -315,6 +319,126 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             yearManager.updateExcelTemplateFlag(year)
             loadYears()
+        }
+    }
+
+    /**
+     * Zeigt den "Jahr bearbeiten" Dialog
+     */
+    fun showEditYearDialog(year: YearSettings) {
+        _uiState.value = _uiState.value.copy(
+            showEditYearDialog = true,
+            editYear = year
+        )
+    }
+
+    /**
+     * Schließt den "Jahr bearbeiten" Dialog
+     */
+    fun dismissEditYearDialog() {
+        _uiState.value = _uiState.value.copy(
+            showEditYearDialog = false,
+            editYear = null
+        )
+    }
+
+    /**
+     * Aktualisiert ein Jahr
+     */
+    fun updateYear(
+        year: Int,
+        ersterMontagImJahr: String,
+        urlaubsanspruch: Int,
+        vorjahresUebertrag: Int
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            try {
+                val existing = yearSettingsDao.getYearSettings(year)
+                if (existing != null) {
+                    yearSettingsDao.update(existing.copy(
+                        ersterMontagImJahr = ersterMontagImJahr,
+                        urlaubsanspruchTage = urlaubsanspruch,
+                        vorjahresUebertragMinuten = vorjahresUebertrag
+                    ))
+
+                    loadYears()
+                    _uiState.value = _uiState.value.copy(
+                        showEditYearDialog = false,
+                        editYear = null,
+                        isLoading = false,
+                        success = "Jahr $year erfolgreich aktualisiert!"
+                    )
+
+                    // Clear success message after 3 seconds
+                    kotlinx.coroutines.delay(3000)
+                    clearMessages()
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Jahr $year nicht gefunden"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Fehler beim Aktualisieren: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Zeigt Bestätigungs-Dialog zum Löschen eines Jahres
+     */
+    fun showDeleteConfirmDialog(year: YearSettings) {
+        _uiState.value = _uiState.value.copy(
+            showDeleteConfirmDialog = true,
+            deleteYear = year
+        )
+    }
+
+    /**
+     * Schließt den Lösch-Bestätigungs-Dialog
+     */
+    fun dismissDeleteConfirmDialog() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteConfirmDialog = false,
+            deleteYear = null
+        )
+    }
+
+    /**
+     * Löscht ein Jahr (bestätigt)
+     * WICHTIG: Zeiteinträge bleiben erhalten!
+     */
+    fun confirmDeleteYear() {
+        viewModelScope.launch {
+            val year = _uiState.value.deleteYear?.year ?: return@launch
+
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            val success = yearManager.deleteYear(year)
+
+            if (success) {
+                loadYears()
+                _uiState.value = _uiState.value.copy(
+                    showDeleteConfirmDialog = false,
+                    deleteYear = null,
+                    isLoading = false,
+                    success = "Jahr $year gelöscht (Zeiteinträge bleiben erhalten)"
+                )
+
+                // Clear success message after 3 seconds
+                kotlinx.coroutines.delay(3000)
+                clearMessages()
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Jahr $year konnte nicht gelöscht werden (ist es aktiv?)"
+                )
+            }
         }
     }
 }
