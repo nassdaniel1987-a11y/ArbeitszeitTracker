@@ -256,6 +256,25 @@ object DatabaseMigrations {
     }
 
     /**
+     * Migration v19 -> v20: Auto-Switch für Jahreswechsel
+     *
+     * Fügt ein neues Feld in UserSettings hinzu:
+     * - autoSwitchYear: Automatischer Wechsel zum neuen Jahr am ersten Montag
+     *
+     * Standardmäßig aktiviert (true), kann in den Einstellungen deaktiviert werden.
+     */
+    val MIGRATION_19_20 = object : Migration(19, 20) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // autoSwitchYear-Spalte zu user_settings hinzufügen
+            // DEFAULT 1 = true (Auto-Switch standardmäßig aktiviert)
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN autoSwitchYear INTEGER NOT NULL DEFAULT 1
+            """)
+        }
+    }
+
+    /**
      * Gibt alle verfügbaren Migrations zurück
      *
      * Wenn neue Migrations hinzugefügt werden, hier in der Liste eintragen!
@@ -265,8 +284,8 @@ object DatabaseMigrations {
             MIGRATION_16_17,
             MIGRATION_17_18,
             MIGRATION_18_19,
+            MIGRATION_19_20,
             // Zukünftige Migrations hier hinzufügen:
-            // MIGRATION_19_20,
             // MIGRATION_20_21,
             // etc.
         )

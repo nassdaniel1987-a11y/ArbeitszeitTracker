@@ -28,6 +28,7 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
     private val yearManager = YearManager(application)
     private val database = AppDatabase.getDatabase(application)
     private val yearSettingsDao = database.yearSettingsDao()
+    private val userSettingsDao = database.userSettingsDao()
 
     private val _uiState = MutableStateFlow(YearUiState())
     val uiState: StateFlow<YearUiState> = _uiState.asStateFlow()
@@ -35,6 +36,69 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
     init {
         loadYears()
         observeActiveYear()
+    }
+
+    /**
+     * Prüft und führt Auto-Switch zum neuen Jahr aus (wenn aktiviert)
+     *
+     * Wird von MainActivity beim Start aufgerufen.
+     * Logik:
+     * 1. Prüfe ob Auto-Switch aktiviert ist
+     * 2. Prüfe ob heute >= erster Montag des nächsten Jahres
+     * 3. Falls ja:
+     *    - Wenn nächstes Jahr existiert: Automatisch wechseln
+     *    - Wenn nächstes Jahr NICHT existiert: Dialog anzeigen
+     */
+    suspend fun checkAndPerformAutoSwitch() {
+        try {
+            // 1. Prüfe ob Auto-Switch aktiviert ist
+            val settings = userSettingsDao.getSettings()
+            if (settings?.autoSwitchYear != true) {
+                return // Auto-Switch deaktiviert
+            }
+
+            // 2. Hole aktuelles aktives Jahr
+            val activeYear = yearManager.getActiveYear() ?: return
+            val today = LocalDate.now()
+
+            // 3. Berechne erster Montag des aktuellen Jahres
+            val firstMondayOfActiveYear = LocalDate.parse(activeYear.ersterMontagImJahr)
+
+            // 4. Berechne erster Montag des NÄCHSTEN Jahres
+            val nextYearNumber = activeYear.year + 1
+            var firstMondayOfNextYear = LocalDate.of(nextYearNumber, 1, 1)
+            while (firstMondayOfNextYear.dayOfWeek != java.time.DayOfWeek.MONDAY) {
+                firstMondayOfNextYear = firstMondayOfNextYear.plusDays(1)
+            }
+
+            // 5. Prüfe ob heute >= erster Montag des nächsten Jahres
+            if (today >= firstMondayOfNextYear) {
+                // Es ist Zeit für einen Jahreswechsel!
+
+                // 6. Prüfe ob nächstes Jahr bereits existiert
+                if (yearManager.yearExists(nextYearNumber)) {
+                    // Jahr existiert → Automatisch wechseln
+                    val success = yearManager.switchToYear(nextYearNumber)
+                    if (success) {
+                        loadYears()
+                        _uiState.value = _uiState.value.copy(
+                            success = "Automatisch zu Jahr $nextYearNumber gewechselt"
+                        )
+                    }
+                } else {
+                    // Jahr existiert NICHT → Dialog anzeigen
+                    val suggestion = yearManager.suggestNewYear(nextYearNumber)
+                    _uiState.value = _uiState.value.copy(
+                        showNewYearDialog = true,
+                        newYearSuggestion = suggestion
+                    )
+                }
+            }
+
+        } catch (e: Exception) {
+            // Fehler beim Auto-Switch ignorieren (kein kritischer Fehler)
+            android.util.Log.e("YearViewModel", "Fehler beim Auto-Switch: ${e.message}")
+        }
     }
 
     /**
