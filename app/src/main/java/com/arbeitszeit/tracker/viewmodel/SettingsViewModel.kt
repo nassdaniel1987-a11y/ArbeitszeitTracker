@@ -311,4 +311,38 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             timeEntryDao.deleteAllEntries()
         }
     }
+
+    /**
+     * Aktualisiert Auto-Start Einstellungen
+     */
+    fun updateAutoStartSettings(
+        autoStartEnabled: Boolean,
+        autoStartRequiresGeofencing: Boolean,
+        autoStartReminderMinutes: Int,
+        autoStartDefaultPauseMinutes: Int
+    ) {
+        viewModelScope.launch {
+            val existing = settingsDao.getSettings()
+            if (existing != null) {
+                val updated = existing.copy(
+                    autoStartEnabled = autoStartEnabled,
+                    autoStartRequiresGeofencing = autoStartRequiresGeofencing,
+                    autoStartReminderMinutes = autoStartReminderMinutes,
+                    autoStartDefaultPauseMinutes = autoStartDefaultPauseMinutes,
+                    updatedAt = System.currentTimeMillis()
+                )
+                settingsDao.insertOrUpdate(updated)
+
+                // Schedule Auto-Start Alarme neu wenn aktiviert
+                if (autoStartEnabled) {
+                    val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(getApplication())
+                    scheduler.scheduleAutoStarts()
+                } else {
+                    // Deaktiviert: Alle Alarme canceln
+                    val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(getApplication())
+                    scheduler.cancelAllAlarms()
+                }
+            }
+        }
+    }
 }

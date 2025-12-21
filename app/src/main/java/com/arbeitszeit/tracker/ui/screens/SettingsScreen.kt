@@ -112,6 +112,14 @@ fun SettingsScreen(
             }
             item {
                 SettingsMenuItem(
+                    icon = Icons.Default.PlayArrow,
+                    title = "Auto-Start",
+                    subtitle = if (settings?.autoStartEnabled == true) "Aktiviert" else "Deaktiviert",
+                    onClick = { selectedSection = SettingsSection.AUTO_START }
+                )
+            }
+            item {
+                SettingsMenuItem(
                     icon = Icons.Default.Celebration,
                     title = "Feiertage",
                     subtitle = settings?.bundesland?.let { code ->
@@ -196,6 +204,7 @@ enum class SettingsSection {
     DARK_MODE,
     WORK_TIME,
     ARBEITSZEITVORLAGEN,
+    AUTO_START,
     HOLIDAYS,
     GEOFENCING,
     YEAR_MANAGEMENT,
@@ -327,6 +336,7 @@ private fun SettingsDetailScreen(
                             SettingsSection.DARK_MODE -> "Dark Mode"
                             SettingsSection.WORK_TIME -> "Arbeitszeit"
                             SettingsSection.ARBEITSZEITVORLAGEN -> "Arbeitszeitvorlagen"
+                            SettingsSection.AUTO_START -> "Auto-Start"
                             SettingsSection.HOLIDAYS -> "Feiertage"
                             SettingsSection.GEOFENCING -> "Geofencing & Orte"
                             SettingsSection.YEAR_MANAGEMENT -> "Jahres-Management"
@@ -355,6 +365,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.DARK_MODE -> DarkModeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.WORK_TIME -> WorkTimeSection(viewModel, settings, snackbarHostState)
                 SettingsSection.ARBEITSZEITVORLAGEN -> ArbeitszeitvorlagenSection(viewModel, snackbarHostState)
+                SettingsSection.AUTO_START -> AutoStartSection(viewModel, settings, snackbarHostState)
                 SettingsSection.HOLIDAYS -> HolidaysSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
                 SettingsSection.YEAR_MANAGEMENT -> YearManagementSection(viewModel, settings, snackbarHostState)
@@ -1727,6 +1738,141 @@ private fun AutomatisierungTab(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+        }
+    }
+}
+
+/**
+ * Auto-Start Section
+ */
+@Composable
+private fun AutoStartSection(
+    viewModel: SettingsViewModel,
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    snackbarHostState: SnackbarHostState
+) {
+    var autoStartEnabled by remember { mutableStateOf(settings?.autoStartEnabled ?: false) }
+    var autoStartRequiresGeofencing by remember { mutableStateOf(settings?.autoStartRequiresGeofencing ?: true) }
+    var reminderMinutes by remember { mutableStateOf((settings?.autoStartReminderMinutes ?: 5).toString()) }
+    var defaultPauseMinutes by remember { mutableStateOf((settings?.autoStartDefaultPauseMinutes ?: 30).toString()) }
+
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(settings) {
+        settings?.let {
+            autoStartEnabled = it.autoStartEnabled
+            autoStartRequiresGeofencing = it.autoStartRequiresGeofencing
+            reminderMinutes = it.autoStartReminderMinutes.toString()
+            defaultPauseMinutes = it.autoStartDefaultPauseMinutes.toString()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Info Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Column {
+                    Text(
+                        "Automatischer Start",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Die Arbeitszeit startet automatisch zur konfigurierten Zeit aus deinen Wochenvorlagen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+
+        // Auto-Start aktivieren
+        Card {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Auto-Start aktivieren", style = MaterialTheme.typography.titleMedium)
+                    Text("Startet Zeiterfassung automatisch", style = MaterialTheme.typography.bodySmall)
+                }
+                Switch(checked = autoStartEnabled, onCheckedChange = { autoStartEnabled = it })
+            }
+        }
+
+        if (autoStartEnabled) {
+            Card {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Nur mit Geofencing", style = MaterialTheme.typography.titleMedium)
+                        Text("Auto-Start nur am Arbeitsort", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Switch(checked = autoStartRequiresGeofencing, onCheckedChange = { autoStartRequiresGeofencing = it })
+                }
+            }
+
+            OutlinedTextField(
+                value = reminderMinutes,
+                onValueChange = { reminderMinutes = it },
+                label = { Text("Vor-Erinnerung (Minuten)") },
+                leadingIcon = { Icon(Icons.Default.Notifications, null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = defaultPauseMinutes,
+                onValueChange = { defaultPauseMinutes = it },
+                label = { Text("Standard-Pause (Minuten)") },
+                leadingIcon = { Icon(Icons.Default.FreeBreakfast, null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Spacer(Modifier.weight(1f))
+
+        Button(
+            onClick = {
+                viewModel.updateAutoStartSettings(
+                    autoStartEnabled,
+                    autoStartRequiresGeofencing,
+                    reminderMinutes.toIntOrNull() ?: 5,
+                    defaultPauseMinutes.toIntOrNull() ?: 30
+                )
+                scope.launch { snackbarHostState.showSnackbar("Gespeichert") }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Save, null)
+            Spacer(Modifier.width(8.dp))
+            Text("Speichern")
         }
     }
 }

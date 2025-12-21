@@ -69,6 +69,9 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             when (geofenceTransition) {
                 Geofence.GEOFENCE_TRANSITION_ENTER -> {
                     // Benutzer hat Arbeitsort betreten
+                    val geofencingManager = GeofencingManager(context)
+                    geofencingManager.setAtWorkLocation(true)
+
                     showNotification(
                         context,
                         "Arbeitsort erreicht",
@@ -78,6 +81,9 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
                 }
                 Geofence.GEOFENCE_TRANSITION_EXIT -> {
                     // Benutzer hat Arbeitsort verlassen
+                    val geofencingManager = GeofencingManager(context)
+                    geofencingManager.setAtWorkLocation(false)
+
                     showNotification(
                         context,
                         "Arbeitsort verlassen",
