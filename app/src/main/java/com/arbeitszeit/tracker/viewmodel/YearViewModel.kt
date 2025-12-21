@@ -360,7 +360,7 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             try {
-                val existing = yearSettingsDao.getYearSettings(year)
+                val existing = yearSettingsDao.getYear(year)
                 if (existing != null) {
                     yearSettingsDao.update(existing.copy(
                         ersterMontagImJahr = ersterMontagImJahr,
@@ -502,7 +502,7 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
 
             if (success) {
                 // Aktualisiere hasExcelTemplate Flag auf false
-                val existingYear = yearSettingsDao.getYearSettings(year)
+                val existingYear = yearSettingsDao.getYear(year)
                 if (existingYear != null) {
                     yearSettingsDao.update(existingYear.copy(hasExcelTemplate = false))
                 }
