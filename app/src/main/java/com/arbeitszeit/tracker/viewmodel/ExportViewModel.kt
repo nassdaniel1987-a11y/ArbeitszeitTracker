@@ -23,31 +23,37 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
+    private val yearSettingsDao = database.yearSettingsDao()
     private val exportManager = ExcelExportManager(application)
     private val simpleExportManager = SimpleExcelExportManager(application)
     private val importManager = ExcelImportManager(application)
-    
+
     private val _uiState = MutableStateFlow(ExportUiState())
     val uiState: StateFlow<ExportUiState> = _uiState.asStateFlow()
 
-    // Aktuelles Jahr und Settings für KW-Berechnung
-    private val currentYear = LocalDate.now().year
+    // Aktives Jahr aus YearSettings
+    private val activeYear = yearSettingsDao.getActiveYearFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    val selectedYear: StateFlow<Int> = activeYear
+        .map { it?.year ?: LocalDate.now().year }
+        .stateIn(viewModelScope, SharingStarted.Lazily, LocalDate.now().year)
 
     private val _selectedKW = MutableStateFlow(1)
     val selectedKW: StateFlow<Int> = _selectedKW.asStateFlow()
 
-    private val _selectedYear = MutableStateFlow(currentYear)
-    val selectedYear: StateFlow<Int> = _selectedYear.asStateFlow()
-
     init {
-        // Initialisiere mit aktueller KW basierend auf Settings
+        // Initialisiere mit aktueller KW basierend auf YearSettings
         viewModelScope.launch {
-            val settings = settingsDao.getSettings()
-            val currentWeek = DateUtils.getCustomWeekOfYear(
-                LocalDate.now(),
-                settings?.ersterMontagImJahr
-            )
-            _selectedKW.value = currentWeek
+            activeYear.collect { yearSettings ->
+                if (yearSettings != null) {
+                    val currentWeek = DateUtils.getCustomWeekOfYear(
+                        LocalDate.now(),
+                        yearSettings.ersterMontagImJahr
+                    )
+                    _selectedKW.value = currentWeek
+                }
+            }
         }
     }
     
@@ -56,13 +62,6 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
      */
     fun selectKW(kw: Int) {
         _selectedKW.value = kw
-    }
-
-    /**
-     * Wählt ein Jahr für den Export aus
-     */
-    fun selectYear(year: Int) {
-        _selectedYear.value = year
     }
     
     /**
@@ -91,7 +90,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.value = _uiState.value.copy(isExporting = true, error = null, showFileNameDialog = false)
 
             try {
-                val year = _selectedYear.value
+                val year = selectedYear.value
 
                 // Lade Settings
                 val settings = settingsDao.getSettings()
@@ -146,7 +145,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val kw = _selectedKW.value
                 val (startKW, endKW) = DateUtils.getWeekRangeForSheet(kw)
-                val year = _selectedYear.value
+                val year = selectedYear.value
 
                 // Lade Settings
                 val settings = settingsDao.getSettings()
@@ -204,7 +203,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
      * Gibt den erwarteten Dateinamen zurück
      */
     fun getExpectedFileName(): String {
-        val year = _selectedYear.value
+        val year = selectedYear.value
         return exportManager.getExportFileName(year)
     }
     
@@ -381,7 +380,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     fun loadExportPreview() {
         viewModelScope.launch {
             try {
-                val year = _selectedYear.value
+                val year = selectedYear.value
                 val settings = settingsDao.getSettings()
                 val entries = timeEntryDao.getEntriesByYear(year)
 
@@ -418,7 +417,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.value = _uiState.value.copy(isExporting = true, error = null)
 
             try {
-                val year = _selectedYear.value
+                val year = selectedYear.value
                 val settings = settingsDao.getSettings()
                 if (settings == null) {
                     _uiState.value = _uiState.value.copy(
@@ -497,7 +496,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.value = _uiState.value.copy(isExporting = true, error = null)
 
             try {
-                val year = _selectedYear.value
+                val year = selectedYear.value
                 val settings = settingsDao.getSettings()
                 if (settings == null) {
                     _uiState.value = _uiState.value.copy(

@@ -21,16 +21,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.geofencing.GeofencingManager
+import com.arbeitszeit.tracker.ui.components.NewYearDialog
+import com.arbeitszeit.tracker.ui.components.YearSelector
 import com.arbeitszeit.tracker.ui.navigation.NavGraph
 import com.arbeitszeit.tracker.ui.navigation.Screen
 import com.arbeitszeit.tracker.ui.theme.ArbeitszeitTrackerTheme
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.NotificationHelper
+import com.arbeitszeit.tracker.viewmodel.YearViewModel
 import com.arbeitszeit.tracker.worker.ReminderWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -71,6 +75,10 @@ class MainActivity : ComponentActivity() {
             val database = AppDatabase.getDatabase(this)
             val settings by database.userSettingsDao().getSettingsFlow()
                 .collectAsState(initial = null)
+
+            // Year ViewModel
+            val yearViewModel = ViewModelProvider(this)[YearViewModel::class.java]
+            val yearUiState by yearViewModel.uiState.collectAsState()
 
             val darkTheme = when (settings?.darkMode) {
                 "dark" -> true
@@ -270,6 +278,19 @@ class MainActivity : ComponentActivity() {
                                             Icon(Icons.Default.Menu, "Menü öffnen")
                                         }
                                     },
+                                    actions = {
+                                        // Jahr-Auswahl Dropdown
+                                        YearSelector(
+                                            activeYear = yearUiState.activeYear,
+                                            allYears = yearUiState.allYears,
+                                            onYearSelected = { year ->
+                                                yearViewModel.switchToYear(year)
+                                            },
+                                            onNewYearClick = {
+                                                yearViewModel.showNewYearDialog()
+                                            }
+                                        )
+                                    },
                                     colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                                         titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -283,6 +304,49 @@ class MainActivity : ComponentActivity() {
                         Surface(modifier = Modifier.padding(padding)) {
                             NavGraph(navController = navController)
                         }
+                    }
+                }
+
+                // "Neues Jahr anlegen" Dialog
+                if (yearUiState.showNewYearDialog && yearUiState.newYearSuggestion != null) {
+                    val suggestion = yearUiState.newYearSuggestion!!
+                    NewYearDialog(
+                        year = suggestion.year,
+                        ersterMontagVorschlag = suggestion.ersterMontagImJahr,
+                        urlaubsanspruchVorschlag = suggestion.urlaubsanspruch,
+                        restUrlaubVorjahr = suggestion.restUrlaubVorjahr,
+                        ueberstundenVorjahr = suggestion.ueberstundenVorjahr,
+                        ueberstundenFormatted = suggestion.getUeberstundenFormatted(),
+                        onDismiss = {
+                            yearViewModel.dismissNewYearDialog()
+                        },
+                        onCreate = { ersterMontag, urlaubsanspruch, uebertragUeberstunden, uebertragResturlaub ->
+                            yearViewModel.createNewYear(
+                                year = suggestion.year,
+                                ersterMontagImJahr = ersterMontag,
+                                urlaubsanspruch = urlaubsanspruch,
+                                uebertragUeberstunden = uebertragUeberstunden,
+                                uebertragResturlaub = uebertragResturlaub
+                            )
+                        }
+                    )
+                }
+
+                // Erfolgs-/Fehlermeldungen als Snackbar
+                yearUiState.success?.let { message ->
+                    androidx.compose.material3.Snackbar(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(message)
+                    }
+                }
+
+                yearUiState.error?.let { message ->
+                    androidx.compose.material3.Snackbar(
+                        modifier = Modifier.padding(16.dp),
+                        containerColor = MaterialTheme.colorScheme.error
+                    ) {
+                        Text(message)
                     }
                 }
             }
