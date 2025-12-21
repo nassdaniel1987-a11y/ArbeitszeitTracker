@@ -12,6 +12,7 @@ import com.arbeitszeit.tracker.data.dao.TimeEntryDao
 import com.arbeitszeit.tracker.data.dao.UserSettingsDao
 import com.arbeitszeit.tracker.data.dao.WeekTemplateDao
 import com.arbeitszeit.tracker.data.dao.WorkLocationDao
+import com.arbeitszeit.tracker.data.dao.YearSettingsDao
 import com.arbeitszeit.tracker.data.entity.ClosingDay
 import com.arbeitszeit.tracker.data.entity.SchoolHoliday
 import com.arbeitszeit.tracker.data.entity.SollZeitVorlage
@@ -20,6 +21,7 @@ import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.data.entity.WeekTemplate
 import com.arbeitszeit.tracker.data.entity.WeekTemplateEntry
 import com.arbeitszeit.tracker.data.entity.WorkLocation
+import com.arbeitszeit.tracker.data.entity.YearSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,9 +39,10 @@ import java.util.Locale
         WeekTemplateEntry::class,
         SollZeitVorlage::class,
         ClosingDay::class,
-        SchoolHoliday::class
+        SchoolHoliday::class,
+        YearSettings::class
     ],
-    version = 18,  // Current: SchoolHoliday-Tabelle für Schulferien
+    version = 19,  // v19: YearSettings-Tabelle für Jahres-Management-System
     exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -51,6 +54,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun sollZeitVorlageDao(): SollZeitVorlageDao
     abstract fun closingDayDao(): ClosingDayDao
     abstract fun schoolHolidayDao(): SchoolHolidayDao
+    abstract fun yearSettingsDao(): YearSettingsDao
 
     companion object {
         @Volatile
