@@ -42,7 +42,7 @@ import java.util.Locale
         SchoolHoliday::class,
         YearSettings::class
     ],
-    version = 21,  // v21: Auto-Start für Arbeitszeit (autoStartEnabled, autoStartRequiresGeofencing, etc.)
+    version = 22,  // v22: Start-Zeiten in SollZeitVorlage für Auto-Start
     exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {

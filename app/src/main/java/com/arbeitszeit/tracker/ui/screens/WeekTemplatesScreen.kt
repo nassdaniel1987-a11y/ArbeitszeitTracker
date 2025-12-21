@@ -327,6 +327,33 @@ private fun CreateTemplateDialog(
                     fontWeight = FontWeight.Bold
                 )
 
+                // Info-Box für Auto-Start
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            "Die Arbeitsbeginn-Zeit wird auch für den automatischen Start der Zeiterfassung verwendet (wenn in den Einstellungen aktiviert).",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
+
                 // Eingabefelder für jeden Tag
                 val dayNames = listOf("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
                 dayNames.forEachIndexed { index, dayName ->
@@ -477,6 +504,33 @@ private fun EditTemplateDialog(
                         fontWeight = FontWeight.Bold
                     )
 
+                    // Info-Box für Auto-Start
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                "Die Arbeitsbeginn-Zeit wird auch für den automatischen Start der Zeiterfassung verwendet (wenn in den Einstellungen aktiviert).",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                    }
+
                     // Eingabefelder für jeden Tag
                     val dayNames = listOf("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
                     dayNames.forEachIndexed { index, dayName ->
@@ -566,7 +620,19 @@ private fun DayTimeInputRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Von:", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
+                    Row(
+                        modifier = Modifier.width(100.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text("Beginn:", style = MaterialTheme.typography.bodySmall)
+                    }
                     OutlinedButton(
                         onClick = { showStartTimePicker = true },
                         modifier = Modifier.weight(1f)
@@ -586,7 +652,18 @@ private fun DayTimeInputRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Bis:", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
+                    Row(
+                        modifier = Modifier.width(100.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Stop,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text("Ende:", style = MaterialTheme.typography.bodySmall)
+                    }
                     OutlinedButton(
                         onClick = { showEndTimePicker = true },
                         modifier = Modifier.weight(1f)

@@ -3,7 +3,7 @@ package com.arbeitszeit.tracker.autostart
 import android.content.Context
 import android.util.Log
 import com.arbeitszeit.tracker.data.database.AppDatabase
-import com.arbeitszeit.tracker.data.entity.WeekTemplateEntry
+import com.arbeitszeit.tracker.data.entity.SollZeitVorlage
 import com.arbeitszeit.tracker.geofencing.GeofencingManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,7 +24,7 @@ class AutoStartManager(private val context: Context) {
 
     private val database = AppDatabase.getDatabase(context)
     private val settingsDao = database.userSettingsDao()
-    private val weekTemplateDao = database.weekTemplateDao()
+    private val sollZeitVorlageDao = database.sollZeitVorlageDao()
     private val timeEntryDao = database.timeEntryDao()
     private val runningTimeTracker = RunningTimeTracker(context)
     private val geofencingManager = GeofencingManager(context)
@@ -72,11 +72,12 @@ class AutoStartManager(private val context: Context) {
                 return@withContext false
             }
 
-            // Wochenvorlage mit Start-Zeit vorhanden?
+            // SollZeitVorlage mit Start-Zeit vorhanden?
             val dayOfWeek = LocalDate.now().dayOfWeek.value
-            val templateEntry = getActiveTemplateForToday(dayOfWeek)
-            if (templateEntry == null || templateEntry.startZeit == null) {
-                Log.d(TAG, "Keine Wochenvorlage mit Start-Zeit für heute")
+            val vorlage = getActiveVorlage()
+            val startZeit = vorlage?.getStartZeitForDay(dayOfWeek)
+            if (startZeit == null) {
+                Log.d(TAG, "Keine Start-Zeit für heute in der Vorlage konfiguriert")
                 return@withContext false
             }
 
@@ -111,12 +112,17 @@ class AutoStartManager(private val context: Context) {
             }
 
             val dayOfWeek = LocalDate.now().dayOfWeek.value
-            val templateEntry = getActiveTemplateForToday(dayOfWeek) ?: run {
-                Log.e(TAG, "Keine Template-Entry gefunden")
+            val vorlage = getActiveVorlage() ?: run {
+                Log.e(TAG, "Keine Vorlage gefunden")
                 return@withContext false
             }
 
-            val startTime = minutesToLocalTime(templateEntry.startZeit!!)
+            val startZeit = vorlage.getStartZeitForDay(dayOfWeek) ?: run {
+                Log.e(TAG, "Keine Start-Zeit für heute gefunden")
+                return@withContext false
+            }
+
+            val startTime = minutesToLocalTime(startZeit)
             val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 
             // Starte Tracking
@@ -140,30 +146,26 @@ class AutoStartManager(private val context: Context) {
      */
     suspend fun getStartTimeForToday(): LocalTime? = withContext(Dispatchers.IO) {
         val dayOfWeek = LocalDate.now().dayOfWeek.value
-        val templateEntry = getActiveTemplateForToday(dayOfWeek)
-        return@withContext templateEntry?.startZeit?.let { minutesToLocalTime(it) }
+        val vorlage = getActiveVorlage()
+        val startZeit = vorlage?.getStartZeitForDay(dayOfWeek)
+        return@withContext startZeit?.let { minutesToLocalTime(it) }
     }
 
     /**
-     * Lädt die aktive Wochenvorlage für einen bestimmten Tag
+     * Lädt die aktive SollZeitVorlage
      *
-     * WICHTIG: Hier wird angenommen dass es eine "Standard" oder "Aktiv" Vorlage gibt.
-     * Falls mehrere Vorlagen existieren, muss eine Auswahllogik implementiert werden.
+     * Verwendet die Standard-Vorlage (isDefault = true).
+     * Falls keine Standard-Vorlage existiert, wird die erste Vorlage verwendet.
      */
-    private suspend fun getActiveTemplateForToday(dayOfWeek: Int): WeekTemplateEntry? {
+    private suspend fun getActiveVorlage(): SollZeitVorlage? {
         // Lade alle Vorlagen
-        val templates = weekTemplateDao.getAllTemplates()
-        if (templates.isEmpty()) {
+        val vorlagen = sollZeitVorlageDao.getAllVorlagen()
+        if (vorlagen.isEmpty()) {
             return null
         }
 
-        // TODO: Logik für Auswahl der richtigen Vorlage
-        // Momentan: Nimm die erste Vorlage
-        val activeTemplate = templates.firstOrNull() ?: return null
-
-        // Lade Einträge für diese Vorlage
-        val entries = weekTemplateDao.getEntriesByTemplate(activeTemplate.id)
-        return entries.firstOrNull { it.dayOfWeek == dayOfWeek }
+        // Nimm die Standard-Vorlage, oder die erste Vorlage
+        return vorlagen.firstOrNull { it.isDefault } ?: vorlagen.firstOrNull()
     }
 
     /**

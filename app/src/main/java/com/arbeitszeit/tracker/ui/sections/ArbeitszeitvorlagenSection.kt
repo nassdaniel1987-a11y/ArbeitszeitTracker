@@ -370,6 +370,29 @@ private fun VorlageEditDialog(
         mutableStateOf(formatMinutesToTimeString(vorlage?.sonntagSollMinuten ?: 0))
     }
 
+    // Start-Zeiten (optional)
+    var montagStartText by remember {
+        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.montagStartZeit))
+    }
+    var dienstagStartText by remember {
+        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.dienstagStartZeit))
+    }
+    var mittwochStartText by remember {
+        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.mittwochStartZeit))
+    }
+    var donnerstagStartText by remember {
+        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.donnerstagStartZeit))
+    }
+    var freitagStartText by remember {
+        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.freitagStartZeit))
+    }
+    var samstagStartText by remember {
+        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.samstagStartZeit))
+    }
+    var sonntagStartText by remember {
+        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.sonntagStartZeit))
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (vorlage == null) "Neues Profil" else "Profil bearbeiten") },
@@ -391,39 +414,80 @@ private fun VorlageEditDialog(
 
                 HorizontalDivider()
 
-                // Soll-Zeiten pro Tag
+                // Soll-Zeiten und Start-Zeiten pro Tag
                 Text(
-                    "Soll-Arbeitszeiten pro Tag",
+                    "Arbeitszeiten pro Tag",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    "Eingabe als Stunden:Minuten (z.B. 8:00 oder 800)",
+                    "Soll-Arbeitszeit (z.B. 8:00) und optionale Start-Zeit für Auto-Start (z.B. 08:00)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
+                // Info-Box für Auto-Start
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            "Die Start-Zeit wird für den automatischen Beginn der Zeiterfassung verwendet.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
+
                 // Montag
-                DayTimeInput("Montag", montagText) { montagText = it }
+                DayTimeInputWithStart("Montag", montagText, montagStartText,
+                    onSollChange = { montagText = it },
+                    onStartChange = { montagStartText = it })
 
                 // Dienstag
-                DayTimeInput("Dienstag", dienstagText) { dienstagText = it }
+                DayTimeInputWithStart("Dienstag", dienstagText, dienstagStartText,
+                    onSollChange = { dienstagText = it },
+                    onStartChange = { dienstagStartText = it })
 
                 // Mittwoch
-                DayTimeInput("Mittwoch", mittwochText) { mittwochText = it }
+                DayTimeInputWithStart("Mittwoch", mittwochText, mittwochStartText,
+                    onSollChange = { mittwochText = it },
+                    onStartChange = { mittwochStartText = it })
 
                 // Donnerstag
-                DayTimeInput("Donnerstag", donnerstagText) { donnerstagText = it }
+                DayTimeInputWithStart("Donnerstag", donnerstagText, donnerstagStartText,
+                    onSollChange = { donnerstagText = it },
+                    onStartChange = { donnerstagStartText = it })
 
                 // Freitag
-                DayTimeInput("Freitag", freitagText) { freitagText = it }
+                DayTimeInputWithStart("Freitag", freitagText, freitagStartText,
+                    onSollChange = { freitagText = it },
+                    onStartChange = { freitagStartText = it })
 
                 // Samstag
-                DayTimeInput("Samstag", samstagText) { samstagText = it }
+                DayTimeInputWithStart("Samstag", samstagText, samstagStartText,
+                    onSollChange = { samstagText = it },
+                    onStartChange = { samstagStartText = it })
 
                 // Sonntag
-                DayTimeInput("Sonntag", sonntagText) { sonntagText = it }
+                DayTimeInputWithStart("Sonntag", sonntagText, sonntagStartText,
+                    onSollChange = { sonntagText = it },
+                    onStartChange = { sonntagStartText = it })
             }
         },
         confirmButton = {
@@ -439,6 +503,13 @@ private fun VorlageEditDialog(
                         freitagSollMinuten = parseTimeStringToMinutes(freitagText),
                         samstagSollMinuten = parseTimeStringToMinutes(samstagText),
                         sonntagSollMinuten = parseTimeStringToMinutes(sonntagText),
+                        montagStartZeit = parseOptionalTimeStringToMinutes(montagStartText),
+                        dienstagStartZeit = parseOptionalTimeStringToMinutes(dienstagStartText),
+                        mittwochStartZeit = parseOptionalTimeStringToMinutes(mittwochStartText),
+                        donnerstagStartZeit = parseOptionalTimeStringToMinutes(donnerstagStartText),
+                        freitagStartZeit = parseOptionalTimeStringToMinutes(freitagStartText),
+                        samstagStartZeit = parseOptionalTimeStringToMinutes(samstagStartText),
+                        sonntagStartZeit = parseOptionalTimeStringToMinutes(sonntagStartText),
                         isDefault = vorlage?.isDefault ?: false
                     )
                     onSave(newVorlage)
@@ -545,5 +616,139 @@ private fun parseTimeStringToMinutes(timeString: String): Int {
         }
     } catch (e: Exception) {
         0
+    }
+}
+
+/**
+ * Konvertiert optionale Minuten in einen Zeitstring
+ * null -> ""
+ * 480 -> "8:00"
+ */
+private fun formatMinutesToOptionalTimeString(minutes: Int?): String {
+    if (minutes == null) return ""
+    val hours = minutes / 60
+    val mins = minutes % 60
+    return "${String.format("%02d", hours)}:${String.format("%02d", mins)}"
+}
+
+/**
+ * Parst einen optionalen Zeitstring in Minuten (nullable)
+ * "" -> null
+ * "8:00" -> 480
+ */
+private fun parseOptionalTimeStringToMinutes(timeString: String): Int? {
+    if (timeString.isBlank()) return null
+    return parseTimeStringToMinutes(timeString)
+}
+
+/**
+ * Erweiterte Tageseingabe mit Soll-Zeit und Start-Zeit
+ */
+@Composable
+private fun DayTimeInputWithStart(
+    dayName: String,
+    sollText: String,
+    startText: String,
+    onSollChange: (String) -> Unit,
+    onStartChange: (String) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            dayName,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        // Soll-Arbeitszeit
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                "Soll:",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.width(50.dp)
+            )
+
+            OutlinedTextField(
+                value = sollText,
+                onValueChange = { newValue ->
+                    if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
+                        onSollChange(newValue)
+                    }
+                },
+                label = { Text("Zeit") },
+                placeholder = { Text("8:00") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                )
+            )
+
+            val minutes = parseTimeStringToMinutes(sollText)
+            Text(
+                "= ${minutes / 60}:${String.format("%02d", minutes % 60)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(60.dp)
+            )
+        }
+
+        // Start-Zeit (optional)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.width(50.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "Start:",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            OutlinedTextField(
+                value = startText,
+                onValueChange = { newValue ->
+                    if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
+                        onStartChange(newValue)
+                    }
+                },
+                label = { Text("Zeit") },
+                placeholder = { Text("08:00") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                )
+            )
+
+            if (startText.isNotBlank()) {
+                val minutes = parseTimeStringToMinutes(startText)
+                Text(
+                    "= ${String.format("%02d", minutes / 60)}:${String.format("%02d", minutes % 60)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(60.dp)
+                )
+            } else {
+                Spacer(Modifier.width(60.dp))
+            }
+        }
     }
 }
