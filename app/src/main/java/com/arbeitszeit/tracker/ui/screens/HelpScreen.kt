@@ -744,7 +744,7 @@ private fun HelpSectionCard(
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxWidth(),
-                            crossAxisAlignment = Alignment.Start
+                            verticalAlignment = Alignment.Top
                         ) {
                             Icon(
                                 Icons.Default.CheckCircle,
