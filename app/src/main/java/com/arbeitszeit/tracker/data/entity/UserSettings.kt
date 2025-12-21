@@ -38,6 +38,9 @@ data class UserSettings(
     // Urlaubs-Einstellungen
     val urlaubsanspruchTage: Int = 30,       // Jahresurlaub in Tagen (Standard: 30 Tage)
 
+    // Jahr-Management
+    val autoSwitchYear: Boolean = true,      // Automatischer Wechsel am ersten Montag des Jahres
+
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

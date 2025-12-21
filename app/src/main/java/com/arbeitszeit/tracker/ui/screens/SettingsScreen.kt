@@ -134,6 +134,19 @@ fun SettingsScreen(
                 )
             }
 
+            // Jahres-Management
+            item {
+                SettingsMenuSection(title = "Jahres-Management")
+            }
+            item {
+                SettingsMenuItem(
+                    icon = Icons.Default.CalendarMonth,
+                    title = "Automatischer Jahreswechsel",
+                    subtitle = if (settings?.autoSwitchYear == true) "Aktiviert" else "Deaktiviert",
+                    onClick = { selectedSection = SettingsSection.YEAR_MANAGEMENT }
+                )
+            }
+
             // Excel & Vorlagen
             item {
                 SettingsMenuSection(title = "Excel & Vorlagen")
@@ -185,6 +198,7 @@ enum class SettingsSection {
     ARBEITSZEITVORLAGEN,
     HOLIDAYS,
     GEOFENCING,
+    YEAR_MANAGEMENT,
     BACKUP,
     EXCEL_TEMPLATES,
     DELETE_DATA
@@ -315,6 +329,7 @@ private fun SettingsDetailScreen(
                             SettingsSection.ARBEITSZEITVORLAGEN -> "Arbeitszeitvorlagen"
                             SettingsSection.HOLIDAYS -> "Feiertage"
                             SettingsSection.GEOFENCING -> "Geofencing & Orte"
+                            SettingsSection.YEAR_MANAGEMENT -> "Jahres-Management"
                             SettingsSection.BACKUP -> "Cloud-Backup"
                             SettingsSection.EXCEL_TEMPLATES -> "Excel-Vorlagen"
                             SettingsSection.DELETE_DATA -> "Daten löschen"
@@ -342,6 +357,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.ARBEITSZEITVORLAGEN -> ArbeitszeitvorlagenSection(viewModel, snackbarHostState)
                 SettingsSection.HOLIDAYS -> HolidaysSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
+                SettingsSection.YEAR_MANAGEMENT -> YearManagementSection(viewModel, settings, snackbarHostState)
                 SettingsSection.BACKUP -> CloudBackupSection(viewModel, snackbarHostState)
                 SettingsSection.EXCEL_TEMPLATES -> ExcelTemplatesSection(onNavigateToTemplateManagement)
                 SettingsSection.DELETE_DATA -> DeleteDataSection(viewModel, snackbarHostState, onNavigateBack)
@@ -785,6 +801,154 @@ private fun GeofencingSection(
                     "• Die Zeiterfassung erfolgt im Hintergrund\n" +
                     "• Du kannst mehrere Standorte definieren\n" +
                     "• Die Genauigkeit hängt vom GPS-Signal ab",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Jahres-Management Section
+ */
+@Composable
+private fun YearManagementSection(
+    viewModel: SettingsViewModel,
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    snackbarHostState: SnackbarHostState
+) {
+    var autoSwitchYear by remember { mutableStateOf(settings?.autoSwitchYear ?: true) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(settings) {
+        settings?.let {
+            autoSwitchYear = it.autoSwitchYear
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Info Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Automatischer Jahreswechsel",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            "Wechselt automatisch zum neuen Jahr am ersten Montag",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Text(
+                    "Wenn aktiviert, wechselt die App automatisch zum nächsten Jahr, sobald der erste Montag des neuen Jahres erreicht ist. " +
+                    "Falls das neue Jahr noch nicht angelegt wurde, wird automatisch ein Dialog angezeigt.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        // Toggle für Auto-Switch
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Automatischer Wechsel",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        if (autoSwitchYear) "Aktiviert" else "Deaktiviert",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Switch(
+                    checked = autoSwitchYear,
+                    onCheckedChange = { enabled ->
+                        autoSwitchYear = enabled
+                        scope.launch {
+                            viewModel.updateAutoSwitchYear(enabled)
+                            snackbarHostState.showSnackbar(
+                                if (enabled) "Automatischer Jahreswechsel aktiviert"
+                                else "Automatischer Jahreswechsel deaktiviert"
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        // Hinweise Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Hinweise",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Text(
+                    "• Der Wechsel erfolgt am ersten Montag des neuen Jahres\n" +
+                    "• Falls das neue Jahr noch nicht existiert, wird ein Dialog angezeigt\n" +
+                    "• Du kannst Jahre jederzeit manuell wechseln (Jahr-Auswahl oben)\n" +
+                    "• Überstunden werden automatisch übertragen",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

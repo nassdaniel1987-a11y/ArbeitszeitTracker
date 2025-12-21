@@ -70,6 +70,9 @@ class MainActivity : ComponentActivity() {
         // EINMALIG: Migriere KW-Nummern für alte Einträge
         migrateKalenderwochen()
 
+        // Auto-Switch für Jahreswechsel prüfen (wenn aktiviert)
+        checkAutoSwitchYear()
+
         setContent {
             // Observe settings for dark mode
             val database = AppDatabase.getDatabase(this)
@@ -441,6 +444,20 @@ class MainActivity : ComponentActivity() {
             sharedPrefs.edit().putBoolean("kw_migration_done", true).apply()
 
             android.util.Log.i("MainActivity", "KW-Migration abgeschlossen: $updatedCount von ${allEntries.size} Einträgen aktualisiert")
+        }
+    }
+
+    /**
+     * Prüft Auto-Switch für Jahreswechsel
+     *
+     * Wird einmalig beim App-Start aufgerufen.
+     * Falls Auto-Switch aktiviert ist und der erste Montag des nächsten Jahres
+     * erreicht wurde, wird entweder automatisch gewechselt oder ein Dialog angezeigt.
+     */
+    private fun checkAutoSwitchYear() {
+        lifecycleScope.launch {
+            val yearViewModel = ViewModelProvider(this@MainActivity)[YearViewModel::class.java]
+            yearViewModel.checkAndPerformAutoSwitch()
         }
     }
 }

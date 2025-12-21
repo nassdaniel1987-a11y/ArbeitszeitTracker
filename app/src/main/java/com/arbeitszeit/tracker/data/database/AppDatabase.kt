@@ -42,7 +42,7 @@ import java.util.Locale
         SchoolHoliday::class,
         YearSettings::class
     ],
-    version = 19,  // v19: YearSettings-Tabelle für Jahres-Management-System
+    version = 20,  // v20: Auto-Switch für Jahreswechsel (autoSwitchYear in UserSettings)
     exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {

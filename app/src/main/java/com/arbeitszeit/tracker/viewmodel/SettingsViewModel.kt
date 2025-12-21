@@ -250,6 +250,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Aktualisiert die Auto-Switch-Einstellung für Jahreswechsel
+     */
+    fun updateAutoSwitchYear(enabled: Boolean) {
+        viewModelScope.launch {
+            val settings = settingsDao.getSettings() ?: return@launch
+            settingsDao.insertOrUpdate(settings.copy(
+                autoSwitchYear = enabled,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+
+    /**
      * Löscht alle Zeiteinträge (ACHTUNG: Kann nicht rückgängig gemacht werden!)
      */
     fun deleteAllTimeEntries() {
