@@ -169,7 +169,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Running Time Banner - wenn Zeiterfassung läuft
-            if (runningTimeState != null) {
+            runningTimeState?.let { runningState ->
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -207,7 +207,7 @@ fun HomeScreen(
                                             color = MaterialTheme.colorScheme.onPrimaryContainer
                                         )
                                         Text(
-                                            if (runningTimeState.isAutoStart) "Automatisch gestartet" else "Manuell gestartet",
+                                            if (runningState.isAutoStart) "Automatisch gestartet" else "Manuell gestartet",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                         )
@@ -240,7 +240,7 @@ fun HomeScreen(
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                     )
                                     Text(
-                                        runningTimeState.getStartTimeFormatted(),
+                                        runningState.getStartTimeFormatted(),
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -254,7 +254,7 @@ fun HomeScreen(
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                     )
                                     Text(
-                                        runningTimeState.getDurationFormatted(),
+                                        runningState.getDurationFormatted(),
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary
@@ -715,31 +715,36 @@ private fun WeekNavigationHeader(
     }
 
     // EndWorkDialog anzeigen, wenn runningTimeState vorhanden ist und showEndWorkDialog true ist
-    if (showEndWorkDialog && runningTimeState != null) {
-        val expectedWorkMinutes = userSettings?.let { settings ->
-            val dayOfWeek = LocalDate.now().dayOfWeek.value
-            if (settings.isWorkingDay(dayOfWeek)) {
-                settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+    if (showEndWorkDialog) {
+        runningTimeState?.let { runningState ->
+            val settings = userSettings
+            val expectedWorkMinutes = if (settings != null) {
+                val dayOfWeek = LocalDate.now().dayOfWeek.value
+                if (settings.isWorkingDay(dayOfWeek)) {
+                    settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+                } else {
+                    0
+                }
             } else {
                 0
             }
-        } ?: 0
 
-        EndWorkDialog(
-            runningState = runningTimeState,
-            defaultPauseMinutes = userSettings?.autoStartDefaultPauseMinutes ?: 30,
-            expectedWorkMinutes = expectedWorkMinutes,
-            onSave = { pauseMinutes ->
-                viewModel.stopRunningTimeTracking(pauseMinutes)
-                showEndWorkDialog = false
-            },
-            onDiscard = {
-                viewModel.discardRunningTimeTracking()
-                showEndWorkDialog = false
-            },
-            onDismiss = {
-                showEndWorkDialog = false
-            }
-        )
+            EndWorkDialog(
+                runningState = runningState,
+                defaultPauseMinutes = settings?.autoStartDefaultPauseMinutes ?: 30,
+                expectedWorkMinutes = expectedWorkMinutes,
+                onSave = { pauseMinutes ->
+                    viewModel.stopRunningTimeTracking(pauseMinutes)
+                    showEndWorkDialog = false
+                },
+                onDiscard = {
+                    viewModel.discardRunningTimeTracking()
+                    showEndWorkDialog = false
+                },
+                onDismiss = {
+                    showEndWorkDialog = false
+                }
+            )
+        }
     }
 }
