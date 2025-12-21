@@ -7,6 +7,7 @@ import android.location.Location
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
@@ -30,6 +31,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val workLocationDao = database.workLocationDao()
     private val sollZeitVorlageDao = database.sollZeitVorlageDao()
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
+
+    // Running Time Tracker für Auto-Start
+    private val runningTimeTracker = RunningTimeTracker(application)
+    val runningTimeState = runningTimeTracker.runningState
 
     // UI State
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -447,6 +452,64 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 updatedAt = System.currentTimeMillis()
             ))
         }
+    }
+
+    /**
+     * Beendet die laufende Zeiterfassung und speichert den Eintrag
+     */
+    fun stopRunningTimeTracking(pauseMinutes: Int) {
+        viewModelScope.launch {
+            val runningState = runningTimeTracker.stopTracking() ?: return@launch
+
+            // Berechne End-Zeit und Dauer
+            val endTime = runningState.calculateEndTime()
+            val endMinutes = endTime.hour * 60 + endTime.minute
+
+            // Hole Settings für Soll-Zeit
+            val settings = settingsDao.getSettings()
+            val dayOfWeek = LocalDate.now().dayOfWeek.value
+            val sollMinuten = if (settings?.isWorkingDay(dayOfWeek) == true) {
+                settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+            } else {
+                0
+            }
+
+            // Erstelle TimeEntry
+            val today = DateUtils.today()
+            val existingEntry = timeEntryDao.getEntryByDate(today)
+
+            if (existingEntry != null) {
+                // Update existing entry
+                timeEntryDao.update(existingEntry.copy(
+                    startZeit = runningState.startTime.hour * 60 + runningState.startTime.minute,
+                    endZeit = endMinutes,
+                    pauseMinuten = pauseMinutes,
+                    updatedAt = System.currentTimeMillis()
+                ))
+            } else {
+                // Create new entry
+                timeEntryDao.insert(TimeEntry(
+                    datum = today,
+                    wochentag = DateUtils.getWeekdayShort(LocalDate.now()),
+                    kalenderwoche = DateUtils.getCustomWeekOfYear(LocalDate.now(), settings?.ersterMontagImJahr),
+                    jahr = LocalDate.now().year,
+                    startZeit = runningState.startTime.hour * 60 + runningState.startTime.minute,
+                    endZeit = endMinutes,
+                    pauseMinuten = pauseMinutes,
+                    sollMinuten = sollMinuten,
+                    typ = TimeEntry.TYP_NORMAL,
+                    notiz = if (runningState.isAutoStart) "Auto-Start" else "",
+                    isManualEntry = false
+                ))
+            }
+        }
+    }
+
+    /**
+     * Verwirft die laufende Zeiterfassung ohne zu speichern
+     */
+    fun discardRunningTimeTracking() {
+        runningTimeTracker.stopTracking()
     }
 }
 
