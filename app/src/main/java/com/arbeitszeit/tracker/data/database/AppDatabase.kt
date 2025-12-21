@@ -42,7 +42,7 @@ import java.util.Locale
         SchoolHoliday::class,
         YearSettings::class
     ],
-    version = 20,  // v20: Auto-Switch für Jahreswechsel (autoSwitchYear in UserSettings)
+    version = 21,  // v21: Auto-Start für Arbeitszeit (autoStartEnabled, autoStartRequiresGeofencing, etc.)
     exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {

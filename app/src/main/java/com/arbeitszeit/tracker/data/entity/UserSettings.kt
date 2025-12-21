@@ -41,6 +41,12 @@ data class UserSettings(
     // Jahr-Management
     val autoSwitchYear: Boolean = true,      // Automatischer Wechsel am ersten Montag des Jahres
 
+    // Auto-Start Einstellungen
+    val autoStartEnabled: Boolean = false,           // Auto-Start basierend auf Wochenvorlagen aktivieren
+    val autoStartRequiresGeofencing: Boolean = true, // Auto-Start nur wenn am Arbeitsort (Geofencing)
+    val autoStartReminderMinutes: Int = 5,           // Vor-Erinnerung X Minuten vor Auto-Start
+    val autoStartDefaultPauseMinutes: Int = 30,      // Standard-Pausenzeit beim Beenden
+
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

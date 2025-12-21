@@ -139,6 +139,17 @@
             </intent-filter>
         </receiver>
 
+        <!-- Auto-Start Receiver -->
+        <receiver
+            android:name=".autostart.AutoStartReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.arbeitszeit.tracker.AUTO_START_REMINDER" />
+                <action android:name="com.arbeitszeit.tracker.AUTO_START" />
+            </intent-filter>
+        </receiver>
+
         <!-- FileProvider für Share-Funktion (Excel-Export) -->
         <provider
             android:name="androidx.core.content.FileProvider"
