@@ -275,6 +275,42 @@ object DatabaseMigrations {
     }
 
     /**
+     * Migration v20 -> v21: Auto-Start für Arbeitszeit
+     *
+     * Fügt neue Felder in UserSettings hinzu:
+     * - autoStartEnabled: Auto-Start basierend auf Wochenvorlagen
+     * - autoStartRequiresGeofencing: Auto-Start nur mit Geofencing
+     * - autoStartReminderMinutes: Vor-Erinnerung in Minuten
+     * - autoStartDefaultPauseMinutes: Standard-Pausenzeit
+     *
+     * Auto-Start standardmäßig deaktiviert (false), kann aktiviert werden.
+     */
+    val MIGRATION_20_21 = object : Migration(20, 21) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Auto-Start Felder zu user_settings hinzufügen
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN autoStartEnabled INTEGER NOT NULL DEFAULT 0
+            """)
+
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN autoStartRequiresGeofencing INTEGER NOT NULL DEFAULT 1
+            """)
+
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN autoStartReminderMinutes INTEGER NOT NULL DEFAULT 5
+            """)
+
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN autoStartDefaultPauseMinutes INTEGER NOT NULL DEFAULT 30
+            """)
+        }
+    }
+
+    /**
      * Gibt alle verfügbaren Migrations zurück
      *
      * Wenn neue Migrations hinzugefügt werden, hier in der Liste eintragen!
@@ -285,8 +321,9 @@ object DatabaseMigrations {
             MIGRATION_17_18,
             MIGRATION_18_19,
             MIGRATION_19_20,
+            MIGRATION_20_21,
             // Zukünftige Migrations hier hinzufügen:
-            // MIGRATION_20_21,
+            // MIGRATION_21_22,
             // etc.
         )
     }
