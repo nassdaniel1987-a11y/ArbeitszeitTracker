@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.ui.components.*
+import com.arbeitszeit.tracker.ui.dialogs.EndWorkDialog
 import com.arbeitszeit.tracker.ui.theme.*
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
@@ -49,12 +50,14 @@ fun HomeScreen(
     val deletedEntry by viewModel.deletedEntry.collectAsState()
     val vorlagen by viewModel.vorlagen.collectAsState()
     val defaultVorlage by viewModel.defaultVorlage.collectAsState()
+    val runningTimeState by viewModel.runningTimeState.collectAsState()
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showPauseDialog by remember { mutableStateOf(false) }
     var showQuickActionMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showEndWorkDialog by remember { mutableStateOf(false) }
     var entryToDelete by remember { mutableStateOf<TimeEntry?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -165,6 +168,104 @@ fun HomeScreen(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // Running Time Banner - wenn Zeiterfassung läuft
+            if (runningTimeState != null) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        onClick = { showEndWorkDialog = true }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.PlayArrow,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                    Column {
+                                        Text(
+                                            "Zeiterfassung läuft",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                        Text(
+                                            if (runningTimeState.isAutoStart) "Automatisch gestartet" else "Manuell gestartet",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+
+                                FilledTonalButton(
+                                    onClick = { showEndWorkDialog = true },
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Stop, contentDescription = null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Beenden")
+                                }
+                            }
+
+                            HorizontalDivider()
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        "Start:",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    )
+                                    Text(
+                                        runningTimeState.getStartTimeFormatted(),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        "Laufzeit:",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    )
+                                    Text(
+                                        runningTimeState.getDurationFormatted(),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             item {
                 AnimatedVisibility(
                     visible = itemsVisible,
@@ -611,5 +712,34 @@ private fun WeekNavigationHeader(
                 }
             }
         }
+    }
+
+    // EndWorkDialog anzeigen, wenn runningTimeState vorhanden ist und showEndWorkDialog true ist
+    if (showEndWorkDialog && runningTimeState != null) {
+        val expectedWorkMinutes = userSettings?.let { settings ->
+            val dayOfWeek = LocalDate.now().dayOfWeek.value
+            if (settings.isWorkingDay(dayOfWeek)) {
+                settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+            } else {
+                0
+            }
+        } ?: 0
+
+        EndWorkDialog(
+            runningState = runningTimeState,
+            defaultPauseMinutes = userSettings?.autoStartDefaultPauseMinutes ?: 30,
+            expectedWorkMinutes = expectedWorkMinutes,
+            onSave = { pauseMinutes ->
+                viewModel.stopRunningTimeTracking(pauseMinutes)
+                showEndWorkDialog = false
+            },
+            onDiscard = {
+                viewModel.discardRunningTimeTracking()
+                showEndWorkDialog = false
+            },
+            onDismiss = {
+                showEndWorkDialog = false
+            }
+        )
     }
 }

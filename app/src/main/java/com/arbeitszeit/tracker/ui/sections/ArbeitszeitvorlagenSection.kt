@@ -642,7 +642,7 @@ private fun parseOptionalTimeStringToMinutes(timeString: String): Int? {
 }
 
 /**
- * Erweiterte Tageseingabe mit Soll-Zeit und Start-Zeit
+ * Kompakte Tageseingabe mit Soll-Zeit und Start-Zeit nebeneinander
  */
 @Composable
 private fun DayTimeInputWithStart(
@@ -652,102 +652,96 @@ private fun DayTimeInputWithStart(
     onSollChange: (String) -> Unit,
     onStartChange: (String) -> Unit
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            dayName,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
-
-        // Soll-Arbeitszeit
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Tag-Name
             Text(
-                "Soll:",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.width(50.dp)
+                dayName,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            OutlinedTextField(
-                value = sollText,
-                onValueChange = { newValue ->
-                    if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
-                        onSollChange(newValue)
-                    }
-                },
-                label = { Text("Zeit") },
-                placeholder = { Text("8:00") },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = KeyboardType.Number
-                )
-            )
-
-            val minutes = parseTimeStringToMinutes(sollText)
-            Text(
-                "= ${minutes / 60}:${String.format("%02d", minutes % 60)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.width(60.dp)
-            )
-        }
-
-        // Start-Zeit (optional)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
+            // Beide Eingabefelder nebeneinander
             Row(
-                modifier = Modifier.width(50.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "Start:",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+                // Soll-Arbeitszeit
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        "Soll-Zeit",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = sollText,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
+                                onSollChange(newValue)
+                            }
+                        },
+                        placeholder = { Text("8:00", style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        ),
+                        textStyle = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
-            OutlinedTextField(
-                value = startText,
-                onValueChange = { newValue ->
-                    if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
-                        onStartChange(newValue)
+                // Start-Zeit (Auto-Start)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            "Beginn",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                },
-                label = { Text("Zeit") },
-                placeholder = { Text("08:00") },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = KeyboardType.Number
-                )
-            )
-
-            if (startText.isNotBlank()) {
-                val minutes = parseTimeStringToMinutes(startText)
-                Text(
-                    "= ${String.format("%02d", minutes / 60)}:${String.format("%02d", minutes % 60)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.width(60.dp)
-                )
-            } else {
-                Spacer(Modifier.width(60.dp))
+                    OutlinedTextField(
+                        value = startText,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
+                                onStartChange(newValue)
+                            }
+                        },
+                        placeholder = { Text("08:00", style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        ),
+                        textStyle = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
     }
