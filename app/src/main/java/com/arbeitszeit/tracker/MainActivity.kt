@@ -221,6 +221,18 @@ class MainActivity : ComponentActivity() {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                             NavigationDrawerItem(
+                                icon = { Icon(Icons.Default.DateRange, null) },
+                                label = { Text("Jahre verwalten") },
+                                selected = currentRoute == Screen.YearManagement.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(Screen.YearManagement.route) {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+
+                            NavigationDrawerItem(
                                 icon = { Icon(Icons.Default.Settings, null) },
                                 label = { Text("Einstellungen") },
                                 selected = currentRoute == Screen.Settings.route,
