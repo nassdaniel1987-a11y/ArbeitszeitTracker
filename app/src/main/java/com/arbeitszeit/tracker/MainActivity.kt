@@ -73,6 +73,9 @@ class MainActivity : ComponentActivity() {
         // Auto-Switch für Jahreswechsel prüfen (wenn aktiviert)
         checkAutoSwitchYear()
 
+        // Auto-Start Scheduler initialisieren
+        initializeAutoStartScheduler()
+
         setContent {
             // Observe settings for dark mode
             val database = AppDatabase.getDatabase(this)
@@ -470,6 +473,23 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val yearViewModel = ViewModelProvider(this@MainActivity)[YearViewModel::class.java]
             yearViewModel.checkAndPerformAutoSwitch()
+        }
+    }
+
+    /**
+     * Initialisiert den Auto-Start Scheduler
+     * Scheduled Alarme für automatischen Start der Arbeitszeit basierend auf Wochenvorlagen
+     */
+    private fun initializeAutoStartScheduler() {
+        lifecycleScope.launch {
+            val database = AppDatabase.getDatabase(this@MainActivity)
+            val settings = database.userSettingsDao().getSettings()
+
+            // Nur wenn Auto-Start aktiviert ist
+            if (settings?.autoStartEnabled == true) {
+                val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(this@MainActivity)
+                scheduler.scheduleAutoStarts()
+            }
         }
     }
 }
