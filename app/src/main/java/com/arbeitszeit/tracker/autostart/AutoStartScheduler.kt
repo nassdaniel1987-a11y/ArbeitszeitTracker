@@ -85,7 +85,7 @@ class AutoStartScheduler(private val context: Context) {
         }
 
         val activeTemplate = templates.firstOrNull() ?: return
-        val entries = database.weekTemplateDao().getEntriesForTemplate(activeTemplate.id)
+        val entries = database.weekTemplateDao().getEntriesByTemplate(activeTemplate.id)
         val tomorrowEntry = entries.firstOrNull { it.dayOfWeek == tomorrowDayOfWeek }
 
         if (tomorrowEntry == null || tomorrowEntry.startZeit == null) {
@@ -93,7 +93,7 @@ class AutoStartScheduler(private val context: Context) {
             return
         }
 
-        val startTime = minutesToLocalTime(tomorrowEntry.startZeit)
+        val startTime = minutesToLocalTime(tomorrowEntry.startZeit!!)
 
         // Schedule Reminder (z.B. 5 Min vor Start)
         val reminderTime = startTime.minusMinutes(reminderMinutes.toLong())
@@ -181,6 +181,7 @@ class AutoStartReceiver : BroadcastReceiver() {
         private const val TAG = "AutoStartReceiver"
         private const val NOTIFICATION_ID_REMINDER = 2001
         private const val NOTIFICATION_ID_RUNNING = 2002
+        private const val CHANNEL_ID = "auto_start_channel"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -240,10 +241,10 @@ class AutoStartReceiver : BroadcastReceiver() {
      * Zeigt Vor-Erinnerungs-Benachrichtigung
      */
     private fun showReminderNotification(context: Context, startTime: LocalTime) {
-        NotificationHelper.ensureNotificationChannelExists(context)
+        createNotificationChannel(context)
 
-        val notification = NotificationCompat.Builder(context, NotificationHelper.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Auto-Start in Kürze")
             .setContentText("Arbeitszeit startet automatisch um ${startTime.hour}:${String.format("%02d", startTime.minute)} Uhr")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -257,10 +258,10 @@ class AutoStartReceiver : BroadcastReceiver() {
      * Zeigt persistente Benachrichtigung für laufende Zeiterfassung
      */
     private fun showRunningNotification(context: Context) {
-        NotificationHelper.ensureNotificationChannelExists(context)
+        createNotificationChannel(context)
 
-        val notification = NotificationCompat.Builder(context, NotificationHelper.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Arbeitszeit läuft")
             .setContentText("Automatisch gestartet")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -268,5 +269,23 @@ class AutoStartReceiver : BroadcastReceiver() {
             .build()
 
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_RUNNING, notification)
+    }
+
+    /**
+     * Erstellt Notification Channel (Android 8+)
+     */
+    private fun createNotificationChannel(context: Context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                CHANNEL_ID,
+                "Auto-Start Benachrichtigungen",
+                android.app.NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Benachrichtigungen für automatischen Start der Arbeitszeit"
+            }
+
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 }

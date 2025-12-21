@@ -162,7 +162,7 @@ class AutoStartManager(private val context: Context) {
         val activeTemplate = templates.firstOrNull() ?: return null
 
         // Lade Einträge für diese Vorlage
-        val entries = weekTemplateDao.getEntriesForTemplate(activeTemplate.id)
+        val entries = weekTemplateDao.getEntriesByTemplate(activeTemplate.id)
         return entries.firstOrNull { it.dayOfWeek == dayOfWeek }
     }
 
