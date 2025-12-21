@@ -16,8 +16,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val database = AppDatabase.getDatabase(application)
     private val settingsDao = database.userSettingsDao()
     private val timeEntryDao = database.timeEntryDao()
-    
+    private val yearSettingsDao = database.yearSettingsDao()
+
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    // Aktives Jahr (für jahr-spezifische Einstellungen wie ersterMontag)
+    val activeYear = yearSettingsDao.getActiveYearFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
     
     /**
@@ -88,13 +93,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     /**
      * Aktualisiert nur Arbeitszeiteinstellungen
      * Alle anderen Felder werden beibehalten
+     *
+     * WICHTIG: ersterMontagImJahr wird NICHT mehr hier gespeichert!
+     * Nutze stattdessen updateErsterMontag() (speichert in YearSettings)
      */
     fun updateArbeitszeit(
         arbeitsumfangProzent: Int,
         wochenStundenMinuten: Int,
         arbeitsTageProWoche: Int,
         ferienbetreuung: Boolean,
-        ersterMontagImJahr: String?,
         workingDays: String = "12345"
     ) {
         viewModelScope.launch {
@@ -105,7 +112,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 wochenStundenMinuten = wochenStundenMinuten,
                 arbeitsTageProWoche = arbeitsTageProWoche,
                 ferienbetreuung = ferienbetreuung,
-                ersterMontagImJahr = ersterMontagImJahr,
                 workingDays = workingDays,
                 updatedAt = System.currentTimeMillis()
             )
@@ -114,9 +120,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
             // Aktualisiere sollMinuten für alle bestehenden Einträge
             updateSollMinutenForAllEntries(updated)
-
-            // Aktualisiere Kalenderwochen, wenn sich der erste Montag geändert hat
-            updateKalenderwochenForAllEntries(updated)
         }
     }
 
@@ -259,6 +262,44 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 autoSwitchYear = enabled,
                 updatedAt = System.currentTimeMillis()
             ))
+        }
+    }
+
+    /**
+     * Aktualisiert den ersten Montag für das aktive Jahr
+     *
+     * WICHTIG: Speichert den Wert in YearSettings (jahr-spezifisch),
+     * NICHT in UserSettings!
+     */
+    fun updateErsterMontag(ersterMontag: String) {
+        viewModelScope.launch {
+            val activeYear = yearSettingsDao.getActiveYear() ?: return@launch
+            yearSettingsDao.update(activeYear.copy(
+                ersterMontagImJahr = ersterMontag
+            ))
+
+            // Aktualisiere KW-Nummern für alle Einträge des aktiven Jahres
+            updateKalenderwochenForYear(activeYear.year, ersterMontag)
+        }
+    }
+
+    /**
+     * Aktualisiert Kalenderwochen für alle Einträge eines bestimmten Jahres
+     */
+    private suspend fun updateKalenderwochenForYear(year: Int, ersterMontag: String) {
+        val entries = timeEntryDao.getEntriesByYear(year)
+        entries.forEach { entry ->
+            val date = java.time.LocalDate.parse(entry.datum)
+            val newKW = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekOfYear(date, ersterMontag)
+            val newJahr = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(date, ersterMontag)
+
+            if (entry.kalenderwoche != newKW || entry.jahr != newJahr) {
+                timeEntryDao.update(entry.copy(
+                    kalenderwoche = newKW,
+                    jahr = newJahr,
+                    updatedAt = System.currentTimeMillis()
+                ))
+            }
         }
     }
 
