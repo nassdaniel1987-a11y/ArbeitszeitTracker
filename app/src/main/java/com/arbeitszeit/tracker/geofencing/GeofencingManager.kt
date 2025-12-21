@@ -127,4 +127,26 @@ class GeofencingManager(private val context: Context) {
             true // Nicht erforderlich vor Android 10
         }
     }
+
+    /**
+     * Prüft ob sich der Nutzer gerade an einem Arbeitsort befindet
+     *
+     * HINWEIS: Diese Methode nutzt SharedPreferences, die vom GeofenceBroadcastReceiver
+     * gesetzt werden wenn Geofence-Events eintreten (ENTER/EXIT).
+     *
+     * @return true wenn der User am Arbeitsort ist, false sonst
+     */
+    fun isCurrentlyAtWorkLocation(): Boolean {
+        val prefs = context.getSharedPreferences("geofencing_state", Context.MODE_PRIVATE)
+        return prefs.getBoolean("is_at_work_location", false)
+    }
+
+    /**
+     * Setzt den Status ob sich der User am Arbeitsort befindet
+     * Wird vom GeofenceBroadcastReceiver aufgerufen
+     */
+    fun setAtWorkLocation(isAtWork: Boolean) {
+        val prefs = context.getSharedPreferences("geofencing_state", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("is_at_work_location", isAtWork).apply()
+    }
 }
