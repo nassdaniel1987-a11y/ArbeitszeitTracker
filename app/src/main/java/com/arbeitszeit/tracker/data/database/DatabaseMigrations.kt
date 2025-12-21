@@ -119,7 +119,7 @@ object DatabaseMigrations {
                     hasExcelTemplate INTEGER NOT NULL,
                     isActive INTEGER NOT NULL,
                     createdAt INTEGER NOT NULL,
-                    isArchived INTEGER NOT NULL DEFAULT 0
+                    isArchived INTEGER NOT NULL
                 )
             """)
 
