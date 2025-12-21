@@ -1,11 +1,17 @@
 package com.arbeitszeit.tracker.ui.components
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -14,16 +20,28 @@ import com.arbeitszeit.tracker.data.entity.YearSettings
 /**
  * Dialog zum Bearbeiten eines Jahres
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditYearDialog(
     year: YearSettings,
+    availableTemplates: List<Int>,
     onDismiss: () -> Unit,
-    onSave: (ersterMontag: String, urlaubsanspruch: Int, vorjahresUebertrag: Int) -> Unit
+    onSave: (ersterMontag: String, urlaubsanspruch: Int, vorjahresUebertrag: Int) -> Unit,
+    onTemplateUpload: (Uri) -> Unit,
+    onTemplateDelete: () -> Unit
 ) {
     var ersterMontag by remember { mutableStateOf("") }
     var urlaubsanspruch by remember { mutableStateOf(year.urlaubsanspruchTage.toString()) }
     var ueberstundenStunden by remember { mutableStateOf("0") }
     var ueberstundenMinuten by remember { mutableStateOf("00") }
+    var expandedTemplateDropdown by remember { mutableStateOf(false) }
+
+    // File Picker für Template-Upload
+    val templatePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { onTemplateUpload(it) }
+    }
 
     // Initialisiere Werte
     LaunchedEffect(year) {
@@ -48,7 +66,9 @@ fun EditYearDialog(
         title = { Text("Jahr ${year.year} bearbeiten") },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
@@ -98,6 +118,94 @@ fun EditYearDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
                     )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Excel Template Verwaltung
+                Text(
+                    "Excel-Vorlage:",
+                    style = MaterialTheme.typography.labelLarge
+                )
+
+                // Status: Hat Template oder nicht
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (year.hasExcelTemplate)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            if (year.hasExcelTemplate) Icons.Default.CheckCircle else Icons.Default.Info,
+                            contentDescription = null,
+                            tint = if (year.hasExcelTemplate)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            if (year.hasExcelTemplate)
+                                "Excel-Vorlage vorhanden (template_${year.year}.xlsx)"
+                            else
+                                "Keine Vorlage - Standard wird verwendet",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                // Template Upload Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { templatePicker.launch("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.FileUpload, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Vorlage hochladen")
+                    }
+
+                    if (year.hasExcelTemplate) {
+                        OutlinedButton(
+                            onClick = onTemplateDelete,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Löschen")
+                        }
+                    }
+                }
+
+                // Template Auswahl Dropdown (welche Vorlage nutzen)
+                if (availableTemplates.isNotEmpty()) {
+                    Text(
+                        "Andere verfügbare Vorlagen:",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+
+                    availableTemplates.forEach { templateYear ->
+                        if (templateYear != year.year) {
+                            AssistChip(
+                                onClick = { /* Info only - nicht änderbar */ },
+                                label = { Text("template_$templateYear.xlsx") },
+                                leadingIcon = { Icon(Icons.Default.Description, null) }
+                            )
+                        }
+                    }
                 }
             }
         },

@@ -1,10 +1,12 @@
 package com.arbeitszeit.tracker.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.data.entity.YearSettings
+import com.arbeitszeit.tracker.template.TemplateManager
 import com.arbeitszeit.tracker.year.NewYearSuggestion
 import com.arbeitszeit.tracker.year.YearManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,7 @@ data class YearUiState(
     val editYear: YearSettings? = null,
     val showDeleteConfirmDialog: Boolean = false,
     val deleteYear: YearSettings? = null,
+    val availableTemplates: List<Int> = emptyList(),  // Jahre mit Templates
     val error: String? = null,
     val success: String? = null
 )
@@ -33,6 +36,7 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private val yearSettingsDao = database.yearSettingsDao()
     private val userSettingsDao = database.userSettingsDao()
+    private val templateManager = TemplateManager(application)
 
     private val _uiState = MutableStateFlow(YearUiState())
     val uiState: StateFlow<YearUiState> = _uiState.asStateFlow()
@@ -40,6 +44,7 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
     init {
         loadYears()
         observeActiveYear()
+        loadAvailableTemplates()
     }
 
     /**
@@ -440,5 +445,93 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
         }
+    }
+
+    /**
+     * Lädt Liste der verfügbaren Templates
+     */
+    private fun loadAvailableTemplates() {
+        viewModelScope.launch {
+            val templates = templateManager.getAvailableYears()
+            _uiState.value = _uiState.value.copy(availableTemplates = templates)
+        }
+    }
+
+    /**
+     * Lädt ein Excel-Template für ein Jahr hoch
+     */
+    fun uploadTemplate(year: Int, uri: Uri) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            val success = templateManager.saveTemplate(year, uri)
+
+            if (success) {
+                // Aktualisiere hasExcelTemplate Flag
+                yearManager.updateExcelTemplateFlag(year)
+
+                // Reload data
+                loadYears()
+                loadAvailableTemplates()
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    success = "Excel-Vorlage für Jahr $year erfolgreich hochgeladen!"
+                )
+
+                // Clear success message after 3 seconds
+                kotlinx.coroutines.delay(3000)
+                clearMessages()
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Fehler beim Hochladen der Vorlage für Jahr $year"
+                )
+            }
+        }
+    }
+
+    /**
+     * Löscht das Template für ein Jahr
+     */
+    fun deleteTemplate(year: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            val success = templateManager.deleteTemplate(year)
+
+            if (success) {
+                // Aktualisiere hasExcelTemplate Flag auf false
+                val existingYear = yearSettingsDao.getYearSettings(year)
+                if (existingYear != null) {
+                    yearSettingsDao.update(existingYear.copy(hasExcelTemplate = false))
+                }
+
+                // Reload data
+                loadYears()
+                loadAvailableTemplates()
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    success = "Excel-Vorlage für Jahr $year gelöscht"
+                )
+
+                // Clear success message after 3 seconds
+                kotlinx.coroutines.delay(3000)
+                clearMessages()
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Fehler beim Löschen der Vorlage"
+                )
+            }
+        }
+    }
+
+    /**
+     * Prüft ob ein Template für ein Jahr verfügbar ist
+     */
+    fun hasTemplate(year: Int): Boolean {
+        return templateManager.hasTemplate(year)
     }
 }

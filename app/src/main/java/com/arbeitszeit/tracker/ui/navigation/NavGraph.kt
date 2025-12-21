@@ -23,6 +23,7 @@ import kotlinx.serialization.Serializable
 @Serializable object HelpRoute
 @Serializable object VacationPlannerRoute
 @Serializable object ClosingDaysRoute
+@Serializable object YearManagementRoute
 
 // Backwards compatibility - wird später entfernt
 sealed class Screen(val route: String) {
@@ -38,6 +39,7 @@ sealed class Screen(val route: String) {
     object Help : Screen("help")
     object VacationPlanner : Screen("vacation_planner")
     object ClosingDays : Screen("closing_days")
+    object YearManagement : Screen("year_management")
 }
 
 @Composable
@@ -129,6 +131,14 @@ fun NavGraph(
         composable(Screen.ClosingDays.route) {
             val viewModel: ClosingDayViewModel = viewModel()
             ClosingDaysScreen(viewModel = viewModel)
+        }
+
+        composable(Screen.YearManagement.route) {
+            val viewModel: YearViewModel = viewModel()
+            YearManagementScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }
