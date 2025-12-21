@@ -311,6 +311,27 @@ object DatabaseMigrations {
     }
 
     /**
+     * Migration v21 -> v22: Start-Zeiten zu SollZeitVorlage hinzufügen
+     *
+     * Erweitert die soll_zeit_vorlagen Tabelle um Start-Zeiten pro Wochentag
+     * für die Auto-Start Funktion der Arbeitszeiterfassung.
+     *
+     * Start-Zeiten sind optional (nullable) und werden in Minuten seit Mitternacht gespeichert.
+     */
+    val MIGRATION_21_22 = object : Migration(21, 22) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Start-Zeiten für jeden Wochentag hinzufügen
+            db.execSQL("ALTER TABLE soll_zeit_vorlagen ADD COLUMN montagStartZeit INTEGER")
+            db.execSQL("ALTER TABLE soll_zeit_vorlagen ADD COLUMN dienstagStartZeit INTEGER")
+            db.execSQL("ALTER TABLE soll_zeit_vorlagen ADD COLUMN mittwochStartZeit INTEGER")
+            db.execSQL("ALTER TABLE soll_zeit_vorlagen ADD COLUMN donnerstagStartZeit INTEGER")
+            db.execSQL("ALTER TABLE soll_zeit_vorlagen ADD COLUMN freitagStartZeit INTEGER")
+            db.execSQL("ALTER TABLE soll_zeit_vorlagen ADD COLUMN samstagStartZeit INTEGER")
+            db.execSQL("ALTER TABLE soll_zeit_vorlagen ADD COLUMN sonntagStartZeit INTEGER")
+        }
+    }
+
+    /**
      * Gibt alle verfügbaren Migrations zurück
      *
      * Wenn neue Migrations hinzugefügt werden, hier in der Liste eintragen!
@@ -322,8 +343,9 @@ object DatabaseMigrations {
             MIGRATION_18_19,
             MIGRATION_19_20,
             MIGRATION_20_21,
+            MIGRATION_21_22,
             // Zukünftige Migrations hier hinzufügen:
-            // MIGRATION_21_22,
+            // MIGRATION_22_23,
             // etc.
         )
     }

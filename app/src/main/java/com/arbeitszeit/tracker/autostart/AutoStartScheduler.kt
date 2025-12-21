@@ -77,23 +77,23 @@ class AutoStartScheduler(private val context: Context) {
         val tomorrow = LocalDate.now().plusDays(1)
         val tomorrowDayOfWeek = tomorrow.dayOfWeek.value
 
-        // Lade Wochenvorlage für morgen
-        val templates = database.weekTemplateDao().getAllTemplates()
-        if (templates.isEmpty()) {
-            Log.d(TAG, "Keine Wochenvorlagen vorhanden")
+        // Lade SollZeitVorlage für morgen
+        val vorlagen = database.sollZeitVorlageDao().getAllVorlagen()
+        if (vorlagen.isEmpty()) {
+            Log.d(TAG, "Keine SollZeitVorlagen vorhanden")
             return
         }
 
-        val activeTemplate = templates.firstOrNull() ?: return
-        val entries = database.weekTemplateDao().getEntriesByTemplate(activeTemplate.id)
-        val tomorrowEntry = entries.firstOrNull { it.dayOfWeek == tomorrowDayOfWeek }
+        // Nimm die Standard-Vorlage, oder die erste Vorlage
+        val activeVorlage = vorlagen.firstOrNull { it.isDefault } ?: vorlagen.firstOrNull() ?: return
+        val startZeit = activeVorlage.getStartZeitForDay(tomorrowDayOfWeek)
 
-        if (tomorrowEntry == null || tomorrowEntry.startZeit == null) {
+        if (startZeit == null) {
             Log.d(TAG, "Keine Start-Zeit für morgen konfiguriert")
             return
         }
 
-        val startTime = minutesToLocalTime(tomorrowEntry.startZeit!!)
+        val startTime = minutesToLocalTime(startZeit)
 
         // Schedule Reminder (z.B. 5 Min vor Start)
         val reminderTime = startTime.minusMinutes(reminderMinutes.toLong())

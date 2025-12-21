@@ -21,6 +21,15 @@ data class SollZeitVorlage(
     val samstagSollMinuten: Int = 0,
     val sonntagSollMinuten: Int = 0,
 
+    // Start-Zeiten pro Wochentag (in Minuten seit Mitternacht) - für Auto-Start
+    val montagStartZeit: Int? = null,
+    val dienstagStartZeit: Int? = null,
+    val mittwochStartZeit: Int? = null,
+    val donnerstagStartZeit: Int? = null,
+    val freitagStartZeit: Int? = null,
+    val samstagStartZeit: Int? = null,
+    val sonntagStartZeit: Int? = null,
+
     // Ist dies die Standard-Vorlage?
     val isDefault: Boolean = false,
 
@@ -41,6 +50,24 @@ data class SollZeitVorlage(
             6 -> samstagSollMinuten
             7 -> sonntagSollMinuten
             else -> 0
+        }
+    }
+
+    /**
+     * Gibt die Start-Zeit für einen bestimmten Wochentag zurück
+     * @param dayOfWeek 1=Montag, 2=Dienstag, ..., 7=Sonntag
+     * @return Start-Zeit in Minuten seit Mitternacht, oder null wenn nicht gesetzt
+     */
+    fun getStartZeitForDay(dayOfWeek: Int): Int? {
+        return when (dayOfWeek) {
+            1 -> montagStartZeit
+            2 -> dienstagStartZeit
+            3 -> mittwochStartZeit
+            4 -> donnerstagStartZeit
+            5 -> freitagStartZeit
+            6 -> samstagStartZeit
+            7 -> sonntagStartZeit
+            else -> null
         }
     }
 
