@@ -44,8 +44,12 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
     private val userSettingsDao = database.userSettingsDao()
+    private val yearSettingsDao = database.yearSettingsDao()
 
     val userSettings: StateFlow<UserSettings?> = userSettingsDao.getSettingsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    private val activeYear = yearSettingsDao.getActiveYearFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     private val allEntries: StateFlow<List<TimeEntry>> = timeEntryDao.getAllEntriesFlow()
@@ -53,9 +57,10 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
 
     val ueberstundenSummary: StateFlow<UeberstundenSummary> = combine(
         allEntries,
-        userSettings
-    ) { entries, settings ->
-        calculateUeberstundenSummary(entries, settings)
+        userSettings,
+        activeYear
+    ) { entries, settings, year ->
+        calculateUeberstundenSummary(entries, settings, year)
     }.stateIn(
         viewModelScope,
         SharingStarted.Lazily,
@@ -64,9 +69,10 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
 
     val urlaubsSummary: StateFlow<UrlaubsSummary> = combine(
         allEntries,
-        userSettings
-    ) { entries, settings ->
-        calculateUrlaubsSummary(entries, settings)
+        userSettings,
+        activeYear
+    ) { entries, settings, year ->
+        calculateUrlaubsSummary(entries, settings, year)
     }.stateIn(
         viewModelScope,
         SharingStarted.Lazily,
@@ -104,14 +110,25 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
 
     private fun calculateUeberstundenSummary(
         entries: List<TimeEntry>,
-        settings: UserSettings?
+        settings: UserSettings?,
+        yearSettings: com.arbeitszeit.tracker.data.entity.YearSettings?
     ): UeberstundenSummary {
-        if (settings == null) {
+        if (settings == null || yearSettings == null) {
             return UeberstundenSummary(0, 0, 0, 0, emptyList())
         }
 
+        // Filtere Einträge für das aktive Jahr (basierend auf Custom-Jahr)
+        val activeYearEntries = entries.filter { entry ->
+            val date = LocalDate.parse(entry.datum)
+            val customYear = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(
+                date,
+                yearSettings.ersterMontagImJahr
+            )
+            customYear == yearSettings.year
+        }
+
         // Gruppiere Einträge nach Monat
-        val entriesByMonth = entries
+        val entriesByMonth = activeYearEntries
             .sortedByDescending { it.datum }
             .groupBy { entry ->
                 val date = LocalDate.parse(entry.datum)
@@ -133,22 +150,16 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
             )
         }.sortedByDescending { it.yearMonth }
 
-        // Berechne Gesamtüberstunden für laufendes Jahr
-        val currentYear = LocalDate.now().year
-        val laufendesJahrUeberstunden = entries
-            .filter {
-                val date = LocalDate.parse(it.datum)
-                date.year == currentYear
-            }
-            .sumOf { it.getDifferenzMinuten() }
+        // Berechne Gesamtüberstunden für aktives Jahr (Custom-Jahr)
+        val laufendesJahrUeberstunden = activeYearEntries.sumOf { it.getDifferenzMinuten() }
 
-        // Gesamtüberstunden = laufendes Jahr + Vorjahresübertrag
-        val gesamtUeberstunden = laufendesJahrUeberstunden + settings.ueberstundenVorjahrMinuten
+        // Gesamtüberstunden = laufendes Jahr + Vorjahresübertrag (aus YearSettings!)
+        val gesamtUeberstunden = laufendesJahrUeberstunden + yearSettings.vorjahresUebertragMinuten
 
         return UeberstundenSummary(
             gesamtUeberstunden = gesamtUeberstunden,
             laufendesJahr = laufendesJahrUeberstunden,
-            vorjahrUebertrag = settings.ueberstundenVorjahrMinuten,
+            vorjahrUebertrag = yearSettings.vorjahresUebertragMinuten,
             letzterUebertrag = settings.letzterUebertragMinuten,
             monatsSummen = monatsSummen
         )
@@ -156,16 +167,21 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
 
     private fun calculateUrlaubsSummary(
         entries: List<TimeEntry>,
-        settings: UserSettings?
+        settings: UserSettings?,
+        yearSettings: com.arbeitszeit.tracker.data.entity.YearSettings?
     ): UrlaubsSummary {
-        if (settings == null) {
+        if (settings == null || yearSettings == null) {
             return UrlaubsSummary(30, 0, 30, 0)
         }
 
-        val currentYear = LocalDate.now().year
-        val currentYearEntries = entries.filter {
-            val date = LocalDate.parse(it.datum)
-            date.year == currentYear
+        // Filtere Einträge für das aktive Jahr (basierend auf Custom-Jahr)
+        val currentYearEntries = entries.filter { entry ->
+            val date = LocalDate.parse(entry.datum)
+            val customYear = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(
+                date,
+                yearSettings.ersterMontagImJahr
+            )
+            customYear == yearSettings.year
         }
 
         // Zähle Urlaubstage (typ == TYP_URLAUB)
@@ -174,7 +190,8 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         // Zähle Krankheitstage (typ == TYP_KRANK)
         val krankheitstage = currentYearEntries.count { it.typ == TimeEntry.TYP_KRANK }
 
-        val urlaubsanspruch = settings.urlaubsanspruchTage
+        // Urlaubsanspruch aus YearSettings (nicht mehr aus UserSettings!)
+        val urlaubsanspruch = yearSettings.urlaubsanspruchTage
         val resturlaub = urlaubsanspruch - urlaubstage
 
         return UrlaubsSummary(
