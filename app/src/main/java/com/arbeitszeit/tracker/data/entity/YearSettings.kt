@@ -1,6 +1,7 @@
 package com.arbeitszeit.tracker.data.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -18,7 +19,10 @@ import androidx.room.PrimaryKey
  * - Jahr-spezifische Konfiguration
  * - Konsistente KW/Überstunden/Urlaub-Berechnung
  */
-@Entity(tableName = "year_settings")
+@Entity(
+    tableName = "year_settings",
+    indices = [Index(value = ["isActive"])]
+)
 data class YearSettings(
     @PrimaryKey
     val year: Int,                          // Jahr (z.B. 2025, 2026)
