@@ -65,51 +65,13 @@ fun ExportScreen(viewModel: ExportViewModel) {
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Jahr wird jetzt über YearSelector in TopAppBar ausgewählt
                 Text(
-                    "Jahr auswählen",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    "Ausgewähltes Jahr: $selectedYear",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
-
-                // Jahr-Auswahl mit Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { viewModel.selectYear(selectedYear - 1) },
-                        enabled = selectedYear > availableYears.first()
-                    ) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Vorheriges Jahr")
-                    }
-
-                    Text(
-                        text = selectedYear.toString(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.weight(1f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                    )
-
-                    IconButton(
-                        onClick = { viewModel.selectYear(selectedYear + 1) },
-                        enabled = selectedYear < availableYears.last()
-                    ) {
-                        Icon(Icons.Filled.ArrowForward, contentDescription = "Nächstes Jahr")
-                    }
-                }
-
-                if (selectedYear != currentYear) {
-                    TextButton(
-                        onClick = { viewModel.selectYear(currentYear) },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    ) {
-                        Icon(Icons.Default.Today, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Zum aktuellen Jahr ($currentYear)")
-                    }
-                }
             }
         }
 
