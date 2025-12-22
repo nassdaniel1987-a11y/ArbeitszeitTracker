@@ -118,13 +118,15 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         }
 
         // Filtere Einträge für das aktive Jahr (basierend auf Custom-Jahr)
+        // UND nur bis heute (keine zukünftigen Einträge)
+        val today = LocalDate.now()
         val activeYearEntries = entries.filter { entry ->
             val date = LocalDate.parse(entry.datum)
             val customYear = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(
                 date,
                 yearSettings.ersterMontagImJahr
             )
-            customYear == yearSettings.year
+            customYear == yearSettings.year && !date.isAfter(today)
         }
 
         // Gruppiere Einträge nach Monat
@@ -175,13 +177,15 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         }
 
         // Filtere Einträge für das aktive Jahr (basierend auf Custom-Jahr)
+        // UND nur bis heute (keine zukünftigen Einträge)
+        val today = LocalDate.now()
         val currentYearEntries = entries.filter { entry ->
             val date = LocalDate.parse(entry.datum)
             val customYear = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(
                 date,
                 yearSettings.ersterMontagImJahr
             )
-            customYear == yearSettings.year
+            customYear == yearSettings.year && !date.isAfter(today)
         }
 
         // Zähle Urlaubstage (typ == TYP_URLAUB)
