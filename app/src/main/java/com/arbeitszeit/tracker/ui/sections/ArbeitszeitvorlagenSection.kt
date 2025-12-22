@@ -684,6 +684,8 @@ private fun DayTimeInputWithStart(
     onSollChange: (String) -> Unit,
     onStartChange: (String) -> Unit
 ) {
+    var showStartTimePicker by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -710,7 +712,7 @@ private fun DayTimeInputWithStart(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Soll-Arbeitszeit
+                // Soll-Arbeitszeit (bleibt Textfeld)
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -738,7 +740,7 @@ private fun DayTimeInputWithStart(
                     )
                 }
 
-                // Start-Zeit (Auto-Start)
+                // Start-Zeit (Auto-Start) - jetzt mit Time Picker
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -759,25 +761,41 @@ private fun DayTimeInputWithStart(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    OutlinedTextField(
-                        value = startText,
-                        onValueChange = { newValue ->
-                            if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
-                                val formatted = formatTimeInput(newValue)
-                                onStartChange(formatted)
-                            }
-                        },
-                        placeholder = { Text("08:00", style = MaterialTheme.typography.bodySmall) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        ),
-                        textStyle = MaterialTheme.typography.bodyMedium
-                    )
+                    OutlinedButton(
+                        onClick = { showStartTimePicker = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (startText.isNotEmpty()) startText else "Zeit wählen",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
         }
+    }
+
+    // Time Picker Dialog für Start-Zeit
+    if (showStartTimePicker) {
+        // Parse aktuelle Zeit aus startText
+        val currentHour = if (startText.isNotEmpty() && startText.contains(":")) {
+            startText.split(":")[0].toIntOrNull() ?: 8
+        } else 8
+        val currentMinute = if (startText.isNotEmpty() && startText.contains(":")) {
+            startText.split(":").getOrNull(1)?.toIntOrNull() ?: 0
+        } else 0
+
+        TimePickerDialogForStart(
+            title = "Arbeitsbeginn für $dayName",
+            initialHour = currentHour,
+            initialMinute = currentMinute,
+            onDismiss = { showStartTimePicker = false },
+            onConfirm = { hour, minute ->
+                val formattedTime = "${String.format("%02d", hour)}:${String.format("%02d", minute)}"
+                onStartChange(formattedTime)
+                showStartTimePicker = false
+            }
+        )
     }
 }
 
@@ -811,4 +829,45 @@ private fun formatTimeInput(input: String): String {
         }
         else -> input // Noch nicht genug Ziffern oder zu viel
     }
+}
+
+/**
+ * Time Picker Dialog für Arbeitsbeginn
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialogForStart(
+    title: String,
+    initialHour: Int,
+    initialMinute: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (hour: Int, minute: Int) -> Unit
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialHour.coerceIn(0, 23),
+        initialMinute = initialMinute.coerceIn(0, 59),
+        is24Hour = true
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            TimePicker(state = timePickerState)
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(timePickerState.hour, timePickerState.minute)
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
 }
