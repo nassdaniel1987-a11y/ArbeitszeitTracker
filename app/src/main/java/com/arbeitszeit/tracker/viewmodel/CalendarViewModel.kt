@@ -212,16 +212,24 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     
     /**
      * Erstellt fehlende Einträge für einen Monat
+     * Erstellt KEINE Einträge für zukünftige Tage (verhindert falsche Überstunden-Berechnung)
      */
     private suspend fun ensureMonthEntriesExist(month: YearMonth) {
         val settings = settingsDao.getSettings()
         val daysInMonth = month.lengthOfMonth()
-        
+        val today = LocalDate.now()
+
         for (day in 1..daysInMonth) {
             val date = month.atDay(day)
+
+            // Überspringe zukünftige Tage - sie werden nicht in der DB angelegt
+            if (date.isAfter(today)) {
+                continue
+            }
+
             val dateString = DateUtils.dateToString(date)
             val existing = timeEntryDao.getEntryByDate(dateString)
-            
+
             if (existing == null) {
                 val entry = TimeEntry(
                     datum = dateString,
@@ -234,11 +242,11 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
                     sollMinuten = calculateSollMinuten(date, settings),
                     typ = TimeEntry.TYP_NORMAL
                 )
-                
+
                 timeEntryDao.insert(entry)
             }
         }
-        
+
         // Lade Einträge neu
         val startDate = DateUtils.dateToString(month.atDay(1))
         val endDate = DateUtils.dateToString(month.atEndOfMonth())
