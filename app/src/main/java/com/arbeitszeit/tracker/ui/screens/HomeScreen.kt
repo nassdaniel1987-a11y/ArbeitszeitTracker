@@ -117,10 +117,23 @@ fun HomeScreen(
                     offset = DpOffset(x = 0.dp, y = (-8).dp)
                 ) {
                 DropdownMenuItem(
-                    text = { Text("Stempeln") },
-                    leadingIcon = { Icon(Icons.Default.AccessTime, null) },
+                    text = {
+                        Text(if (runningTimeState != null) "Ausstempeln" else "Einstempeln")
+                    },
+                    leadingIcon = {
+                        Icon(
+                            if (runningTimeState != null) Icons.Default.Stop else Icons.Default.AccessTime,
+                            null
+                        )
+                    },
                     onClick = {
-                        viewModel.quickStamp()
+                        if (runningTimeState != null) {
+                            // Zeiterfassung läuft -> Dialog zum Beenden zeigen
+                            showEndWorkDialog = true
+                        } else {
+                            // Zeiterfassung läuft nicht -> Schnellstempel
+                            viewModel.quickStamp()
+                        }
                         showQuickActionMenu = false
                     }
                 )

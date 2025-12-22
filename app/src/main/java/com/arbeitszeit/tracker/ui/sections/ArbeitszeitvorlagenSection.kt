@@ -139,6 +139,14 @@ fun ArbeitszeitvorlagenSection(
                 onSetDefault = {
                     scope.launch {
                         vorlageDao.setAsDefault(vorlage.id)
+
+                        // Auto-Start Alarme neu planen, falls Auto-Start aktiviert ist
+                        val settings = database.userSettingsDao().getSettings()
+                        if (settings?.autoStartEnabled == true) {
+                            val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(context)
+                            scheduler.scheduleAutoStarts()
+                        }
+
                         snackbarHostState.showSnackbar("${vorlage.name} als Standard gesetzt")
                     }
                 }
@@ -155,6 +163,14 @@ fun ArbeitszeitvorlagenSection(
                 scope.launch {
                     vorlageDao.insert(newVorlage)
                     showCreateDialog = false
+
+                    // Auto-Start Alarme neu planen, falls Auto-Start aktiviert ist
+                    val settings = database.userSettingsDao().getSettings()
+                    if (settings?.autoStartEnabled == true) {
+                        val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(context)
+                        scheduler.scheduleAutoStarts()
+                    }
+
                     snackbarHostState.showSnackbar("Vorlage '${newVorlage.name}' erstellt")
                 }
             }
@@ -169,6 +185,14 @@ fun ArbeitszeitvorlagenSection(
                 scope.launch {
                     vorlageDao.update(updatedVorlage)
                     editingVorlage = null
+
+                    // Auto-Start Alarme neu planen, falls Auto-Start aktiviert ist
+                    val settings = database.userSettingsDao().getSettings()
+                    if (settings?.autoStartEnabled == true) {
+                        val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(context)
+                        scheduler.scheduleAutoStarts()
+                    }
+
                     snackbarHostState.showSnackbar("Vorlage '${updatedVorlage.name}' aktualisiert")
                 }
             }
@@ -192,6 +216,14 @@ fun ArbeitszeitvorlagenSection(
                         scope.launch {
                             vorlageDao.delete(vorlage)
                             deletingVorlage = null
+
+                            // Auto-Start Alarme neu planen, falls Auto-Start aktiviert ist
+                            val settings = database.userSettingsDao().getSettings()
+                            if (settings?.autoStartEnabled == true) {
+                                val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(context)
+                                scheduler.scheduleAutoStarts()
+                            }
+
                             snackbarHostState.showSnackbar("Vorlage '${vorlage.name}' gelöscht")
                         }
                     },
@@ -692,7 +724,8 @@ private fun DayTimeInputWithStart(
                         value = sollText,
                         onValueChange = { newValue ->
                             if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
-                                onSollChange(newValue)
+                                val formatted = formatTimeInput(newValue)
+                                onSollChange(formatted)
                             }
                         },
                         placeholder = { Text("8:00", style = MaterialTheme.typography.bodySmall) },
@@ -730,7 +763,8 @@ private fun DayTimeInputWithStart(
                         value = startText,
                         onValueChange = { newValue ->
                             if (newValue.all { it.isDigit() || it == ':' } && newValue.length <= 5) {
-                                onStartChange(newValue)
+                                val formatted = formatTimeInput(newValue)
+                                onStartChange(formatted)
                             }
                         },
                         placeholder = { Text("08:00", style = MaterialTheme.typography.bodySmall) },
@@ -744,5 +778,37 @@ private fun DayTimeInputWithStart(
                 }
             }
         }
+    }
+}
+
+/**
+ * Formatiert Zeiteingaben automatisch
+ * Beispiele:
+ * - "0800" -> "08:00"
+ * - "800" -> "8:00"
+ * - "08:00" -> "08:00" (bereits formatiert)
+ * - "8" -> "8" (noch nicht fertig)
+ */
+private fun formatTimeInput(input: String): String {
+    if (input.isBlank()) return input
+
+    // Wenn bereits ein Doppelpunkt vorhanden ist, nicht weiter formatieren
+    if (input.contains(":")) return input
+
+    // Bei 3 oder 4 Ziffern ohne Doppelpunkt: automatisch formatieren
+    return when (input.length) {
+        3 -> {
+            // "800" -> "8:00"
+            val hours = input.substring(0, 1)
+            val minutes = input.substring(1, 3)
+            "$hours:$minutes"
+        }
+        4 -> {
+            // "0800" -> "08:00"
+            val hours = input.substring(0, 2)
+            val minutes = input.substring(2, 4)
+            "$hours:$minutes"
+        }
+        else -> input // Noch nicht genug Ziffern oder zu viel
     }
 }
