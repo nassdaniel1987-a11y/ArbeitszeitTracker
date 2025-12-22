@@ -437,6 +437,40 @@ fun HomeScreen(
             }
         )
     }
+
+    // EndWorkDialog anzeigen, wenn runningTimeState vorhanden ist und showEndWorkDialog true ist
+    if (showEndWorkDialog) {
+        runningTimeState?.let { runningState ->
+            val settings = userSettings
+            val expectedWorkMinutes = if (settings != null) {
+                val dayOfWeek = LocalDate.now().dayOfWeek.value
+                if (settings.isWorkingDay(dayOfWeek)) {
+                    settings.wochenStundenMinuten / settings.arbeitsTageProWoche
+                } else {
+                    0
+                }
+            } else {
+                0
+            }
+
+            EndWorkDialog(
+                runningState = runningState,
+                defaultPauseMinutes = settings?.autoStartDefaultPauseMinutes ?: 30,
+                expectedWorkMinutes = expectedWorkMinutes,
+                onSave = { pauseMinutes ->
+                    viewModel.stopRunningTimeTracking(pauseMinutes)
+                    showEndWorkDialog = false
+                },
+                onDiscard = {
+                    viewModel.discardRunningTimeTracking()
+                    showEndWorkDialog = false
+                },
+                onDismiss = {
+                    showEndWorkDialog = false
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -711,40 +745,6 @@ private fun WeekNavigationHeader(
                     )
                 }
             }
-        }
-    }
-
-    // EndWorkDialog anzeigen, wenn runningTimeState vorhanden ist und showEndWorkDialog true ist
-    if (showEndWorkDialog) {
-        runningTimeState?.let { runningState ->
-            val settings = userSettings
-            val expectedWorkMinutes = if (settings != null) {
-                val dayOfWeek = LocalDate.now().dayOfWeek.value
-                if (settings.isWorkingDay(dayOfWeek)) {
-                    settings.wochenStundenMinuten / settings.arbeitsTageProWoche
-                } else {
-                    0
-                }
-            } else {
-                0
-            }
-
-            EndWorkDialog(
-                runningState = runningState,
-                defaultPauseMinutes = settings?.autoStartDefaultPauseMinutes ?: 30,
-                expectedWorkMinutes = expectedWorkMinutes,
-                onSave = { pauseMinutes ->
-                    viewModel.stopRunningTimeTracking(pauseMinutes)
-                    showEndWorkDialog = false
-                },
-                onDiscard = {
-                    viewModel.discardRunningTimeTracking()
-                    showEndWorkDialog = false
-                },
-                onDismiss = {
-                    showEndWorkDialog = false
-                }
-            )
         }
     }
 }
