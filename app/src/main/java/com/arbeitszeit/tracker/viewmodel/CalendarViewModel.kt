@@ -13,13 +13,18 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 class CalendarViewModel(application: Application) : AndroidViewModel(application) {
-    
+
     private val database = AppDatabase.getDatabase(application)
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
+    private val yearSettingsDao = database.yearSettingsDao()
 
     // User Settings mit Bundesland für Feiertage
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    // Year Settings für Arbeitsjahr-Grenzen
+    val yearSettings = yearSettingsDao.getActiveYearFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     private val _currentMonth = MutableStateFlow(YearMonth.now())
@@ -58,18 +63,66 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     
     /**
      * Wechselt zum vorherigen Monat
+     * Begrenzt auf den ersten Montag des aktiven Arbeitsjahres
      */
     fun previousMonth() {
-        _currentMonth.value = _currentMonth.value.minusMonths(1)
-        loadMonthEntries()
+        val yearConfig = yearSettings.value
+        if (yearConfig != null) {
+            val firstMonday = LocalDate.parse(yearConfig.ersterMontagImJahr)
+            val earliestMonth = YearMonth.from(firstMonday)
+            val newMonth = _currentMonth.value.minusMonths(1)
+
+            // Nur navigieren wenn wir nicht vor den Jahresbeginn gehen
+            if (newMonth >= earliestMonth) {
+                _currentMonth.value = newMonth
+                loadMonthEntries()
+            }
+        } else {
+            // Fallback ohne Begrenzung
+            _currentMonth.value = _currentMonth.value.minusMonths(1)
+            loadMonthEntries()
+        }
     }
-    
+
     /**
      * Wechselt zum nächsten Monat
+     * Begrenzt auf den letzten Freitag vor dem ersten Montag des nächsten Jahres
      */
     fun nextMonth() {
-        _currentMonth.value = _currentMonth.value.plusMonths(1)
-        loadMonthEntries()
+        val yearConfig = yearSettings.value
+        if (yearConfig != null) {
+            // Finde den ersten Montag des nächsten Jahres
+            val nextYear = yearConfig.year + 1
+            val firstMondayNextYear = findFirstMonday(nextYear)
+
+            // Letzter Freitag ist der Tag vor dem ersten Montag des nächsten Jahres
+            // minus die Tage bis zum letzten Freitag
+            val lastFriday = firstMondayNextYear.minusDays(3) // Montag - 3 = Freitag davor
+            val latestMonth = YearMonth.from(lastFriday)
+
+            val newMonth = _currentMonth.value.plusMonths(1)
+
+            // Nur navigieren wenn wir nicht über das Jahresende hinaus gehen
+            if (newMonth <= latestMonth) {
+                _currentMonth.value = newMonth
+                loadMonthEntries()
+            }
+        } else {
+            // Fallback ohne Begrenzung
+            _currentMonth.value = _currentMonth.value.plusMonths(1)
+            loadMonthEntries()
+        }
+    }
+
+    /**
+     * Findet den ersten Montag eines Jahres
+     */
+    private fun findFirstMonday(year: Int): LocalDate {
+        var date = LocalDate.of(year, 1, 1)
+        while (date.dayOfWeek != java.time.DayOfWeek.MONDAY) {
+            date = date.plusDays(1)
+        }
+        return date
     }
     
     /**
