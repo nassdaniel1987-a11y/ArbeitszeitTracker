@@ -64,11 +64,11 @@ class AutoStartManager(private val context: Context) {
                 return@withContext false
             }
 
-            // Heute schon Eintrag?
+            // Heute schon Eintrag mit Start-Zeit?
             val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
             val existingEntry = timeEntryDao.getEntryByDate(today)
-            if (existingEntry != null) {
-                Log.d(TAG, "Eintrag für heute existiert bereits")
+            if (existingEntry?.startZeit != null) {
+                Log.d(TAG, "Heute bereits gestartet (startZeit vorhanden)")
                 return@withContext false
             }
 
@@ -106,24 +106,31 @@ class AutoStartManager(private val context: Context) {
      */
     suspend fun performAutoStart(): Boolean = withContext(Dispatchers.IO) {
         try {
+            Log.d(TAG, "performAutoStart() - Starte Prüfung")
+
             if (!shouldAutoStart()) {
-                Log.w(TAG, "Auto-Start nicht möglich")
+                Log.w(TAG, "Auto-Start nicht möglich (shouldAutoStart = false)")
                 return@withContext false
             }
 
             val dayOfWeek = LocalDate.now().dayOfWeek.value
+            Log.d(TAG, "Heute ist Tag: $dayOfWeek")
+
             val vorlage = getActiveVorlage() ?: run {
                 Log.e(TAG, "Keine Vorlage gefunden")
                 return@withContext false
             }
+            Log.d(TAG, "Vorlage gefunden: ${vorlage.name}")
 
             val startZeit = vorlage.getStartZeitForDay(dayOfWeek) ?: run {
-                Log.e(TAG, "Keine Start-Zeit für heute gefunden")
+                Log.e(TAG, "Keine Start-Zeit für heute (Tag $dayOfWeek) gefunden")
                 return@withContext false
             }
+            Log.d(TAG, "Start-Zeit gefunden: $startZeit Minuten")
 
             val startTime = minutesToLocalTime(startZeit)
             val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+            Log.d(TAG, "Starte Tracking für $today um $startTime")
 
             // Starte Tracking
             runningTimeTracker.startTracking(
