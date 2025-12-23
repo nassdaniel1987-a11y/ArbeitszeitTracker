@@ -59,6 +59,9 @@ class AutoStartScheduler(private val context: Context) {
                 return
             }
 
+            // Schedule für heute (falls die Zeit noch nicht vorbei ist)
+            scheduleToday(settings.autoStartReminderMinutes)
+
             // Schedule für morgen
             scheduleTomorrow(settings.autoStartReminderMinutes)
 
@@ -67,6 +70,54 @@ class AutoStartScheduler(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "Fehler beim Planen der Auto-Start Alarme", e)
         }
+    }
+
+    /**
+     * Scheduled Auto-Start für heute (falls die Zeit noch nicht vorbei ist)
+     */
+    private suspend fun scheduleToday(reminderMinutes: Int) {
+        val today = LocalDate.now()
+        val todayDayOfWeek = today.dayOfWeek.value
+        val now = LocalTime.now()
+
+        // Lade SollZeitVorlage für heute
+        val vorlagen = database.sollZeitVorlageDao().getAllVorlagen()
+        if (vorlagen.isEmpty()) {
+            Log.d(TAG, "Keine SollZeitVorlagen vorhanden")
+            return
+        }
+
+        // Nimm die Standard-Vorlage, oder die erste Vorlage
+        val activeVorlage = vorlagen.firstOrNull { it.isDefault } ?: vorlagen.firstOrNull() ?: return
+        val startZeit = activeVorlage.getStartZeitForDay(todayDayOfWeek)
+
+        if (startZeit == null) {
+            Log.d(TAG, "Keine Start-Zeit für heute konfiguriert")
+            return
+        }
+
+        val startTime = minutesToLocalTime(startZeit)
+
+        // Prüfe ob die Start-Zeit noch in der Zukunft liegt
+        if (now >= startTime) {
+            Log.d(TAG, "Start-Zeit für heute ($startTime) ist bereits vorbei (jetzt: $now)")
+            return
+        }
+
+        // Prüfe ob genug Zeit für Reminder ist
+        val reminderTime = startTime.minusMinutes(reminderMinutes.toLong())
+        if (now < reminderTime) {
+            // Genug Zeit für Reminder
+            scheduleAlarm(today, reminderTime, ACTION_REMINDER, REQUEST_CODE_REMINDER)
+            Log.d(TAG, "Reminder für heute geplant: $reminderTime")
+        } else {
+            Log.d(TAG, "Reminder-Zeit für heute ($reminderTime) ist bereits vorbei")
+        }
+
+        // Schedule Auto-Start für heute
+        scheduleAlarm(today, startTime, ACTION_START, REQUEST_CODE_START)
+
+        Log.i(TAG, "Auto-Start für heute geplant: Start=$startTime")
     }
 
     /**
