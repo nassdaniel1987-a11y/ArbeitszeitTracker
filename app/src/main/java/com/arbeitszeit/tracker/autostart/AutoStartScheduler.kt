@@ -215,21 +215,31 @@ class AutoStartReceiver : BroadcastReceiver() {
      * Führt Auto-Start durch
      */
     private fun handleAutoStart(context: Context) {
+        Log.d(TAG, "handleAutoStart() gestartet")
         CoroutineScope(Dispatchers.IO).launch {
             val autoStartManager = AutoStartManager(context)
 
-            if (autoStartManager.shouldAutoStart()) {
+            val shouldStart = autoStartManager.shouldAutoStart()
+            Log.d(TAG, "shouldAutoStart() = $shouldStart")
+
+            if (shouldStart) {
+                Log.d(TAG, "Versuche performAutoStart()...")
                 val success = autoStartManager.performAutoStart()
+                Log.d(TAG, "performAutoStart() = $success")
 
                 if (success) {
                     // Zeige Benachrichtigung
                     CoroutineScope(Dispatchers.Main).launch {
                         showRunningNotification(context)
+                        Log.d(TAG, "Running-Notification angezeigt")
                     }
 
                     // Schedule für morgen
                     val scheduler = AutoStartScheduler(context)
                     scheduler.scheduleAutoStarts()
+                    Log.d(TAG, "Auto-Starts für morgen geplant")
+                } else {
+                    Log.w(TAG, "performAutoStart() fehlgeschlagen")
                 }
             } else {
                 Log.d(TAG, "Auto-Start abgebrochen (Bedingungen nicht erfüllt)")
