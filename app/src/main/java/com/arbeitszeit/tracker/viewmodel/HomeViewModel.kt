@@ -218,7 +218,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val entry = timeEntryDao.getEntryByDate(todayDate)
             val currentTime = TimeUtils.currentTimeInMinutes()
-            
+            val currentLocalTime = java.time.LocalTime.now()
+
             if (entry == null) {
                 // Neuer Eintrag mit Start
                 ensureTodayEntryExists()
@@ -228,6 +229,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         startZeit = currentTime,
                         updatedAt = System.currentTimeMillis()
                     ))
+                    // Starte RunningTimeTracker
+                    runningTimeTracker.startTracking(
+                        startTime = currentLocalTime,
+                        isAutoStart = false,
+                        date = todayDate
+                    )
                 }
             } else {
                 // Entscheide: Start oder Ende?
@@ -237,18 +244,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         startZeit = currentTime,
                         updatedAt = System.currentTimeMillis()
                     ))
+                    // Starte RunningTimeTracker
+                    runningTimeTracker.startTracking(
+                        startTime = currentLocalTime,
+                        isAutoStart = false,
+                        date = todayDate
+                    )
                 } else if (entry.endZeit == null) {
                     // Start vorhanden, Ende fehlt -> setze Ende
                     timeEntryDao.update(entry.copy(
                         endZeit = currentTime,
                         updatedAt = System.currentTimeMillis()
                     ))
+                    // Stoppe RunningTimeTracker
+                    runningTimeTracker.stopTracking()
                 } else {
                     // Beide vorhanden -> überschreibe Ende
                     timeEntryDao.update(entry.copy(
                         endZeit = currentTime,
                         updatedAt = System.currentTimeMillis()
                     ))
+                    // Stoppe RunningTimeTracker (falls läuft)
+                    runningTimeTracker.stopTracking()
                 }
             }
         }
@@ -264,9 +281,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 startZeit = minutes,
                 updatedAt = System.currentTimeMillis()
             ))
+            // Starte RunningTimeTracker wenn Ende noch nicht gesetzt ist
+            if (entry.endZeit == null) {
+                val hours = minutes / 60
+                val mins = minutes % 60
+                val startTime = java.time.LocalTime.of(hours, mins)
+                runningTimeTracker.startTracking(
+                    startTime = startTime,
+                    isAutoStart = false,
+                    date = todayDate
+                )
+            }
         }
     }
-    
+
     /**
      * Setzt Arbeitsende
      */
@@ -277,6 +305,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 endZeit = minutes,
                 updatedAt = System.currentTimeMillis()
             ))
+            // Stoppe RunningTimeTracker wenn Ende gesetzt wird
+            runningTimeTracker.stopTracking()
         }
     }
     
