@@ -132,6 +132,19 @@ class AutoStartManager(private val context: Context) {
             val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
             Log.d(TAG, "Starte Tracking für $today um $startTime")
 
+            // Update TimeEntry in Datenbank
+            val entry = timeEntryDao.getEntryByDate(today)
+            if (entry != null) {
+                timeEntryDao.update(entry.copy(
+                    startZeit = startZeit,
+                    updatedAt = System.currentTimeMillis()
+                ))
+                Log.d(TAG, "TimeEntry updated mit startZeit: $startZeit")
+            } else {
+                Log.w(TAG, "Kein TimeEntry für heute gefunden - kann nicht starten")
+                return@withContext false
+            }
+
             // Starte Tracking
             runningTimeTracker.startTracking(
                 startTime = startTime,
