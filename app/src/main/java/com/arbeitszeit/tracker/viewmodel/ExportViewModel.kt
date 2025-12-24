@@ -105,8 +105,11 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                     return@launch
                 }
 
-                // Lade ALLE Einträge des Jahres
-                val entries = timeEntryDao.getEntriesByYear(year)
+                // Lade ALLE Einträge des Kalenderjahres (nicht custom year!)
+                // Wichtig: Datum-basiert, nicht custom year Feld!
+                val startDate = "${year}-01-01"
+                val endDate = "${year}-12-31"
+                val entries = timeEntryDao.getEntriesByDateRange(startDate, endDate)
 
                 // Exportiere GESAMTJAHR
                 val file = exportManager.exportToExcel(
@@ -445,7 +448,10 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                     )
                 } else {
                     // Gesamtjahr-Export
-                    val entries = timeEntryDao.getEntriesByYear(year)
+                    // Wichtig: Datum-basiert, nicht custom year Feld!
+                    val startDate = "${year}-01-01"
+                    val endDate = "${year}-12-31"
+                    val entries = timeEntryDao.getEntriesByDateRange(startDate, endDate)
 
                     exportManager.exportToExcel(
                         userSettings = settings,
