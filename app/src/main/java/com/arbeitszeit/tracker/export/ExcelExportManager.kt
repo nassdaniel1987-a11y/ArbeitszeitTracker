@@ -266,6 +266,13 @@ class ExcelExportManager(private val context: Context) {
      * Füllt alle KW-Sheets mit Zeiteinträgen
      */
     private fun fillAllSheets(workbook: Workbook, entries: List<TimeEntry>) {
+        android.util.Log.d("ExcelExportManager", "fillAllSheets: ${entries.size} Einträge gefunden")
+
+        // Log erste paar Einträge zur Kontrolle
+        entries.take(5).forEach { entry ->
+            android.util.Log.d("ExcelExportManager", "Eintrag: ${entry.datum}, KW=${entry.kalenderwoche}, Jahr=${entry.jahr}")
+        }
+
         // Alle 4-Wochen-Blöcke: KW 01-04, 05-08, ..., 49-52
         val blocks = listOf(
             1 to 4,
@@ -290,7 +297,12 @@ class ExcelExportManager(private val context: Context) {
             if (sheet != null) {
                 // Filtere Einträge für diesen Block
                 val blockEntries = entries.filter { it.kalenderwoche in startKW..endKW }
+                if (blockEntries.isNotEmpty()) {
+                    android.util.Log.d("ExcelExportManager", "Block $sheetName: ${blockEntries.size} Einträge")
+                }
                 fillTimeEntries(sheet, blockEntries, startKW, endKW)
+            } else {
+                android.util.Log.w("ExcelExportManager", "Sheet '$sheetName' nicht gefunden in Vorlage!")
             }
         }
     }
@@ -315,6 +327,8 @@ class ExcelExportManager(private val context: Context) {
             .groupBy { it.kalenderwoche }
             .toSortedMap()
 
+        android.util.Log.d("ExcelExportManager", "fillTimeEntries für KW $startKW-$endKW: ${entriesByWeek.size} Wochen mit Daten")
+
         // Wochenstart-Zeilen in Excel (0-basiert)
         // Woche 1: Zeilen 7-13 (Mo-Fr, Sonst, Summe)
         // Woche 2: Zeilen 14-20 (Mo-Fr, Sonst, Summe)
@@ -323,10 +337,15 @@ class ExcelExportManager(private val context: Context) {
         val weekStartRows = listOf(7, 14, 21, 28)
 
         entriesByWeek.entries.forEach weekLoop@{ (kw, weekEntries) ->
+            android.util.Log.d("ExcelExportManager", "KW $kw: ${weekEntries.size} Einträge")
+
             // Berechne die Position der Woche im 4-Wochen-Block
             // Beispiel: KW 25 in Block "KW 25-28" -> Position 0 -> Zeile 7
             val weekPosition = kw - startKW
-            if (weekPosition < 0 || weekPosition >= weekStartRows.size) return@weekLoop
+            if (weekPosition < 0 || weekPosition >= weekStartRows.size) {
+                android.util.Log.w("ExcelExportManager", "KW $kw außerhalb Block $startKW-$endKW (Position: $weekPosition)")
+                return@weekLoop
+            }
 
             val startRow = weekStartRows[weekPosition]
 
@@ -342,6 +361,7 @@ class ExcelExportManager(private val context: Context) {
 
             // Sortiere Einträge nach Datum
             weekEntries.sortedBy { it.datum }.forEach { entry ->
+                android.util.Log.d("ExcelExportManager", "Schreibe Eintrag: ${entry.datum}, Start=${entry.startZeit}, Ende=${entry.endZeit}")
                 // Berechne tatsächlichen Wochentag aus Datum (1=Mo, 7=So)
                 val date = LocalDate.parse(entry.datum)
                 val dayOfWeek = date.dayOfWeek.value // 1=Monday, 7=Sunday
