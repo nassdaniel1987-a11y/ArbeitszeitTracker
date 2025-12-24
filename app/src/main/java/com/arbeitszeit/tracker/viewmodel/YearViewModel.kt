@@ -177,21 +177,21 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Zeigt den "Neues Jahr anlegen" Dialog
+     *
+     * Findet automatisch das nächste nicht-existierende Jahr
      */
     fun showNewYearDialog() {
         viewModelScope.launch {
             val currentYear = LocalDate.now().year
-            val nextYear = currentYear + 1
+            var nextYear = currentYear + 1
 
-            // Prüfe ob nächstes Jahr bereits existiert
-            if (yearManager.yearExists(nextYear)) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Jahr $nextYear existiert bereits"
-                )
-                return@launch
+            // Finde nächstes nicht-existierendes Jahr
+            // z.B. wenn 2026 existiert, versuche 2027, 2028, etc.
+            while (yearManager.yearExists(nextYear)) {
+                nextYear++
             }
 
-            // Lade Vorschlag
+            // Lade Vorschlag für das gefundene Jahr
             val suggestion = yearManager.suggestNewYear(nextYear)
 
             _uiState.value = _uiState.value.copy(
