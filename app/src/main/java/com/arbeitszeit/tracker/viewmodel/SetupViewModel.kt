@@ -358,6 +358,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
 
             try {
                 val state = _uiState.value
+                Toast.makeText(getApplication(), "Schritt 1: Extrahiere Jahr aus Datum", Toast.LENGTH_SHORT).show()
 
                 // Jahr aus "ersterMontagImJahr" extrahieren
                 val currentYear = try {
@@ -367,6 +368,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 android.util.Log.d("SetupViewModel", "Jahr $currentYear wird angelegt")
+                Toast.makeText(getApplication(), "Schritt 2: Jahr $currentYear - speichere UserSettings", Toast.LENGTH_SHORT).show()
 
                 // 1. UserSettings speichern
                 val userSettings = UserSettings(
@@ -387,6 +389,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
 
                 userSettingsDao.insertOrUpdate(userSettings)
                 android.util.Log.d("SetupViewModel", "UserSettings gespeichert: $userSettings")
+                Toast.makeText(getApplication(), "Schritt 3: UserSettings gespeichert - erstelle Jahr", Toast.LENGTH_SHORT).show()
 
                 // 2. Aktuelles Jahr erstellen
                 val result = yearManager.createNewYear(
@@ -397,8 +400,12 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                     uebertragResturlaub = false
                 )
 
+                Toast.makeText(getApplication(), "Schritt 4: Jahr erstellt - prüfe Ergebnis", Toast.LENGTH_SHORT).show()
+                android.util.Log.d("SetupViewModel", "Jahr-Ergebnis: success=${result.isSuccess}, error=${result.exceptionOrNull()?.message}")
+
                 if (result.isSuccess) {
                     android.util.Log.d("SetupViewModel", "Jahr $currentYear erfolgreich erstellt")
+                    Toast.makeText(getApplication(), "Schritt 5: Erfolgreich! Wechsle zu Completion", Toast.LENGTH_SHORT).show()
 
                     // 3. Wenn Template vorhanden, als Template für dieses Jahr speichern
                     if (state.hasTemplate && state.templateUri != null) {
@@ -420,14 +427,18 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                     )
 
                 } else {
+                    val errorMsg = result.exceptionOrNull()?.message ?: "Unbekannter Fehler"
+                    android.util.Log.e("SetupViewModel", "Jahr konnte nicht erstellt werden: $errorMsg")
+                    Toast.makeText(getApplication(), "FEHLER: Jahr konnte nicht erstellt werden: $errorMsg", Toast.LENGTH_LONG).show()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Fehler beim Erstellen des Jahres: ${result.exceptionOrNull()?.message}"
+                        error = "Fehler beim Erstellen des Jahres: $errorMsg"
                     )
                 }
 
             } catch (e: Exception) {
                 android.util.Log.e("SetupViewModel", "Setup-Fehler: ${e.message}", e)
+                Toast.makeText(getApplication(), "FEHLER im Setup: ${e.message}", Toast.LENGTH_LONG).show()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = "Fehler beim Abschließen der Einrichtung: ${e.message}"
