@@ -10,10 +10,13 @@ import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.import.ExcelImportManager
 import com.arbeitszeit.tracker.import.ImportResult
 import com.arbeitszeit.tracker.year.YearManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 /**
@@ -358,7 +361,12 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
 
             try {
                 val state = _uiState.value
-                Toast.makeText(getApplication(), "Schritt 1: Extrahiere Jahr aus Datum", Toast.LENGTH_SHORT).show()
+                delay(500) // Warte damit Toast sichtbar wird
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Schritt 1: Extrahiere Jahr aus Datum", Toast.LENGTH_SHORT).show()
+                }
+                delay(500)
 
                 // Jahr aus "ersterMontagImJahr" extrahieren
                 val currentYear = try {
@@ -368,51 +376,72 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 android.util.Log.d("SetupViewModel", "Jahr $currentYear wird angelegt")
-                Toast.makeText(getApplication(), "Schritt 2: Jahr $currentYear - speichere UserSettings", Toast.LENGTH_SHORT).show()
 
-                // 1. UserSettings speichern
-                val userSettings = UserSettings(
-                    id = 1,
-                    name = state.name,
-                    einrichtung = state.einrichtung,
-                    arbeitsumfangProzent = state.arbeitsumfangProzent,
-                    wochenStundenMinuten = state.wochenStundenMinuten,
-                    arbeitsTageProWoche = state.arbeitsTageProWoche,
-                    ferienbetreuung = state.ferienbetreuung,
-                    ueberstundenVorjahrMinuten = 0,
-                    letzterUebertragMinuten = 0,
-                    ersterMontagImJahr = state.ersterMontagImJahr,
-                    urlaubsanspruchTage = state.urlaubsanspruchTage,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Schritt 2: Jahr $currentYear - speichere UserSettings", Toast.LENGTH_SHORT).show()
+                }
+                delay(500)
 
-                userSettingsDao.insertOrUpdate(userSettings)
-                android.util.Log.d("SetupViewModel", "UserSettings gespeichert: $userSettings")
-                Toast.makeText(getApplication(), "Schritt 3: UserSettings gespeichert - erstelle Jahr", Toast.LENGTH_SHORT).show()
+                // 1. UserSettings speichern (auf IO Thread)
+                withContext(Dispatchers.IO) {
+                    val userSettings = UserSettings(
+                        id = 1,
+                        name = state.name,
+                        einrichtung = state.einrichtung,
+                        arbeitsumfangProzent = state.arbeitsumfangProzent,
+                        wochenStundenMinuten = state.wochenStundenMinuten,
+                        arbeitsTageProWoche = state.arbeitsTageProWoche,
+                        ferienbetreuung = state.ferienbetreuung,
+                        ueberstundenVorjahrMinuten = 0,
+                        letzterUebertragMinuten = 0,
+                        ersterMontagImJahr = state.ersterMontagImJahr,
+                        urlaubsanspruchTage = state.urlaubsanspruchTage,
+                        createdAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
 
-                // 2. Aktuelles Jahr erstellen
+                    userSettingsDao.insertOrUpdate(userSettings)
+                    android.util.Log.d("SetupViewModel", "UserSettings gespeichert: $userSettings")
+                }
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Schritt 3: UserSettings gespeichert - erstelle Jahr", Toast.LENGTH_SHORT).show()
+                }
+                delay(500)
+
+                // 2. Aktuelles Jahr erstellen (auf IO Thread)
                 android.util.Log.d("SetupViewModel", "STARTE createNewYear für Jahr $currentYear")
                 android.util.Log.d("SetupViewModel", "Parameter: ersterMontag=${state.ersterMontagImJahr}, urlaubsanspruch=${state.urlaubsanspruchTage}")
 
-                Toast.makeText(getApplication(), "Rufe yearManager.createNewYear() auf...", Toast.LENGTH_SHORT).show()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Rufe yearManager.createNewYear() auf...", Toast.LENGTH_SHORT).show()
+                }
+                delay(500)
 
-                val result = try {
-                    yearManager.createNewYear(
-                        year = currentYear,
-                        ersterMontagImJahr = state.ersterMontagImJahr,
-                        urlaubsanspruch = state.urlaubsanspruchTage,
-                        uebertragUeberstunden = false,  // Erstes Jahr, kein Übertrag
-                        uebertragResturlaub = false
-                    )
-                } catch (e: Exception) {
-                    android.util.Log.e("SetupViewModel", "EXCEPTION in createNewYear: ${e.message}", e)
-                    Toast.makeText(getApplication(), "EXCEPTION in createNewYear: ${e.message}", Toast.LENGTH_LONG).show()
-                    throw e
+                val result = withContext(Dispatchers.IO) {
+                    try {
+                        yearManager.createNewYear(
+                            year = currentYear,
+                            ersterMontagImJahr = state.ersterMontagImJahr,
+                            urlaubsanspruch = state.urlaubsanspruchTage,
+                            uebertragUeberstunden = false,  // Erstes Jahr, kein Übertrag
+                            uebertragResturlaub = false
+                        )
+                    } catch (e: Exception) {
+                        android.util.Log.e("SetupViewModel", "EXCEPTION in createNewYear: ${e.message}", e)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(getApplication(), "EXCEPTION in createNewYear: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                        throw e
+                    }
                 }
 
                 android.util.Log.d("SetupViewModel", "createNewYear ist ZURÜCKGEKOMMEN")
-                Toast.makeText(getApplication(), "Schritt 4: Jahr erstellt - prüfe Ergebnis", Toast.LENGTH_SHORT).show()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Schritt 4: Jahr erstellt - prüfe Ergebnis", Toast.LENGTH_SHORT).show()
+                }
+                delay(500)
+
                 android.util.Log.d("SetupViewModel", "Jahr-Ergebnis: success=${result.isSuccess}, error=${result.exceptionOrNull()?.message}")
 
                 if (result.isSuccess) {
