@@ -474,6 +474,12 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
                 loadYears()
                 loadAvailableTemplates()
 
+                // Zeige Benachrichtigung
+                com.arbeitszeit.tracker.utils.NotificationHelper.showTemplateUploadSuccess(
+                    getApplication(),
+                    year
+                )
+
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     success = "Excel-Vorlage für Jahr $year erfolgreich hochgeladen!"

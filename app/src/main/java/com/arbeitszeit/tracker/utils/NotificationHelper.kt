@@ -24,6 +24,7 @@ object NotificationHelper {
     const val NOTIFICATION_ID_MISSING = 1003
     const val NOTIFICATION_ID_EXPORT = 2001
     const val NOTIFICATION_ID_IMPORT = 2002
+    const val NOTIFICATION_ID_TEMPLATE = 2003
 
     /**
      * Erstellt alle Notification Channels
@@ -257,6 +258,23 @@ object NotificationHelper {
             .build()
 
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_IMPORT, notification)
+    }
+
+    /**
+     * Zeigt Template-Upload Erfolg Benachrichtigung
+     */
+    fun showTemplateUploadSuccess(context: Context, year: Int) {
+        if (!hasNotificationPermission(context)) return
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID_EXPORT)
+            .setSmallIcon(R.drawable.ic_notification_time)
+            .setContentTitle("Excel-Vorlage hochgeladen")
+            .setContentText("Vorlage für Jahr $year erfolgreich gespeichert")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_TEMPLATE, notification)
     }
 
     /**
