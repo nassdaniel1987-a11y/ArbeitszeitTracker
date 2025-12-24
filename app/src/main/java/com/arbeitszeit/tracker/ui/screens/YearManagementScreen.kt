@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arbeitszeit.tracker.data.entity.YearSettings
 import com.arbeitszeit.tracker.ui.components.DeleteYearConfirmDialog
 import com.arbeitszeit.tracker.ui.components.EditYearDialog
+import com.arbeitszeit.tracker.ui.components.NewYearDialog
 import com.arbeitszeit.tracker.viewmodel.YearViewModel
 
 /**
@@ -152,6 +153,22 @@ fun YearManagementScreen(
         }
 
         // Dialoge
+        if (uiState.showNewYearDialog && uiState.newYearSuggestion != null) {
+            NewYearDialog(
+                suggestion = uiState.newYearSuggestion!!,
+                onDismiss = { viewModel.dismissNewYearDialog() },
+                onCreate = { year, ersterMontagImJahr, urlaubsanspruch, uebertragUeberstunden, uebertragResturlaub ->
+                    viewModel.createNewYear(
+                        year = year,
+                        ersterMontagImJahr = ersterMontagImJahr,
+                        urlaubsanspruch = urlaubsanspruch,
+                        uebertragUeberstunden = uebertragUeberstunden,
+                        uebertragResturlaub = uebertragResturlaub
+                    )
+                }
+            )
+        }
+
         if (uiState.showEditYearDialog && uiState.editYear != null) {
             EditYearDialog(
                 year = uiState.editYear!!,
