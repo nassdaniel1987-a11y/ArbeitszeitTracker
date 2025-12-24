@@ -79,18 +79,6 @@ class MainActivity : ComponentActivity() {
             val settings by database.userSettingsDao().getSettingsFlow()
                 .collectAsState(initial = null)
 
-            // Setup-Modus State: Bleibt true bis onSetupComplete aufgerufen wird
-            var showSetup by remember { mutableStateOf(false) }
-            var settingsLoaded by remember { mutableStateOf(false) }
-
-            // Prüfe beim ersten Laden, ob Setup nötig ist
-            LaunchedEffect(settings) {
-                if (!settingsLoaded) {
-                    settingsLoaded = true
-                    showSetup = (settings == null)
-                }
-            }
-
             // Jahr ViewModel
             val yearViewModel = ViewModelProvider(this)[YearViewModel::class.java]
             val yearUiState by yearViewModel.uiState.collectAsState()
@@ -102,30 +90,7 @@ class MainActivity : ComponentActivity() {
             }
 
             ArbeitszeitTrackerTheme(darkTheme = darkTheme) {
-                // Setup-Check: Wenn keine Settings vorhanden sind
-                if (showSetup) {
-                    // Neue Installation -> Setup Wizard anzeigen
-                    com.arbeitszeit.tracker.ui.screens.SetupScreen(
-                        onSetupComplete = {
-                            // Nach Setup: App neustarten um Settings zu laden
-                            recreate()
-                        }
-                    )
-                    return@ArbeitszeitTrackerTheme
-                }
-
-                // Zeige Loading bis Settings geladen sind
-                if (!settingsLoaded) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                    return@ArbeitszeitTrackerTheme
-                }
-
-                // Normale App (für bestehende Benutzer)
+                // Normale App
                 val navController = rememberNavController()
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
