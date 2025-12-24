@@ -249,6 +249,185 @@ fun EditYearDialog(
 }
 
 /**
+ * Dialog zum Erstellen eines neuen Jahres
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NewYearDialog(
+    suggestion: com.arbeitszeit.tracker.year.NewYearSuggestion,
+    onDismiss: () -> Unit,
+    onCreate: (
+        year: Int,
+        ersterMontagImJahr: String,
+        urlaubsanspruch: Int,
+        uebertragUeberstunden: Boolean,
+        uebertragResturlaub: Boolean
+    ) -> Unit
+) {
+    var ersterMontag by remember { mutableStateOf("") }
+    var urlaubsanspruch by remember { mutableStateOf(suggestion.urlaubsanspruch.toString()) }
+    var uebertragUeberstunden by remember { mutableStateOf(true) }
+    var uebertragResturlaub by remember { mutableStateOf(true) }
+
+    // Initialisiere Datum
+    LaunchedEffect(suggestion) {
+        // Format: yyyy-MM-dd → dd.MM.yyyy
+        val parts = suggestion.ersterMontagImJahr.split("-")
+        if (parts.size == 3) {
+            ersterMontag = "${parts[2]}.${parts[1]}.${parts[0]}"
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Add, contentDescription = null) },
+        title = { Text("Neues Jahr ${suggestion.year} anlegen") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Erstelle ein neues Jahr mit folgenden Einstellungen:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                OutlinedTextField(
+                    value = ersterMontag,
+                    onValueChange = { ersterMontag = it },
+                    label = { Text("Erster Montag") },
+                    placeholder = { Text("TT.MM.JJJJ") },
+                    leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = urlaubsanspruch,
+                    onValueChange = { urlaubsanspruch = it },
+                    label = { Text("Urlaubsanspruch (Tage)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    leadingIcon = { Icon(Icons.Default.BeachAccess, null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Überstunden-Übertrag
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "Überstunden aus ${suggestion.year - 1}:",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Text(
+                            suggestion.getUeberstundenFormatted(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = uebertragUeberstunden,
+                                onCheckedChange = { uebertragUeberstunden = it }
+                            )
+                            Text(
+                                "Überstunden übertragen",
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Resturlaub-Übertrag
+                if (suggestion.restUrlaubVorjahr > 0) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "Resturlaub aus ${suggestion.year - 1}:",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Text(
+                                "${suggestion.restUrlaubVorjahr} Tage",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = uebertragResturlaub,
+                                    onCheckedChange = { uebertragResturlaub = it }
+                                )
+                                Text(
+                                    "Resturlaub übertragen",
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    // Format: dd.MM.yyyy → yyyy-MM-dd
+                    val ersterMontagFormatted = ersterMontag.trim().let { datum ->
+                        if (datum.isNotBlank()) {
+                            val parts = datum.split(".")
+                            if (parts.size == 3) {
+                                val tag = parts[0].padStart(2, '0')
+                                val monat = parts[1].padStart(2, '0')
+                                val jahr = parts[2]
+                                "$jahr-$monat-$tag"
+                            } else suggestion.ersterMontagImJahr
+                        } else suggestion.ersterMontagImJahr
+                    }
+
+                    onCreate(
+                        suggestion.year,
+                        ersterMontagFormatted,
+                        urlaubsanspruch.toIntOrNull() ?: suggestion.urlaubsanspruch,
+                        uebertragUeberstunden,
+                        uebertragResturlaub
+                    )
+                }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Erstellen")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
+}
+
+/**
  * Bestätigungs-Dialog zum Löschen eines Jahres
  */
 @Composable
