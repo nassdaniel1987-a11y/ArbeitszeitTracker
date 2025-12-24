@@ -19,6 +19,9 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     private val settingsDao = database.userSettingsDao()
     private val yearSettingsDao = database.yearSettingsDao()
 
+    // YearBoundaryService für Jahr-Berechnungen
+    private val yearBoundaryService = com.arbeitszeit.tracker.year.YearBoundaryService(application)
+
     // User Settings mit Bundesland für Feiertage
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
@@ -66,21 +69,14 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
      * Begrenzt auf den ersten Montag des aktiven Arbeitsjahres
      */
     fun previousMonth() {
-        val yearConfig = yearSettings.value
-        if (yearConfig != null) {
-            val firstMonday = LocalDate.parse(yearConfig.ersterMontagImJahr)
-            val earliestMonth = YearMonth.from(firstMonday)
+        viewModelScope.launch {
             val newMonth = _currentMonth.value.minusMonths(1)
 
-            // Nur navigieren wenn wir nicht vor den Jahresbeginn gehen
-            if (newMonth >= earliestMonth) {
+            // Prüfe über YearBoundaryService ob Navigation erlaubt ist
+            if (yearBoundaryService.canNavigateToMonth(newMonth)) {
                 _currentMonth.value = newMonth
                 loadMonthEntries()
             }
-        } else {
-            // Fallback ohne Begrenzung
-            _currentMonth.value = _currentMonth.value.minusMonths(1)
-            loadMonthEntries()
         }
     }
 
@@ -89,42 +85,17 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
      * Begrenzt auf den letzten Freitag vor dem ersten Montag des nächsten Jahres
      */
     fun nextMonth() {
-        val yearConfig = yearSettings.value
-        if (yearConfig != null) {
-            // Finde den ersten Montag des nächsten Jahres
-            val nextYear = yearConfig.year + 1
-            val firstMondayNextYear = findFirstMonday(nextYear)
-
-            // Letzter Freitag ist der Tag vor dem ersten Montag des nächsten Jahres
-            // minus die Tage bis zum letzten Freitag
-            val lastFriday = firstMondayNextYear.minusDays(3) // Montag - 3 = Freitag davor
-            val latestMonth = YearMonth.from(lastFriday)
-
+        viewModelScope.launch {
             val newMonth = _currentMonth.value.plusMonths(1)
 
-            // Nur navigieren wenn wir nicht über das Jahresende hinaus gehen
-            if (newMonth <= latestMonth) {
+            // Prüfe über YearBoundaryService ob Navigation erlaubt ist
+            if (yearBoundaryService.canNavigateToMonth(newMonth)) {
                 _currentMonth.value = newMonth
                 loadMonthEntries()
             }
-        } else {
-            // Fallback ohne Begrenzung
-            _currentMonth.value = _currentMonth.value.plusMonths(1)
-            loadMonthEntries()
         }
     }
 
-    /**
-     * Findet den ersten Montag eines Jahres
-     */
-    private fun findFirstMonday(year: Int): LocalDate {
-        var date = LocalDate.of(year, 1, 1)
-        while (date.dayOfWeek != java.time.DayOfWeek.MONDAY) {
-            date = date.plusDays(1)
-        }
-        return date
-    }
-    
     /**
      * Wählt einen Eintrag aus (für Detail-Ansicht)
      */

@@ -46,6 +46,9 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
     private val userSettingsDao = database.userSettingsDao()
     private val yearSettingsDao = database.yearSettingsDao()
 
+    // YearBoundaryService für Custom-Year Filterung
+    private val yearBoundaryService = com.arbeitszeit.tracker.year.YearBoundaryService(application)
+
     val userSettings: StateFlow<UserSettings?> = userSettingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
@@ -118,15 +121,12 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         }
 
         // Filtere Einträge für das aktive Jahr (basierend auf Custom-Jahr)
+        // Nutze jahr-Feld (wurde bei Erstellung/Neuberechnung korrekt gesetzt)
         // UND nur bis heute (keine zukünftigen Einträge)
         val today = LocalDate.now()
         val activeYearEntries = entries.filter { entry ->
             val date = LocalDate.parse(entry.datum)
-            val customYear = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(
-                date,
-                yearSettings.ersterMontagImJahr
-            )
-            customYear == yearSettings.year && !date.isAfter(today)
+            entry.jahr == yearSettings.year && !date.isAfter(today)
         }
 
         // Gruppiere Einträge nach Monat
@@ -177,15 +177,12 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         }
 
         // Filtere Einträge für das aktive Jahr (basierend auf Custom-Jahr)
+        // Nutze jahr-Feld (wurde bei Erstellung/Neuberechnung korrekt gesetzt)
         // UND nur bis heute (keine zukünftigen Einträge)
         val today = LocalDate.now()
         val currentYearEntries = entries.filter { entry ->
             val date = LocalDate.parse(entry.datum)
-            val customYear = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(
-                date,
-                yearSettings.ersterMontagImJahr
-            )
-            customYear == yearSettings.year && !date.isAfter(today)
+            entry.jahr == yearSettings.year && !date.isAfter(today)
         }
 
         // Zähle Urlaubstage (typ == TYP_URLAUB)

@@ -30,6 +30,7 @@ import com.arbeitszeit.tracker.viewmodel.CalendarViewModel
 import com.arbeitszeit.tracker.viewmodel.EntryStatus
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,7 +101,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     Icon(Icons.Default.ChevronLeft, "Vorheriger Monat")
                 }
                 Text(
-                    text = "${month.month} ${month.year}",
+                    text = month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMAN)),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
