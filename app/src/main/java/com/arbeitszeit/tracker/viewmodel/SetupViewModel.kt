@@ -281,8 +281,14 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
     private fun validateUserData(): Boolean {
         var isValid = true
 
+        android.util.Log.d("SetupViewModel", "Validierung gestartet")
+        android.util.Log.d("SetupViewModel", "Name: '${_uiState.value.name}'")
+        android.util.Log.d("SetupViewModel", "Einrichtung: '${_uiState.value.einrichtung}'")
+        android.util.Log.d("SetupViewModel", "Erster Montag: '${_uiState.value.ersterMontagImJahr}'")
+
         // Name prüfen
         if (_uiState.value.name.isBlank()) {
+            android.util.Log.e("SetupViewModel", "Validierung fehlgeschlagen: Name ist leer")
             _uiState.value = _uiState.value.copy(
                 nameError = "Name darf nicht leer sein"
             )
@@ -291,6 +297,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
 
         // Einrichtung prüfen
         if (_uiState.value.einrichtung.isBlank()) {
+            android.util.Log.e("SetupViewModel", "Validierung fehlgeschlagen: Einrichtung ist leer")
             _uiState.value = _uiState.value.copy(
                 einrichtungError = "Einrichtung darf nicht leer sein"
             )
@@ -300,13 +307,16 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
         // Erster Montag prüfen (yyyy-MM-dd)
         try {
             LocalDate.parse(_uiState.value.ersterMontagImJahr)
+            android.util.Log.d("SetupViewModel", "Erster Montag ist gültig")
         } catch (e: Exception) {
+            android.util.Log.e("SetupViewModel", "Validierung fehlgeschlagen: Ungültiges Datum - ${e.message}")
             _uiState.value = _uiState.value.copy(
                 ersterMontagError = "Ungültiges Datum (Format: yyyy-MM-dd)"
             )
             isValid = false
         }
 
+        android.util.Log.d("SetupViewModel", "Validierung abgeschlossen: isValid=$isValid")
         return isValid
     }
 
@@ -314,9 +324,11 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
      * Schließt Setup ab: Speichert Benutzerdaten und erstellt aktuelles Jahr
      */
     fun completeSetup() {
+        android.util.Log.d("SetupViewModel", "completeSetup() aufgerufen")
         viewModelScope.launch {
             // Validierung
             if (!validateUserData()) {
+                android.util.Log.e("SetupViewModel", "Validierung fehlgeschlagen - Setup wird abgebrochen")
                 _uiState.value = _uiState.value.copy(
                     currentStep = SetupStep.USER_DATA,  // Zurück zu Dateneingabe
                     error = "Bitte alle Felder korrekt ausfüllen"
@@ -324,11 +336,20 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
+            android.util.Log.d("SetupViewModel", "Validierung erfolgreich - starte Setup")
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             try {
                 val state = _uiState.value
-                val currentYear = LocalDate.now().year
+
+                // Jahr aus "ersterMontagImJahr" extrahieren
+                val currentYear = try {
+                    LocalDate.parse(state.ersterMontagImJahr).year
+                } catch (e: Exception) {
+                    LocalDate.now().year
+                }
+
+                android.util.Log.d("SetupViewModel", "Jahr $currentYear wird angelegt")
 
                 // 1. UserSettings speichern
                 val userSettings = UserSettings(

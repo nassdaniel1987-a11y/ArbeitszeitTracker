@@ -38,6 +38,10 @@ fun SetupScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // DatePicker State
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
     // Wenn Setup abgeschlossen, navigiere zur App
     LaunchedEffect(uiState.setupComplete) {
         if (uiState.setupComplete) {
@@ -473,15 +477,26 @@ private fun UserDataStep(
         )
 
         // Wochenstunden
-        val wochenStunden = uiState.wochenStundenMinuten / 60
-        val wochenMinuten = uiState.wochenStundenMinuten % 60
+        var wochenStundenText by remember {
+            mutableStateOf(String.format("%02d:%02d", uiState.wochenStundenMinuten / 60, uiState.wochenStundenMinuten % 60))
+        }
+
         OutlinedTextField(
-            value = String.format("%02d:%02d", wochenStunden, wochenMinuten),
-            onValueChange = { /* Read-only */ },
-            label = { Text("Wochenstunden") },
+            value = wochenStundenText,
+            onValueChange = { newValue ->
+                wochenStundenText = newValue
+                // Parse HH:MM format
+                val parts = newValue.split(":")
+                if (parts.size == 2) {
+                    val hours = parts[0].toIntOrNull() ?: 0
+                    val minutes = parts[1].toIntOrNull() ?: 0
+                    viewModel.updateWochenStunden(hours * 60 + minutes)
+                }
+            },
+            label = { Text("Wochenstunden (HH:MM)") },
             leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) },
+            supportingText = { Text("z.B. 40:00 für 40 Stunden/Woche") },
             modifier = Modifier.fillMaxWidth(),
-            enabled = false,
             singleLine = true
         )
 
@@ -510,6 +525,7 @@ private fun UserDataStep(
         )
 
         // Erster Montag
+        val currentYear = LocalDate.now().year
         val ersterMontagFormatted = try {
             val date = LocalDate.parse(uiState.ersterMontagImJahr)
             date.format(DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy"))
@@ -517,11 +533,22 @@ private fun UserDataStep(
             "Format: yyyy-MM-dd"
         }
 
+        Text(
+            "Jahr $currentYear wird angelegt",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+
         OutlinedTextField(
             value = uiState.ersterMontagImJahr,
             onValueChange = { viewModel.updateErsterMontag(it) },
-            label = { Text("Erster Montag im Jahr") },
-            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
+            label = { Text("Erster Montag im Jahr $currentYear") },
+            leadingIcon = {
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(Icons.Default.Event, contentDescription = "Datum auswählen")
+                }
+            },
             isError = uiState.ersterMontagError != null,
             supportingText = {
                 Text(uiState.ersterMontagError ?: ersterMontagFormatted)
@@ -576,7 +603,10 @@ private fun UserDataStep(
             }
 
             Button(
-                onClick = onComplete,
+                onClick = {
+                    android.util.Log.d("SetupScreen", "Abschließen clicked")
+                    onComplete()
+                },
                 enabled = !uiState.isLoading,
                 modifier = Modifier.weight(1f)
             ) {
@@ -590,6 +620,33 @@ private fun UserDataStep(
                     Spacer(Modifier.width(8.dp))
                     Icon(Icons.Default.Check, contentDescription = null)
                 }
+            }
+        }
+
+        // DatePicker Dialog
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val date = java.time.Instant.ofEpochMilli(millis)
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate()
+                            viewModel.updateErsterMontag(date.toString())
+                        }
+                        showDatePicker = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("Abbrechen")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
             }
         }
     }
