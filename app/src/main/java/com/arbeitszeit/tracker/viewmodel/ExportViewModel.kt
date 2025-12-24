@@ -31,6 +31,9 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
     private val simpleExportManager = SimpleExcelExportManager(application)
     private val importManager = ExcelImportManager(application)
 
+    // YearBoundaryService für einheitliche Jahr-Filter
+    private val yearBoundaryService = com.arbeitszeit.tracker.year.YearBoundaryService(application)
+
     private val _uiState = MutableStateFlow(ExportUiState())
     val uiState: StateFlow<ExportUiState> = _uiState.asStateFlow()
 
@@ -105,11 +108,8 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                     return@launch
                 }
 
-                // Lade ALLE Einträge des Kalenderjahres (nicht custom year!)
-                // Wichtig: Datum-basiert, nicht custom year Feld!
-                val startDate = "${year}-01-01"
-                val endDate = "${year}-12-31"
-                val entries = timeEntryDao.getEntriesByDateRange(startDate, endDate)
+                // Lade ALLE Einträge des Kalenderjahres über YearBoundaryService
+                val entries = yearBoundaryService.getEntriesForCalendarYear(year)
 
                 // Exportiere GESAMTJAHR
                 val file = exportManager.exportToExcel(
@@ -447,11 +447,8 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                         year = year
                     )
                 } else {
-                    // Gesamtjahr-Export
-                    // Wichtig: Datum-basiert, nicht custom year Feld!
-                    val startDate = "${year}-01-01"
-                    val endDate = "${year}-12-31"
-                    val entries = timeEntryDao.getEntriesByDateRange(startDate, endDate)
+                    // Gesamtjahr-Export über YearBoundaryService
+                    val entries = yearBoundaryService.getEntriesForCalendarYear(year)
 
                     exportManager.exportToExcel(
                         userSettings = settings,

@@ -32,6 +32,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val sollZeitVorlageDao = database.sollZeitVorlageDao()
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
 
+    // YearBoundaryService für Jahr-Berechnungen
+    private val yearBoundaryService = com.arbeitszeit.tracker.year.YearBoundaryService(application)
+
     // Running Time Tracker für Auto-Start
     private val runningTimeTracker = RunningTimeTracker(application)
     val runningTimeState = runningTimeTracker.runningState
@@ -406,17 +409,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      * Begrenzt auf den ersten Montag des aktiven Arbeitsjahres
      */
     fun previousWeek() {
-        val yearSettings = activeYear.value
-        if (yearSettings != null) {
-            val firstMonday = LocalDate.parse(yearSettings.ersterMontagImJahr)
-            val newWeekDate = _selectedWeekDate.value.minusWeeks(1)
-
-            // Nur navigieren wenn wir nicht vor den Jahresbeginn gehen
-            if (newWeekDate >= firstMonday) {
-                _selectedWeekDate.value = newWeekDate
+        viewModelScope.launch {
+            // Prüfe über YearBoundaryService ob Navigation erlaubt ist
+            if (yearBoundaryService.canNavigateToPreviousWeek(_selectedWeekDate.value)) {
+                _selectedWeekDate.value = _selectedWeekDate.value.minusWeeks(1)
             }
-        } else {
-            _selectedWeekDate.value = _selectedWeekDate.value.minusWeeks(1)
         }
     }
 
@@ -425,32 +422,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      * Begrenzt auf den letzten Freitag vor dem ersten Montag des nächsten Jahres
      */
     fun nextWeek() {
-        val yearSettings = activeYear.value
-        if (yearSettings != null) {
-            val nextYear = yearSettings.year + 1
-            val firstMondayNextYear = findFirstMonday(nextYear)
-            val lastFriday = firstMondayNextYear.minusDays(3)
-
-            val newWeekDate = _selectedWeekDate.value.plusWeeks(1)
-
-            // Nur navigieren wenn wir nicht über das Jahresende hinaus gehen
-            if (newWeekDate <= lastFriday) {
-                _selectedWeekDate.value = newWeekDate
+        viewModelScope.launch {
+            // Prüfe über YearBoundaryService ob Navigation erlaubt ist
+            if (yearBoundaryService.canNavigateToNextWeek(_selectedWeekDate.value)) {
+                _selectedWeekDate.value = _selectedWeekDate.value.plusWeeks(1)
             }
-        } else {
-            _selectedWeekDate.value = _selectedWeekDate.value.plusWeeks(1)
         }
-    }
-
-    /**
-     * Findet den ersten Montag eines Jahres
-     */
-    private fun findFirstMonday(year: Int): LocalDate {
-        var date = LocalDate.of(year, 1, 1)
-        while (date.dayOfWeek != java.time.DayOfWeek.MONDAY) {
-            date = date.plusDays(1)
-        }
-        return date
     }
 
     /**
