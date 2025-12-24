@@ -90,6 +90,9 @@ fun SetupScreen(
                 SetupStep.USER_DATA -> UserDataStep(
                     viewModel = viewModel,
                     uiState = uiState,
+                    showDatePicker = showDatePicker,
+                    onShowDatePickerChange = { showDatePicker = it },
+                    datePickerState = datePickerState,
                     onComplete = { viewModel.completeSetup() },
                     onBack = { viewModel.previousStep() }
                 )
@@ -395,10 +398,14 @@ private fun TemplateUploadStep(
 /**
  * Schritt 3: User Data
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserDataStep(
     viewModel: SetupViewModel,
     uiState: com.arbeitszeit.tracker.viewmodel.SetupUiState,
+    showDatePicker: Boolean,
+    onShowDatePickerChange: (Boolean) -> Unit,
+    datePickerState: DatePickerState,
     onComplete: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -545,7 +552,7 @@ private fun UserDataStep(
             onValueChange = { viewModel.updateErsterMontag(it) },
             label = { Text("Erster Montag im Jahr $currentYear") },
             leadingIcon = {
-                IconButton(onClick = { showDatePicker = true }) {
+                IconButton(onClick = { onShowDatePickerChange(true) }) {
                     Icon(Icons.Default.Event, contentDescription = "Datum auswählen")
                 }
             },
@@ -626,7 +633,7 @@ private fun UserDataStep(
         // DatePicker Dialog
         if (showDatePicker) {
             DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
+                onDismissRequest = { onShowDatePickerChange(false) },
                 confirmButton = {
                     TextButton(onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
@@ -635,13 +642,13 @@ private fun UserDataStep(
                                 .toLocalDate()
                             viewModel.updateErsterMontag(date.toString())
                         }
-                        showDatePicker = false
+                        onShowDatePickerChange(false)
                     }) {
                         Text("OK")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) {
+                    TextButton(onClick = { onShowDatePickerChange(false) }) {
                         Text("Abbrechen")
                     }
                 }
