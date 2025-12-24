@@ -362,24 +362,35 @@ class YearViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val existing = yearSettingsDao.getYear(year)
                 if (existing != null) {
+                    val ersterMontagChanged = existing.ersterMontagImJahr != ersterMontagImJahr
+
                     yearSettingsDao.update(existing.copy(
                         ersterMontagImJahr = ersterMontagImJahr,
                         urlaubsanspruchTage = urlaubsanspruch,
                         vorjahresUebertragMinuten = vorjahresUebertrag
                     ))
 
+                    // Neuberechnung wenn "Erster Montag" geändert wurde
+                    if (ersterMontagChanged) {
+                        android.util.Log.d("YearViewModel", "Erster Montag geändert -> Neuberechnung für Jahr $year")
+                        yearManager.recalculateTimeEntries(year)
+                    }
+
                     loadYears()
                     _uiState.value = _uiState.value.copy(
                         showEditYearDialog = false,
                         editYear = null,
                         isLoading = false,
-                        success = "Jahr $year erfolgreich aktualisiert!"
+                        success = if (ersterMontagChanged)
+                            "Jahr $year aktualisiert und Einträge neu berechnet!"
+                        else
+                            "Jahr $year erfolgreich aktualisiert!"
                     )
 
                     // Clear success message after 3 seconds
                     kotlinx.coroutines.delay(3000)
                     clearMessages()
-                } else {
+                } else{
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = "Jahr $year nicht gefunden"
