@@ -9,15 +9,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -82,6 +79,18 @@ class MainActivity : ComponentActivity() {
             val settings by database.userSettingsDao().getSettingsFlow()
                 .collectAsState(initial = null)
 
+            // Setup-Modus State: Bleibt true bis onSetupComplete aufgerufen wird
+            var showSetup by remember { mutableStateOf(false) }
+            var settingsLoaded by remember { mutableStateOf(false) }
+
+            // Prüfe beim ersten Laden, ob Setup nötig ist
+            LaunchedEffect(settings) {
+                if (!settingsLoaded) {
+                    settingsLoaded = true
+                    showSetup = (settings == null)
+                }
+            }
+
             // Jahr ViewModel
             val yearViewModel = ViewModelProvider(this)[YearViewModel::class.java]
             val yearUiState by yearViewModel.uiState.collectAsState()
@@ -93,8 +102,8 @@ class MainActivity : ComponentActivity() {
             }
 
             ArbeitszeitTrackerTheme(darkTheme = darkTheme) {
-                // Setup-Check: Wenn UserSettings null ist, zeige Setup Wizard
-                if (settings == null) {
+                // Setup-Check: Wenn keine Settings vorhanden sind
+                if (showSetup) {
                     // Neue Installation -> Setup Wizard anzeigen
                     com.arbeitszeit.tracker.ui.screens.SetupScreen(
                         onSetupComplete = {
@@ -102,6 +111,17 @@ class MainActivity : ComponentActivity() {
                             recreate()
                         }
                     )
+                    return@ArbeitszeitTrackerTheme
+                }
+
+                // Zeige Loading bis Settings geladen sind
+                if (!settingsLoaded) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                     return@ArbeitszeitTrackerTheme
                 }
 
