@@ -392,14 +392,26 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                 Toast.makeText(getApplication(), "Schritt 3: UserSettings gespeichert - erstelle Jahr", Toast.LENGTH_SHORT).show()
 
                 // 2. Aktuelles Jahr erstellen
-                val result = yearManager.createNewYear(
-                    year = currentYear,
-                    ersterMontagImJahr = state.ersterMontagImJahr,
-                    urlaubsanspruch = state.urlaubsanspruchTage,
-                    uebertragUeberstunden = false,  // Erstes Jahr, kein Übertrag
-                    uebertragResturlaub = false
-                )
+                android.util.Log.d("SetupViewModel", "STARTE createNewYear für Jahr $currentYear")
+                android.util.Log.d("SetupViewModel", "Parameter: ersterMontag=${state.ersterMontagImJahr}, urlaubsanspruch=${state.urlaubsanspruchTage}")
 
+                Toast.makeText(getApplication(), "Rufe yearManager.createNewYear() auf...", Toast.LENGTH_SHORT).show()
+
+                val result = try {
+                    yearManager.createNewYear(
+                        year = currentYear,
+                        ersterMontagImJahr = state.ersterMontagImJahr,
+                        urlaubsanspruch = state.urlaubsanspruchTage,
+                        uebertragUeberstunden = false,  // Erstes Jahr, kein Übertrag
+                        uebertragResturlaub = false
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e("SetupViewModel", "EXCEPTION in createNewYear: ${e.message}", e)
+                    Toast.makeText(getApplication(), "EXCEPTION in createNewYear: ${e.message}", Toast.LENGTH_LONG).show()
+                    throw e
+                }
+
+                android.util.Log.d("SetupViewModel", "createNewYear ist ZURÜCKGEKOMMEN")
                 Toast.makeText(getApplication(), "Schritt 4: Jahr erstellt - prüfe Ergebnis", Toast.LENGTH_SHORT).show()
                 android.util.Log.d("SetupViewModel", "Jahr-Ergebnis: success=${result.isSuccess}, error=${result.exceptionOrNull()?.message}")
 
