@@ -2,6 +2,7 @@ package com.arbeitszeit.tracker.viewmodel
 
 import android.app.Application
 import android.net.Uri
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.database.AppDatabase
@@ -280,6 +281,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun validateUserData(): Boolean {
         var isValid = true
+        val errors = mutableListOf<String>()
 
         android.util.Log.d("SetupViewModel", "Validierung gestartet")
         android.util.Log.d("SetupViewModel", "Name: '${_uiState.value.name}'")
@@ -289,6 +291,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
         // Name prüfen
         if (_uiState.value.name.isBlank()) {
             android.util.Log.e("SetupViewModel", "Validierung fehlgeschlagen: Name ist leer")
+            errors.add("Name fehlt")
             _uiState.value = _uiState.value.copy(
                 nameError = "Name darf nicht leer sein"
             )
@@ -298,6 +301,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
         // Einrichtung prüfen
         if (_uiState.value.einrichtung.isBlank()) {
             android.util.Log.e("SetupViewModel", "Validierung fehlgeschlagen: Einrichtung ist leer")
+            errors.add("Einrichtung fehlt")
             _uiState.value = _uiState.value.copy(
                 einrichtungError = "Einrichtung darf nicht leer sein"
             )
@@ -310,10 +314,20 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
             android.util.Log.d("SetupViewModel", "Erster Montag ist gültig")
         } catch (e: Exception) {
             android.util.Log.e("SetupViewModel", "Validierung fehlgeschlagen: Ungültiges Datum - ${e.message}")
+            errors.add("Datum ungültig")
             _uiState.value = _uiState.value.copy(
                 ersterMontagError = "Ungültiges Datum (Format: yyyy-MM-dd)"
             )
             isValid = false
+        }
+
+        // Toast mit Fehlern anzeigen
+        if (!isValid) {
+            Toast.makeText(
+                getApplication(),
+                "Validierung fehlgeschlagen: ${errors.joinToString(", ")}",
+                Toast.LENGTH_LONG
+            ).show()
         }
 
         android.util.Log.d("SetupViewModel", "Validierung abgeschlossen: isValid=$isValid")
@@ -325,6 +339,8 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun completeSetup() {
         android.util.Log.d("SetupViewModel", "completeSetup() aufgerufen")
+        Toast.makeText(getApplication(), "Abschließen geklickt - starte Validierung", Toast.LENGTH_SHORT).show()
+
         viewModelScope.launch {
             // Validierung
             if (!validateUserData()) {
@@ -337,6 +353,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             android.util.Log.d("SetupViewModel", "Validierung erfolgreich - starte Setup")
+            Toast.makeText(getApplication(), "Validierung erfolgreich - speichere Daten", Toast.LENGTH_SHORT).show()
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             try {
