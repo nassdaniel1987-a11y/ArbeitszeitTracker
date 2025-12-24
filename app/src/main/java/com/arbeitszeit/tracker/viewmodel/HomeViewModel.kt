@@ -59,8 +59,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
-    // Active Year Settings
-    private val activeYear = yearSettingsDao.getActiveYearFlow()
+    // Active Year Settings - Öffentlich für HomeScreen (KW-Berechnung)
+    val activeYear = yearSettingsDao.getActiveYearFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     // Alle verfügbaren Arbeitszeitvorlagen

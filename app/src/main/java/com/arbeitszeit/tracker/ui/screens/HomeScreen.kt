@@ -44,6 +44,7 @@ fun HomeScreen(
 ) {
     val todayEntry by viewModel.todayEntry.collectAsState()
     val userSettings by viewModel.userSettings.collectAsState()
+    val activeYear by viewModel.activeYear.collectAsState()
     val weekEntries by viewModel.weekEntries.collectAsState()
     val selectedWeekDate by viewModel.selectedWeekDate.collectAsState()
     val locationStatus by viewModel.locationStatus.collectAsState()
@@ -343,7 +344,7 @@ fun HomeScreen(
                         onNextWeek = { viewModel.nextWeek() },
                         onGoToCurrentWeek = { viewModel.goToCurrentWeek() },
                         onApplyTemplate = { onNavigateToWeekTemplates() },
-                        firstMonday = userSettings?.ersterMontagImJahr,
+                        firstMonday = activeYear?.ersterMontagImJahr,
                         vorlagen = vorlagen,
                         currentVorlageName = weekEntries.firstOrNull()?.sollZeitVorlageName,
                         onApplyVorlageToWeek = { vorlageId -> viewModel.applyVorlageToWeek(vorlageId) }
