@@ -347,7 +347,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                     updatedAt = System.currentTimeMillis()
                 )
 
-                userSettingsDao.insert(userSettings)
+                userSettingsDao.insertOrUpdate(userSettings)
                 android.util.Log.d("SetupViewModel", "UserSettings gespeichert: $userSettings")
 
                 // 2. Aktuelles Jahr erstellen

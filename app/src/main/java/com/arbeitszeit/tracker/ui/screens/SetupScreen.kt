@@ -510,6 +510,13 @@ private fun UserDataStep(
         )
 
         // Erster Montag
+        val ersterMontagFormatted = try {
+            val date = LocalDate.parse(uiState.ersterMontagImJahr)
+            date.format(DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy"))
+        } catch (e: Exception) {
+            "Format: yyyy-MM-dd"
+        }
+
         OutlinedTextField(
             value = uiState.ersterMontagImJahr,
             onValueChange = { viewModel.updateErsterMontag(it) },
@@ -517,16 +524,7 @@ private fun UserDataStep(
             leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
             isError = uiState.ersterMontagError != null,
             supportingText = {
-                if (uiState.ersterMontagError != null) {
-                    Text(uiState.ersterMontagError)
-                } else {
-                    try {
-                        val date = LocalDate.parse(uiState.ersterMontagImJahr)
-                        Text(date.format(DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy")))
-                    } catch (e: Exception) {
-                        Text("Format: yyyy-MM-dd")
-                    }
-                }
+                Text(uiState.ersterMontagError ?: ersterMontagFormatted)
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
