@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
             val settings by database.userSettingsDao().getSettingsFlow()
                 .collectAsState(initial = null)
 
-            // Year ViewModel
+            // Jahr ViewModel
             val yearViewModel = ViewModelProvider(this)[YearViewModel::class.java]
             val yearUiState by yearViewModel.uiState.collectAsState()
 
@@ -93,6 +93,19 @@ class MainActivity : ComponentActivity() {
             }
 
             ArbeitszeitTrackerTheme(darkTheme = darkTheme) {
+                // Setup-Check: Wenn UserSettings null ist, zeige Setup Wizard
+                if (settings == null) {
+                    // Neue Installation -> Setup Wizard anzeigen
+                    com.arbeitszeit.tracker.ui.screens.SetupScreen(
+                        onSetupComplete = {
+                            // Nach Setup: App neustarten um Settings zu laden
+                            recreate()
+                        }
+                    )
+                    return@ArbeitszeitTrackerTheme
+                }
+
+                // Normale App (für bestehende Benutzer)
                 val navController = rememberNavController()
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
