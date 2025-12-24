@@ -129,6 +129,9 @@ class YearManager(private val context: Context) {
 
             android.util.Log.d("YearManager", "Neues Jahr $year erfolgreich angelegt: $newYearSettings")
 
+            // 10. Neuberechnung aller Einträge dieses Kalenderjahres
+            recalculateTimeEntries(year)
+
             Result.success(newYearSettings)
 
         } catch (e: Exception) {
@@ -217,6 +220,77 @@ class YearManager(private val context: Context) {
      */
     suspend fun archiveYear(year: Int) = withContext(Dispatchers.IO) {
         yearSettingsDao.archiveYear(year)
+    }
+
+    /**
+     * Berechnet alle Zeiteinträge eines Kalenderjahres neu
+     *
+     * WICHTIG: Wird automatisch aufgerufen wenn:
+     * - Ein neues Jahr angelegt wird
+     * - Der "Erster Montag" eines Jahres geändert wird
+     *
+     * Diese Funktion:
+     * - Lädt alle Einträge des Kalenderjahres (z.B. 2026-01-01 bis 2026-12-31)
+     * - Berechnet für jeden Eintrag die KW und das custom year NEU
+     * - Updated die Einträge in der Datenbank
+     *
+     * @param calendarYear Das Kalenderjahr (z.B. 2026)
+     */
+    suspend fun recalculateTimeEntries(calendarYear: Int) = withContext(Dispatchers.IO) {
+        try {
+            android.util.Log.d("YearManager", "Neuberechnung aller Einträge für Kalenderjahr $calendarYear")
+
+            // 1. Lade YearSettings für dieses Jahr
+            val yearSettings = yearSettingsDao.getYear(calendarYear)
+            if (yearSettings == null) {
+                android.util.Log.w("YearManager", "Kein YearSettings für $calendarYear gefunden - breche ab")
+                return@withContext
+            }
+
+            val ersterMontagImJahr = yearSettings.ersterMontagImJahr
+
+            // 2. Lade ALLE Einträge des Kalenderjahres
+            val startDate = "$calendarYear-01-01"
+            val endDate = "$calendarYear-12-31"
+            val entries = timeEntryDao.getEntriesByDateRange(startDate, endDate)
+
+            android.util.Log.d("YearManager", "Gefunden: ${entries.size} Einträge für Kalenderjahr $calendarYear")
+
+            // 3. Berechne für jeden Eintrag die KW und Jahr neu
+            entries.forEach { entry ->
+                val date = LocalDate.parse(entry.datum)
+
+                // Berechne custom KW
+                val newKW = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekOfYear(
+                    date,
+                    ersterMontagImJahr
+                )
+
+                // Berechne custom year
+                val newYear = com.arbeitszeit.tracker.utils.DateUtils.getCustomWeekBasedYear(
+                    date,
+                    ersterMontagImJahr
+                )
+
+                // Update nur wenn sich was geändert hat
+                if (entry.kalenderwoche != newKW || entry.jahr != newYear) {
+                    android.util.Log.d("YearManager",
+                        "Update ${entry.datum}: KW ${entry.kalenderwoche}→$newKW, Jahr ${entry.jahr}→$newYear"
+                    )
+
+                    timeEntryDao.update(entry.copy(
+                        kalenderwoche = newKW,
+                        jahr = newYear,
+                        updatedAt = System.currentTimeMillis()
+                    ))
+                }
+            }
+
+            android.util.Log.d("YearManager", "Neuberechnung für Kalenderjahr $calendarYear abgeschlossen")
+
+        } catch (e: Exception) {
+            android.util.Log.e("YearManager", "Fehler bei Neuberechnung für Jahr $calendarYear", e)
+        }
     }
 
     /**
