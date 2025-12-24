@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.data.entity.UserSettings
+import com.arbeitszeit.tracker.data.entity.YearSettings
 import com.arbeitszeit.tracker.import.ExcelImportManager
 import com.arbeitszeit.tracker.import.ImportResult
 import com.arbeitszeit.tracker.year.YearManager
@@ -339,167 +340,128 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Schließt Setup ab: Speichert Benutzerdaten und erstellt aktuelles Jahr
+     * VEREINFACHTE VERSION - ohne komplexe Dispatcher-Wechsel
      */
     fun completeSetup() {
-        android.util.Log.d("SetupViewModel", "completeSetup() aufgerufen")
-        Toast.makeText(getApplication(), "Abschließen geklickt - starte Validierung", Toast.LENGTH_SHORT).show()
-
-        viewModelScope.launch {
-            // Validierung
-            if (!validateUserData()) {
-                android.util.Log.e("SetupViewModel", "Validierung fehlgeschlagen - Setup wird abgebrochen")
-                _uiState.value = _uiState.value.copy(
-                    currentStep = SetupStep.USER_DATA,  // Zurück zu Dateneingabe
-                    error = "Bitte alle Felder korrekt ausfüllen"
-                )
-                return@launch
-            }
-
-            android.util.Log.d("SetupViewModel", "Validierung erfolgreich - starte Setup")
-            Toast.makeText(getApplication(), "Validierung erfolgreich - speichere Daten", Toast.LENGTH_SHORT).show()
-            _uiState.value = _uiState.value.copy(isLoading = true)
-
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                val state = _uiState.value
-                delay(500) // Warte damit Toast sichtbar wird
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Schritt 1: Extrahiere Jahr aus Datum", Toast.LENGTH_SHORT).show()
+                // Validierung auf Main Thread
+                val isValid = withContext(Dispatchers.Main) {
+                    validateUserData()
                 }
-                delay(500)
 
-                // Jahr aus "ersterMontagImJahr" extrahieren
+                if (!isValid) {
+                    _uiState.value = _uiState.value.copy(
+                        currentStep = SetupStep.USER_DATA,
+                        error = "Bitte alle Felder korrekt ausfüllen"
+                    )
+                    return@launch
+                }
+
+                // Loading aktivieren
+                _uiState.value = _uiState.value.copy(isLoading = true)
+
+                val state = _uiState.value
+
+                // Jahr aus Datum extrahieren
                 val currentYear = try {
                     LocalDate.parse(state.ersterMontagImJahr).year
                 } catch (e: Exception) {
                     LocalDate.now().year
                 }
 
-                android.util.Log.d("SetupViewModel", "Jahr $currentYear wird angelegt")
+                // 1. UserSettings speichern
+                val userSettings = UserSettings(
+                    id = 1,
+                    name = state.name,
+                    einrichtung = state.einrichtung,
+                    arbeitsumfangProzent = state.arbeitsumfangProzent,
+                    wochenStundenMinuten = state.wochenStundenMinuten,
+                    arbeitsTageProWoche = state.arbeitsTageProWoche,
+                    ferienbetreuung = state.ferienbetreuung,
+                    ueberstundenVorjahrMinuten = 0,
+                    letzterUebertragMinuten = 0,
+                    ersterMontagImJahr = state.ersterMontagImJahr,
+                    urlaubsanspruchTage = state.urlaubsanspruchTage,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
+                )
+                userSettingsDao.insertOrUpdate(userSettings)
 
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Schritt 2: Jahr $currentYear - speichere UserSettings", Toast.LENGTH_SHORT).show()
-                }
-                delay(500)
-
-                // 1. UserSettings speichern (auf IO Thread)
-                withContext(Dispatchers.IO) {
-                    val userSettings = UserSettings(
-                        id = 1,
-                        name = state.name,
-                        einrichtung = state.einrichtung,
-                        arbeitsumfangProzent = state.arbeitsumfangProzent,
-                        wochenStundenMinuten = state.wochenStundenMinuten,
-                        arbeitsTageProWoche = state.arbeitsTageProWoche,
-                        ferienbetreuung = state.ferienbetreuung,
-                        ueberstundenVorjahrMinuten = 0,
-                        letzterUebertragMinuten = 0,
-                        ersterMontagImJahr = state.ersterMontagImJahr,
-                        urlaubsanspruchTage = state.urlaubsanspruchTage,
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
+                // 2. Jahr erstellen - DIREKT ohne Result-Wrapper
+                try {
+                    val yearSettings = createYearDirectly(
+                        currentYear,
+                        state.ersterMontagImJahr,
+                        state.urlaubsanspruchTage
                     )
 
-                    userSettingsDao.insertOrUpdate(userSettings)
-                    android.util.Log.d("SetupViewModel", "UserSettings gespeichert: $userSettings")
-                }
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Schritt 3: UserSettings gespeichert - erstelle Jahr", Toast.LENGTH_SHORT).show()
-                }
-                delay(500)
-
-                // 2. Aktuelles Jahr erstellen (auf IO Thread)
-                android.util.Log.d("SetupViewModel", "STARTE createNewYear für Jahr $currentYear")
-                android.util.Log.d("SetupViewModel", "Parameter: ersterMontag=${state.ersterMontagImJahr}, urlaubsanspruch=${state.urlaubsanspruchTage}")
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Rufe yearManager.createNewYear() auf...", Toast.LENGTH_SHORT).show()
-                }
-                delay(500)
-
-                val result = withContext(Dispatchers.IO) {
-                    try {
-                        yearManager.createNewYear(
-                            year = currentYear,
-                            ersterMontagImJahr = state.ersterMontagImJahr,
-                            urlaubsanspruch = state.urlaubsanspruchTage,
-                            uebertragUeberstunden = false,  // Erstes Jahr, kein Übertrag
-                            uebertragResturlaub = false
-                        )
-                    } catch (e: Exception) {
-                        android.util.Log.e("SetupViewModel", "EXCEPTION in createNewYear: ${e.message}", e)
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(getApplication(), "EXCEPTION in createNewYear: ${e.message}", Toast.LENGTH_LONG).show()
+                    // 3. Template speichern falls vorhanden
+                    if (state.hasTemplate && state.templateUri != null) {
+                        val templateManager = com.arbeitszeit.tracker.template.TemplateManager(getApplication())
+                        val saved = templateManager.saveTemplate(currentYear, state.templateUri)
+                        if (saved) {
+                            yearManager.updateExcelTemplateFlag(currentYear)
                         }
-                        throw e
                     }
+
+                    // Erfolg!
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        setupComplete = true,
+                        currentStep = SetupStep.COMPLETION,
+                        success = "Einrichtung erfolgreich abgeschlossen!"
+                    )
+
+                } catch (e: Exception) {
+                    android.util.Log.e("SetupViewModel", "Fehler beim Jahr erstellen: ${e.message}", e)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Fehler beim Erstellen des Jahres: ${e.message}"
+                    )
                 }
-
-                android.util.Log.d("SetupViewModel", "createNewYear ist ZURÜCKGEKOMMEN - starte fold")
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Schritt 4: Jahr erstellt - prüfe Ergebnis", Toast.LENGTH_SHORT).show()
-                }
-                delay(500)
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Schritt 4.5: Starte result.fold()", Toast.LENGTH_SHORT).show()
-                }
-                android.util.Log.d("SetupViewModel", "STARTE result.fold() - result=$result")
-                delay(500)
-
-                // Verwende fold() für sichere Result-Behandlung
-                result.fold(
-                    onSuccess = { yearSettings ->
-                        android.util.Log.d("SetupViewModel", "SUCCESS: Jahr $currentYear erfolgreich erstellt: $yearSettings")
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(getApplication(), "Schritt 5: Erfolgreich! Wechsle zu Completion", Toast.LENGTH_SHORT).show()
-                        }
-                        delay(500)
-
-                        // 3. Wenn Template vorhanden, als Template für dieses Jahr speichern
-                        if (state.hasTemplate && state.templateUri != null) {
-                            withContext(Dispatchers.IO) {
-                                val templateManager = com.arbeitszeit.tracker.template.TemplateManager(getApplication())
-                                val saved = templateManager.saveTemplate(currentYear, state.templateUri)
-
-                                if (saved) {
-                                    yearManager.updateExcelTemplateFlag(currentYear)
-                                    android.util.Log.d("SetupViewModel", "Template für Jahr $currentYear gespeichert")
-                                }
-                            }
-                        }
-
-                        // Setup erfolgreich abgeschlossen
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            setupComplete = true,
-                            currentStep = SetupStep.COMPLETION,
-                            success = "Einrichtung erfolgreich abgeschlossen!"
-                        )
-                    },
-                    onFailure = { exception ->
-                        val errorMsg = exception.message ?: "Unbekannter Fehler"
-                        android.util.Log.e("SetupViewModel", "FAILURE: Jahr konnte nicht erstellt werden: $errorMsg", exception)
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(getApplication(), "FEHLER: Jahr konnte nicht erstellt werden: $errorMsg", Toast.LENGTH_LONG).show()
-                        }
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = "Fehler beim Erstellen des Jahres: $errorMsg"
-                        )
-                    }
-                )
 
             } catch (e: Exception) {
                 android.util.Log.e("SetupViewModel", "Setup-Fehler: ${e.message}", e)
-                Toast.makeText(getApplication(), "FEHLER im Setup: ${e.message}", Toast.LENGTH_LONG).show()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Fehler beim Abschließen der Einrichtung: ${e.message}"
+                    error = "Fehler: ${e.message}"
                 )
             }
         }
+    }
+
+    /**
+     * Erstellt ein Jahr direkt - ohne Result-Wrapper
+     * Vereinfachte Version nur für Setup
+     */
+    private suspend fun createYearDirectly(
+        year: Int,
+        ersterMontagImJahr: String,
+        urlaubsanspruch: Int
+    ): YearSettings {
+        val yearSettingsDao = database.yearSettingsDao()
+
+        // Prüfe ob Jahr bereits existiert
+        if (yearSettingsDao.yearExists(year)) {
+            throw Exception("Jahr $year existiert bereits")
+        }
+
+        // YearSettings erstellen
+        val newYearSettings = YearSettings(
+            year = year,
+            ersterMontagImJahr = ersterMontagImJahr,
+            urlaubsanspruchTage = urlaubsanspruch,
+            vorjahresUebertragMinuten = 0,
+            hasExcelTemplate = false,
+            isActive = true,  // Als aktives Jahr setzen
+            createdAt = System.currentTimeMillis()
+        )
+
+        // Speichern
+        yearSettingsDao.insert(newYearSettings)
+
+        return newYearSettings
     }
 
     /**
