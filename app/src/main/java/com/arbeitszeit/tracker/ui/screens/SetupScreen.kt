@@ -257,7 +257,7 @@ private fun WelcomeStep(
         ) {
             Text("Los geht's!")
             Spacer(Modifier.width(8.dp))
-            Icon(Icons.Default.ArrowForward, contentDescription = null)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
         }
     }
 }
@@ -380,7 +380,7 @@ private fun TemplateUploadStep(
                 enabled = !isLoading,
                 modifier = Modifier.weight(1f)
             ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Zurück")
             }
@@ -597,7 +597,7 @@ private fun UserDataStep(
                 enabled = !uiState.isLoading,
                 modifier = Modifier.weight(1f)
             ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Zurück")
             }
@@ -718,7 +718,7 @@ private fun CompletionStep(
         ) {
             Text("Zur App")
             Spacer(Modifier.width(8.dp))
-            Icon(Icons.Default.ArrowForward, contentDescription = null)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
         }
     }
 }

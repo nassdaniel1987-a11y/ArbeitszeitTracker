@@ -65,7 +65,7 @@ class DriveManager(
                 DriveFile(
                     id = file.id,
                     name = file.name,
-                    size = file.getSize() ?: 0,
+                    size = file.getSizeSafely() ?: 0,
                     modifiedTime = file.modifiedTime?.value ?: 0
                 )
             )
@@ -113,7 +113,7 @@ class DriveManager(
                 DriveFile(
                     id = file.id,
                     name = file.name,
-                    size = file.getSize() ?: 0,
+                    size = file.getSizeSafely() ?: 0,
                     modifiedTime = file.modifiedTime?.value ?: 0
                 )
             }
@@ -194,7 +194,7 @@ class DriveManager(
 /**
  * Extension: Safe get size (null-safe)
  */
-private fun File.getSize(): Long? {
+private fun File.getSizeSafely(): Long? {
     return try {
         this.size?.toLong()
     } catch (e: Exception) {

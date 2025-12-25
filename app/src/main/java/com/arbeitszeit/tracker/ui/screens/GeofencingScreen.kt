@@ -56,7 +56,7 @@ fun GeofencingScreen(
                 title = { Text("Automatische Zeiterfassung") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
                     }
                 }
             )
@@ -518,6 +518,7 @@ private fun WorkLocationCard(
                     }
                 }
                 // Typ anzeigen (Kreis oder Polygon)
+                @Suppress("DEPRECATION")
                 Text(
                     if (location.isPolygon()) {
                         "Typ: Polygon (${location.getPolygonPointsList().size} Punkte)"

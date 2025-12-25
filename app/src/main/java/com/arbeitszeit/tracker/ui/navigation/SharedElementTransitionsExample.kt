@@ -164,7 +164,7 @@ fun SharedTransitionScope.WorkEntryDetailScreen(
                 title = { Text("Detail") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
                     }
                 }
             )

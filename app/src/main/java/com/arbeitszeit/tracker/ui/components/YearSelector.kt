@@ -82,7 +82,7 @@ fun YearSelector(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Divider()
+            HorizontalDivider()
 
             // Jahre
             allYears.forEach { year ->
@@ -138,7 +138,7 @@ fun YearSelector(
                 )
             }
 
-            Divider()
+            HorizontalDivider()
 
             // "Neues Jahr anlegen"
             DropdownMenuItem(

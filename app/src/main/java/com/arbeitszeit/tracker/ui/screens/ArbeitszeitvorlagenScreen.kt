@@ -23,7 +23,7 @@ fun ArbeitszeitvorlagenScreen(
                 title = { Text("Sollzeit-Vorlagen") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Filled.ArrowBack, "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

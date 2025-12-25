@@ -60,7 +60,7 @@ fun NavGraph(
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToCalendar = { navController.navigate(Screen.Calendar.route) },
-                onNavigateToWeekTemplates = { navController.navigate(Screen.WeekTemplates.route) },
+                onNavigateToWeekTemplates = { navController.navigate(Screen.Arbeitszeitvorlagen.route) },
                 onNavigateToHelp = { navController.navigate(Screen.Help.route) }
             )
         }
@@ -81,11 +81,13 @@ fun NavGraph(
         }
 
         // Backward compatibility - deprecated routes
+        @Suppress("DEPRECATION")
         composable(Screen.Export.route) {
             val viewModel: ExportViewModel = viewModel()
             ExportScreen(viewModel = viewModel)
         }
 
+        @Suppress("DEPRECATION")
         composable(Screen.Import.route) {
             val viewModel: ExportViewModel = viewModel()
             ImportScreen(viewModel = viewModel)
@@ -126,6 +128,7 @@ fun NavGraph(
         }
 
         // Backward compatibility - deprecated route
+        @Suppress("DEPRECATION")
         composable(Screen.WeekTemplates.route) {
             val viewModel: WeekTemplatesViewModel = viewModel()
             WeekTemplatesScreen(

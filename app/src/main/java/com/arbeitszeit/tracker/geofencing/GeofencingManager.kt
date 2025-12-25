@@ -38,6 +38,7 @@ class GeofencingManager(private val context: Context) {
 
         // Filter nur kreisförmige Arbeitsorte (keine Polygone)
         // Die Android Geofencing API unterstützt nur kreisförmige Regionen
+        @Suppress("DEPRECATION")
         val circularLocations = locations.filter { !it.isPolygon() }
 
         val geofences = circularLocations.map { location ->

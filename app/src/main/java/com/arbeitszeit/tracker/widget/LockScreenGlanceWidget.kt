@@ -98,7 +98,7 @@ class LockScreenGlanceWidget : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, R.layout.widget_lockscreen_glance)
 
                 // Status anzeigen
-                if (isRunning && todayEntry != null) {
+                if (isRunning) {
                     // Arbeitszeit läuft
                     views.setTextViewText(R.id.widget_lockscreen_status_icon, "▶")
                     views.setTextViewText(R.id.widget_lockscreen_status_text, "Arbeitszeit läuft")
