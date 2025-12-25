@@ -254,6 +254,53 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     }
                 }
             }
+
+            // Legende
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 1.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Text(
+                        text = "Legende",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Erste Spalte
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            LegendItem(Color(0xFF10B981), "✓", "Vollständig")
+                            LegendItem(Color(0xFFF59E0B), "~", "Teilweise")
+                            LegendItem(Color(0xFF06B6D4), "U", "Urlaub")
+                        }
+
+                        // Zweite Spalte
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            LegendItem(Color(0xFFEF4444), "K", "Krank")
+                            LegendItem(Color(0xFF6366F1), "F", "Feiertag")
+                            LegendItem(Color(0xFFFFD700), "⭐", "Feiertag")
+                        }
+                    }
+                }
+            }
         }
 
         // Edit Dialog
@@ -286,6 +333,49 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                 }
             )
         }
+    }
+}
+
+/**
+ * Legende-Item: Farbiger Balken + Label + Beschreibung
+ */
+@Composable
+private fun LegendItem(
+    color: Color,
+    label: String,
+    description: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Farbiger Balken (wie im Kalender)
+        Surface(
+            modifier = Modifier
+                .width(32.dp)
+                .height(14.dp),
+            color = color,
+            shape = RoundedCornerShape(3.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+        }
+
+        // Beschreibung
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
