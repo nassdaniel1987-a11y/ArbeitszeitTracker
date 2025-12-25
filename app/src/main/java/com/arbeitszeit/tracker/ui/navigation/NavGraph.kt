@@ -14,8 +14,9 @@ import kotlinx.serialization.Serializable
 @Serializable object HomeRoute
 @Serializable object CalendarRoute
 @Serializable object UeberstundenRoute
-@Serializable object ExportRoute
-@Serializable object ImportRoute
+@Serializable object DataManagementRoute  // Neu: kombiniert Export + Import
+@Deprecated("Use DataManagementRoute instead") @Serializable object ExportRoute
+@Deprecated("Use DataManagementRoute instead") @Serializable object ImportRoute
 @Serializable object SettingsRoute
 @Serializable object GeofencingRoute
 @Serializable object TemplateManagementRoute
@@ -30,8 +31,9 @@ sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Calendar : Screen("calendar")
     object Ueberstunden : Screen("ueberstunden")
-    object Export : Screen("export")
-    object Import : Screen("import")
+    object DataManagement : Screen("data_management")  // Neu: kombiniert Export + Import
+    @Deprecated("Use DataManagement instead") object Export : Screen("export")
+    @Deprecated("Use DataManagement instead") object Import : Screen("import")
     object Settings : Screen("settings")
     object Geofencing : Screen("geofencing")
     object TemplateManagement : Screen("template_management")
@@ -71,11 +73,18 @@ fun NavGraph(
             UeberstundenScreen(viewModel = viewModel)
         }
 
+        composable(Screen.DataManagement.route) {
+            val viewModel: ExportViewModel = viewModel()
+            DataManagementScreen(viewModel = viewModel)
+        }
+
+        @Deprecated("Use DataManagement instead")
         composable(Screen.Export.route) {
             val viewModel: ExportViewModel = viewModel()
             ExportScreen(viewModel = viewModel)
         }
 
+        @Deprecated("Use DataManagement instead")
         composable(Screen.Import.route) {
             val viewModel: ExportViewModel = viewModel()
             ImportScreen(viewModel = viewModel)
@@ -86,7 +95,8 @@ fun NavGraph(
             SettingsScreen(
                 viewModel = viewModel,
                 onNavigateToGeofencing = { navController.navigate(Screen.Geofencing.route) },
-                onNavigateToTemplateManagement = { navController.navigate(Screen.TemplateManagement.route) }
+                onNavigateToTemplateManagement = { navController.navigate(Screen.TemplateManagement.route) },
+                onNavigateToYearManagement = { navController.navigate(Screen.YearManagement.route) }
             )
         }
 

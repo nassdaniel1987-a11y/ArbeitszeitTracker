@@ -198,7 +198,7 @@ class MainActivity : ComponentActivity() {
 
                             NavigationDrawerItem(
                                 icon = { Icon(Icons.Default.ContentCopy, null) },
-                                label = { Text("Wochen-Vorlagen") },
+                                label = { Text("Vorlagen") },
                                 selected = currentRoute == Screen.WeekTemplates.route,
                                 onClick = {
                                     scope.launch { drawerState.close() }
@@ -209,25 +209,12 @@ class MainActivity : ComponentActivity() {
                             )
 
                             NavigationDrawerItem(
-                                icon = { Icon(Icons.Default.FileDownload, null) },
-                                label = { Text("Export") },
-                                selected = currentRoute == Screen.Export.route,
+                                icon = { Icon(Icons.Default.SyncAlt, null) },
+                                label = { Text("Daten") },
+                                selected = currentRoute == Screen.DataManagement.route,
                                 onClick = {
                                     scope.launch { drawerState.close() }
-                                    navController.navigate(Screen.Export.route) {
-                                        popUpTo(navController.graph.startDestinationId)
-                                        launchSingleTop = true
-                                    }
-                                }
-                            )
-
-                            NavigationDrawerItem(
-                                icon = { Icon(Icons.Default.FileUpload, null) },
-                                label = { Text("Import") },
-                                selected = currentRoute == Screen.Import.route,
-                                onClick = {
-                                    scope.launch { drawerState.close() }
-                                    navController.navigate(Screen.Import.route) {
+                                    navController.navigate(Screen.DataManagement.route) {
                                         popUpTo(navController.graph.startDestinationId)
                                         launchSingleTop = true
                                     }
@@ -235,18 +222,6 @@ class MainActivity : ComponentActivity() {
                             )
 
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                            NavigationDrawerItem(
-                                icon = { Icon(Icons.Default.DateRange, null) },
-                                label = { Text("Jahre verwalten") },
-                                selected = currentRoute == Screen.YearManagement.route,
-                                onClick = {
-                                    scope.launch { drawerState.close() }
-                                    navController.navigate(Screen.YearManagement.route) {
-                                        launchSingleTop = true
-                                    }
-                                }
-                            )
 
                             NavigationDrawerItem(
                                 icon = { Icon(Icons.Default.Settings, null) },
@@ -283,8 +258,7 @@ class MainActivity : ComponentActivity() {
                                 Screen.Ueberstunden.route,
                                 Screen.Calendar.route,
                                 Screen.VacationPlanner.route,
-                                Screen.Export.route,
-                                Screen.Import.route,
+                                Screen.DataManagement.route,
                                 Screen.Settings.route
                             )
 
@@ -297,8 +271,7 @@ class MainActivity : ComponentActivity() {
                                                 Screen.Ueberstunden.route -> "Überstunden"
                                                 Screen.Calendar.route -> "Kalender"
                                                 Screen.VacationPlanner.route -> "Urlaubsplaner"
-                                                Screen.Export.route -> "Export"
-                                                Screen.Import.route -> "Import"
+                                                Screen.DataManagement.route -> "Daten"
                                                 Screen.Settings.route -> "Einstellungen"
                                                 else -> "Arbeitszeit Tracker"
                                             }
