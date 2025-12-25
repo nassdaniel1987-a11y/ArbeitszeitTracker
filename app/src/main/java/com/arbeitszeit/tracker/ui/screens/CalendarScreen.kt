@@ -38,10 +38,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Kalender im Android/Google Kalender-Stil
- * - Wie die echte Kalender-App
- * - Zeigt Event-Infos unter jedem Tag
- * - Clean Design, gut lesbar
+ * GROßER Kalender im Android-Stil
+ * - Nutzt den ganzen Bildschirm
+ * - Große, gut lesbare Zellen
+ * - Deutlich sichtbare Event-Infos
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -102,54 +102,157 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // TopBar: Monat + Heute-Button
-            CalendarTopBar(
-                month = currentPageMonth,
-                onTodayClick = {
-                    scope.launch {
-                        pagerState.animateScrollToPage(initialPage)
-                        viewModel.setMonth(month)
+            // TopBar: Monat + Heute-Button + Statistik in einer Zeile
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 1.dp
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Monat/Jahr
+                        Text(
+                            text = currentPageMonth.atDay(1).format(
+                                DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMAN)
+                            ),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        // Heute-Button
+                        FilledTonalButton(
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(initialPage)
+                                    viewModel.setMonth(month)
+                                }
+                            },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Today,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Heute", fontSize = 13.sp)
+                        }
+                    }
+
+                    // Kompakte Statistik
+                    if (entries.isNotEmpty()) {
+                        val (totalSoll, totalIst, totalDiff) = remember(entries) {
+                            val soll = entries.sumOf { it.sollMinuten }
+                            val ist = entries.sumOf { it.getIstMinuten() }
+                            Triple(soll, ist, ist - soll)
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Soll: ${TimeUtils.minutesToHoursMinutes(totalSoll)} • Ist: ${TimeUtils.minutesToHoursMinutes(totalIst)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = TimeUtils.formatDifferenz(totalDiff),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = when {
+                                    totalDiff > 0 -> Color(0xFF10B981)
+                                    totalDiff < 0 -> Color(0xFFEF4444)
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
                     }
                 }
-            )
+            }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Kompakte Statistik
-            MonthStatistics(
-                entries = entries,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-            )
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
             // Wochentag-Header
-            WeekdayHeader(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So").forEach { day ->
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = day,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
 
-            // Kalender mit Swipe
+            // GROßER Kalender mit Swipe
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
             ) { page ->
                 val pageMonth = month.plusMonths((page - initialPage).toLong())
                 val pageEntries = remember(pageMonth) {
                     if (pageMonth == month) entries else emptyList()
                 }
 
-                CalendarGrid(
-                    month = pageMonth,
-                    entries = pageEntries,
-                    today = today,
-                    userSettings = userSettings,
-                    onDayClick = { date ->
-                        selectedDate = date
-                        showEditDialog = true
-                    },
-                    viewModel = viewModel,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp)
-                )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(7),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // Offset für ersten Tag
+                    val firstDayOfMonth = pageMonth.atDay(1)
+                    val offset = firstDayOfMonth.dayOfWeek.value - 1
+
+                    // Leere Zellen
+                    items(offset) {
+                        Box(modifier = Modifier.aspectRatio(1f))
+                    }
+
+                    // Tage des Monats
+                    items(pageMonth.lengthOfMonth()) { day ->
+                        val date = pageMonth.atDay(day + 1)
+                        val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        val entry = entries.find { it.datum == dateString }
+                        val status = viewModel.getEntryStatus(entry)
+                        val isToday = date == today
+
+                        LargeDayCell(
+                            date = date,
+                            entry = entry,
+                            status = status,
+                            isToday = isToday,
+                            userSettings = userSettings,
+                            onClick = {
+                                selectedDate = dateString
+                                showEditDialog = true
+                            }
+                        )
+                    }
+                }
             }
         }
 
@@ -187,183 +290,10 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
 }
 
 /**
- * TopBar: Monat/Jahr + Heute-Button
+ * GROßE Tag-Zelle mit deutlich sichtbaren Infos
  */
 @Composable
-private fun CalendarTopBar(
-    month: YearMonth,
-    onTodayClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = month.atDay(1).format(
-                DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMAN)
-            ),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        FilledTonalButton(
-            onClick = onTodayClick,
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Icon(
-                Icons.Default.Today,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(Modifier.width(6.dp))
-            Text("Heute", fontSize = 14.sp)
-        }
-    }
-}
-
-/**
- * Kompakte Statistik
- */
-@Composable
-private fun MonthStatistics(
-    entries: List<TimeEntry>,
-    modifier: Modifier = Modifier
-) {
-    if (entries.isEmpty()) return
-
-    val (totalSoll, totalIst, totalDiff) = remember(entries) {
-        val soll = entries.sumOf { it.sollMinuten }
-        val ist = entries.sumOf { it.getIstMinuten() }
-        val diff = ist - soll
-        Triple(soll, ist, diff)
-    }
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                text = "Soll: ${TimeUtils.minutesToHoursMinutes(totalSoll)}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Ist: ${TimeUtils.minutesToHoursMinutes(totalIst)}",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = TimeUtils.formatDifferenz(totalDiff),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = when {
-                    totalDiff > 0 -> Color(0xFF10B981)
-                    totalDiff < 0 -> Color(0xFFEF4444)
-                    else -> MaterialTheme.colorScheme.onSurface
-                }
-            )
-            Text(
-                text = "${entries.count { it.isComplete() }} / ${entries.size} Tage",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-/**
- * Wochentag-Header
- */
-@Composable
-private fun WeekdayHeader(modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So").forEach { day ->
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = day,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-/**
- * Kalender-Grid
- */
-@Composable
-private fun CalendarGrid(
-    month: YearMonth,
-    entries: List<TimeEntry>,
-    today: LocalDate,
-    userSettings: com.arbeitszeit.tracker.data.entity.UserSettings?,
-    onDayClick: (String) -> Unit,
-    viewModel: CalendarViewModel,
-    modifier: Modifier = Modifier
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(7),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        contentPadding = PaddingValues(bottom = 16.dp),
-        modifier = modifier
-    ) {
-        // Offset für ersten Tag
-        val firstDayOfMonth = month.atDay(1)
-        val offset = firstDayOfMonth.dayOfWeek.value - 1
-
-        // Leere Zellen
-        items(offset) {
-            Box(modifier = Modifier.aspectRatio(1f))
-        }
-
-        // Tage des Monats
-        items(month.lengthOfMonth()) { day ->
-            val date = month.atDay(day + 1)
-            val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-            val entry = entries.find { it.datum == dateString }
-            val status = viewModel.getEntryStatus(entry)
-            val isToday = date == today
-
-            AndroidCalendarDayCell(
-                date = date,
-                entry = entry,
-                status = status,
-                isToday = isToday,
-                userSettings = userSettings,
-                onClick = { onDayClick(dateString) }
-            )
-        }
-    }
-}
-
-/**
- * Tag-Zelle wie in der Android Kalender-App
- * - Tag-Nummer oben
- * - Event-Info als kleiner farbiger Balken darunter
- * - Leichter Hintergrund wenn Einträge vorhanden
- */
-@Composable
-private fun AndroidCalendarDayCell(
+private fun LargeDayCell(
     date: LocalDate,
     entry: TimeEntry?,
     status: EntryStatus,
@@ -374,87 +304,94 @@ private fun AndroidCalendarDayCell(
     val bundesland = HolidayUtils.Bundesland.fromShortCode(userSettings?.bundesland)
     val isHoliday = HolidayUtils.isHoliday(date, bundesland)
 
-    // Hintergrund für Tage mit Einträgen (sehr subtil)
+    // Hintergrund für Tage mit Einträgen
     val cellBackgroundColor = when {
-        isToday -> Color.Transparent
         entry != null -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         else -> Color.Transparent
     }
 
-    Box(
+    Card(
         modifier = Modifier
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(8.dp))
-            .background(cellBackgroundColor)
-            .clickable(onClick = onClick)
-            .padding(4.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = cellBackgroundColor
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isToday) 2.dp else 0.dp
+        )
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxSize()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(6.dp)
         ) {
-            // Tag-Nummer (mit Kreis für Heute)
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(
-                        color = if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top,
+                modifier = Modifier.fillMaxSize()
             ) {
-                Text(
-                    text = "${date.dayOfMonth}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = 15.sp,
-                    color = if (isToday)
-                        MaterialTheme.colorScheme.onPrimary
-                    else
-                        MaterialTheme.colorScheme.onSurface
-                )
-            }
+                // Tag-Nummer (GROß)
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(
+                            color = if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "${date.dayOfMonth}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+                        fontSize = 18.sp,
+                        color = if (isToday)
+                            MaterialTheme.colorScheme.onPrimary
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                    )
+                }
 
-            Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
 
-            // Event-Info (wie Google Calendar - farbige Zeile)
-            if (entry != null || isHoliday) {
+                // Event-Infos (GROß und deutlich)
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Feiertag-Indikator
+                    // Feiertag
                     if (isHoliday) {
                         Surface(
                             modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .height(3.dp),
+                                .fillMaxWidth(0.85f)
+                                .height(4.dp),
                             color = Color(0xFFFFD700),
                             shape = RoundedCornerShape(2.dp)
                         ) {}
                     }
 
-                    // Entry-Status als farbiger Balken
+                    // Entry-Status-Balken (GROß)
                     if (entry != null) {
                         val (barColor, label) = when {
-                            entry.typ == TimeEntry.TYP_URLAUB -> Color(0xFF06B6D4) to "U"
-                            entry.typ == TimeEntry.TYP_KRANK -> Color(0xFFEF4444) to "K"
-                            entry.typ == TimeEntry.TYP_FEIERTAG -> Color(0xFF6366F1) to "F"
-                            entry.typ == TimeEntry.TYP_ABWESEND -> Color(0xFF6B7280) to "A"
+                            entry.typ == TimeEntry.TYP_URLAUB -> Color(0xFF06B6D4) to "Urlaub"
+                            entry.typ == TimeEntry.TYP_KRANK -> Color(0xFFEF4444) to "Krank"
+                            entry.typ == TimeEntry.TYP_FEIERTAG -> Color(0xFF6366F1) to "Feiertag"
+                            entry.typ == TimeEntry.TYP_ABWESEND -> Color(0xFF6B7280) to "Abwesend"
                             status == EntryStatus.COMPLETE -> Color(0xFF10B981) to "✓"
                             status == EntryStatus.PARTIAL -> Color(0xFFF59E0B) to "~"
-                            else -> Color(0xFF9CA3AF) to "○"
+                            else -> MaterialTheme.colorScheme.outline to "○"
                         }
 
-                        // Farbiger Balken mit Label
+                        // Großer farbiger Balken
                         Surface(
                             modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .height(14.dp),
+                                .fillMaxWidth(0.85f)
+                                .height(18.dp),
                             color = barColor,
-                            shape = RoundedCornerShape(3.dp)
+                            shape = RoundedCornerShape(4.dp)
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -462,63 +399,50 @@ private fun AndroidCalendarDayCell(
                             ) {
                                 Text(
                                     text = label,
-                                    fontSize = 9.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    maxLines = 1
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
 
-                        // Arbeitszeit-Info (wenn normal)
-                        if (entry.typ == TimeEntry.TYP_NORMAL && (entry.startZeit != null || entry.endZeit != null)) {
+                        // Arbeitszeit (GROß und lesbar)
+                        if (entry.typ == TimeEntry.TYP_NORMAL) {
                             val timeText = when {
                                 entry.startZeit != null && entry.endZeit != null -> {
                                     "${TimeUtils.minutesToTimeString(entry.startZeit)}-${TimeUtils.minutesToTimeString(entry.endZeit)}"
                                 }
                                 entry.startZeit != null -> TimeUtils.minutesToTimeString(entry.startZeit)
                                 entry.endZeit != null -> TimeUtils.minutesToTimeString(entry.endZeit)
-                                else -> ""
+                                else -> null
                             }
 
-                            if (timeText.isNotEmpty()) {
+                            timeText?.let {
                                 Text(
-                                    text = timeText,
-                                    fontSize = 8.sp,
+                                    text = it,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(horizontal = 2.dp)
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            // Differenz
+                            val diff = entry.getDifferenzMinuten()
+                            if (diff != 0) {
+                                Text(
+                                    text = TimeUtils.formatDifferenz(diff),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (diff > 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                                    maxLines = 1
                                 )
                             }
                         }
                     }
-                }
-            }
-        }
-
-        // Überstunden-Badge (Ecke)
-        if (entry != null && entry.typ == TimeEntry.TYP_NORMAL) {
-            val diff = entry.getDifferenzMinuten()
-            if (kotlin.math.abs(diff) >= 30) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(2.dp),
-                    color = if (diff > 0)
-                        Color(0xFF10B981).copy(alpha = 0.9f)
-                    else
-                        Color(0xFFEF4444).copy(alpha = 0.9f),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = if (diff > 0) "+${diff / 60}" else "${diff / 60}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 8.sp,
-                        modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
-                    )
                 }
             }
         }
