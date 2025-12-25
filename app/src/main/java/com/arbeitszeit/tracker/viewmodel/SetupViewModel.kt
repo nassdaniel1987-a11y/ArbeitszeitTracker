@@ -417,6 +417,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                     android.util.Log.e("SetupViewModel", "Fehler beim Jahr erstellen: ${e.message}", e)
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
+                        currentStep = SetupStep.USER_DATA,
                         error = "Fehler beim Erstellen des Jahres: ${e.message}"
                     )
                 }
@@ -425,6 +426,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                 android.util.Log.e("SetupViewModel", "Setup-Fehler: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
+                    currentStep = SetupStep.USER_DATA,
                     error = "Fehler: ${e.message}"
                 )
             }

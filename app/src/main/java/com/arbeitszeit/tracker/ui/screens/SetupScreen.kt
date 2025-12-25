@@ -42,13 +42,6 @@ fun SetupScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    // Wenn Setup abgeschlossen, navigiere zur App
-    LaunchedEffect(uiState.setupComplete) {
-        if (uiState.setupComplete) {
-            onSetupComplete()
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
