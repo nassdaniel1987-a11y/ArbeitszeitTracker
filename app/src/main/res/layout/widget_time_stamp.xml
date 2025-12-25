@@ -1,142 +1,174 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Modernisiertes Widget mit Material 3 Design
+    - Rounded corners
+    - Modern colors
+    - Responsive layout
+    - Better spacing
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@color/widget_background">
+    android:padding="8dp"
+    android:background="@android:color/transparent">
 
-    <!-- Header mit Status -->
+    <!-- Card-Container mit Rounded Corners -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingBottom="8dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/widget_background_modern"
+        android:elevation="4dp">
 
-        <!-- Status Indikator -->
-        <TextView
-            android:id="@+id/widget_status_indicator"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:background="@android:drawable/presence_offline"
-            android:layout_marginEnd="8dp" />
-
-        <TextView
-            android:id="@+id/widget_title"
-            android:layout_width="0dp"
+        <!-- Header mit Status -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Arbeitszeit"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_title" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="12dp">
 
-        <!-- Aktuelle Dauer -->
-        <TextView
-            android:id="@+id/widget_duration"
-            android:layout_width="wrap_content"
+            <!-- Status Indicator (moderner) -->
+            <View
+                android:id="@+id/widget_status_indicator"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@drawable/widget_status_indicator"
+                android:layout_marginEnd="10dp" />
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Arbeitszeit"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#1C1B1F"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- Aktuelle Dauer (größer & prominenter) -->
+            <TextView
+                android:id="@+id/widget_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0:00h"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#6750A4"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <!-- Fortschrittsbalken (moderner) -->
+        <ProgressBar
+            android:id="@+id/widget_progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginBottom="12dp"
+            android:progress="0"
+            android:max="100"
+            android:progressTint="#6750A4"
+            android:progressBackgroundTint="#E8DEF8"
+            android:indeterminate="false" />
+
+        <!-- Zeit Info (kompakter) -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="0:00h"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_primary" />
-    </LinearLayout>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="14dp"
+            android:paddingTop="2dp">
 
-    <!-- Fortschrittsbalken -->
-    <ProgressBar
-        android:id="@+id/widget_progress_bar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginBottom="8dp"
-        android:progress="0"
-        android:max="100"
-        android:progressTint="@color/widget_progress"
-        android:progressBackgroundTint="@color/widget_progress_background" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🕐"
+                android:textSize="16sp"
+                android:paddingEnd="6dp" />
 
-    <!-- Zeit Info -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingBottom="8dp">
+            <TextView
+                android:id="@+id/widget_start_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--:--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#49454F"
+                android:fontFamily="sans-serif-medium" />
 
-        <TextView
-            android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" → "
+                android:textSize="15sp"
+                android:textColor="#79747E"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp" />
+
+            <TextView
+                android:id="@+id/widget_end_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--:--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#49454F"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <!-- Button Row (moderner mit rounded corners) -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⏰"
-            android:textSize="14sp"
-            android:paddingEnd="4dp" />
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:baselineAligned="false">
 
-        <TextView
-            android:id="@+id/widget_start_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_text" />
+            <Button
+                android:id="@+id/widget_start_button"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="START"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/widget_button_success"
+                android:layout_marginEnd="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:elevation="2dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" - "
-            android:textSize="14sp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp" />
+            <Button
+                android:id="@+id/widget_pause_button"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="PAUSE"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#6750A4"
+                android:background="@drawable/widget_button_secondary"
+                android:layout_marginEnd="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:elevation="2dp" />
 
-        <TextView
-            android:id="@+id/widget_end_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_text" />
+            <Button
+                android:id="@+id/widget_end_button"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="ENDE"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/widget_button_primary"
+                android:fontFamily="sans-serif-medium"
+                android:elevation="2dp" />
+        </LinearLayout>
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="end"
-            android:text=""
-            android:textSize="10sp" />
-    </LinearLayout>
-
-    <!-- Button Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center">
-
-        <Button
-            android:id="@+id/widget_start_button"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:text="START"
-            android:textSize="11sp"
-            android:layout_marginEnd="4dp" />
-
-        <Button
-            android:id="@+id/widget_pause_button"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:text="PAUSE"
-            android:textSize="11sp"
-            android:layout_marginEnd="4dp" />
-
-        <Button
-            android:id="@+id/widget_end_button"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:text="ENDE"
-            android:textSize="11sp" />
     </LinearLayout>
 
 </LinearLayout>
