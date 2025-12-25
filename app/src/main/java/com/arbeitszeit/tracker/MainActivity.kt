@@ -197,12 +197,12 @@ class MainActivity : ComponentActivity() {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                             NavigationDrawerItem(
-                                icon = { Icon(Icons.Default.ContentCopy, null) },
-                                label = { Text("Vorlagen") },
-                                selected = currentRoute == Screen.WeekTemplates.route,
+                                icon = { Icon(Icons.Default.Schedule, null) },
+                                label = { Text("Sollzeit-Vorlagen") },
+                                selected = currentRoute == Screen.Arbeitszeitvorlagen.route,
                                 onClick = {
                                     scope.launch { drawerState.close() }
-                                    navController.navigate(Screen.WeekTemplates.route) {
+                                    navController.navigate(Screen.Arbeitszeitvorlagen.route) {
                                         launchSingleTop = true
                                     }
                                 }

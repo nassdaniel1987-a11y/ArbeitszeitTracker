@@ -20,7 +20,8 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 @Serializable object GeofencingRoute
 @Serializable object TemplateManagementRoute
-@Serializable object WeekTemplatesRoute
+@Serializable object ArbeitszeitvorlagenRoute  // Sollzeit-Vorlagen
+@Deprecated("Use ArbeitszeitvorlagenRoute instead") @Serializable object WeekTemplatesRoute
 @Serializable object HelpRoute
 @Serializable object VacationPlannerRoute
 @Serializable object ClosingDaysRoute
@@ -37,7 +38,8 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object Geofencing : Screen("geofencing")
     object TemplateManagement : Screen("template_management")
-    object WeekTemplates : Screen("week_templates")
+    object Arbeitszeitvorlagen : Screen("arbeitszeitvorlagen")  // Sollzeit-Vorlagen
+    @Deprecated("Use Arbeitszeitvorlagen instead") object WeekTemplates : Screen("week_templates")
     object Help : Screen("help")
     object VacationPlanner : Screen("vacation_planner")
     object ClosingDays : Screen("closing_days")
@@ -115,6 +117,15 @@ fun NavGraph(
             )
         }
 
+        composable(Screen.Arbeitszeitvorlagen.route) {
+            val viewModel: SettingsViewModel = viewModel()
+            ArbeitszeitvorlagenScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Backward compatibility - deprecated route
         composable(Screen.WeekTemplates.route) {
             val viewModel: WeekTemplatesViewModel = viewModel()
             WeekTemplatesScreen(
