@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
@@ -37,10 +38,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Minimalistischer Kalender im Android/Google Kalender-Stil
- * - Clean, einfaches Design
- * - Gut lesbar in Light & Dark Mode
- * - Swipe-Gesten zwischen Monaten
+ * Kalender im Android/Google Kalender-Stil
+ * - Wie die echte Kalender-App
+ * - Zeigt Event-Infos unter jedem Tag
+ * - Clean Design, gut lesbar
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -123,7 +124,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Wochentag-Header
-            WeekdayHeader(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+            WeekdayHeader(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
 
             // Kalender mit Swipe
             HorizontalPager(
@@ -147,7 +148,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     viewModel = viewModel,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 12.dp)
                 )
             }
         }
@@ -225,7 +226,7 @@ private fun CalendarTopBar(
 }
 
 /**
- * Kompakte Statistik-Card
+ * Kompakte Statistik
  */
 @Composable
 private fun MonthStatistics(
@@ -246,7 +247,6 @@ private fun MonthStatistics(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Soll/Ist
         Column {
             Text(
                 text = "Soll: ${TimeUtils.minutesToHoursMinutes(totalSoll)}",
@@ -261,15 +261,14 @@ private fun MonthStatistics(
             )
         }
 
-        // Differenz
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = TimeUtils.formatDifferenz(totalDiff),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = when {
-                    totalDiff > 0 -> Color(0xFF10B981) // Grün
-                    totalDiff < 0 -> Color(0xFFEF4444) // Rot
+                    totalDiff > 0 -> Color(0xFF10B981)
+                    totalDiff < 0 -> Color(0xFFEF4444)
                     else -> MaterialTheme.colorScheme.onSurface
                 }
             )
@@ -345,7 +344,7 @@ private fun CalendarGrid(
             val status = viewModel.getEntryStatus(entry)
             val isToday = date == today
 
-            MinimalDayCell(
+            AndroidCalendarDayCell(
                 date = date,
                 entry = entry,
                 status = status,
@@ -358,10 +357,13 @@ private fun CalendarGrid(
 }
 
 /**
- * Minimalistische Tag-Zelle (Android-Kalender-Stil)
+ * Tag-Zelle wie in der Android Kalender-App
+ * - Tag-Nummer oben
+ * - Event-Info als kleiner farbiger Balken darunter
+ * - Leichter Hintergrund wenn Einträge vorhanden
  */
 @Composable
-private fun MinimalDayCell(
+private fun AndroidCalendarDayCell(
     date: LocalDate,
     entry: TimeEntry?,
     status: EntryStatus,
@@ -372,14 +374,10 @@ private fun MinimalDayCell(
     val bundesland = HolidayUtils.Bundesland.fromShortCode(userSettings?.bundesland)
     val isHoliday = HolidayUtils.isHoliday(date, bundesland)
 
-    // Bestimme Farben basierend auf Theme
-    val dayNumberColor = when {
-        isToday -> MaterialTheme.colorScheme.onPrimary
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-
-    val backgroundColor = when {
-        isToday -> MaterialTheme.colorScheme.primary
+    // Hintergrund für Tage mit Einträgen (sehr subtil)
+    val cellBackgroundColor = when {
+        isToday -> Color.Transparent
+        entry != null -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         else -> Color.Transparent
     }
 
@@ -387,86 +385,122 @@ private fun MinimalDayCell(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(8.dp))
+            .background(cellBackgroundColor)
             .clickable(onClick = onClick)
-            .padding(2.dp),
-        contentAlignment = Alignment.Center
+            .padding(4.dp)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Top,
             modifier = Modifier.fillMaxSize()
         ) {
             // Tag-Nummer (mit Kreis für Heute)
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(32.dp)
                     .background(
-                        color = backgroundColor,
+                        color = if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "${date.dayOfMonth}",
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = 16.sp,
-                    color = dayNumberColor
+                    fontSize = 15.sp,
+                    color = if (isToday)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurface
                 )
             }
 
             Spacer(Modifier.height(2.dp))
 
-            // Event-Indikatoren (kleine Punkte unter der Zahl)
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.height(8.dp)
-            ) {
-                // Feiertags-Punkt
-                if (isHoliday) {
-                    Box(
-                        modifier = Modifier
-                            .size(5.dp)
-                            .background(
-                                color = Color(0xFFFFD700), // Gold
-                                shape = CircleShape
-                            )
-                    )
-                    Spacer(Modifier.width(3.dp))
-                }
-
-                // Entry-Status-Punkt
-                if (entry != null) {
-                    val dotColor = when (status) {
-                        EntryStatus.COMPLETE -> Color(0xFF10B981) // Grün
-                        EntryStatus.PARTIAL -> Color(0xFFF59E0B) // Orange
-                        EntryStatus.SPECIAL -> when (entry.typ) {
-                            TimeEntry.TYP_URLAUB -> Color(0xFF06B6D4) // Cyan
-                            TimeEntry.TYP_KRANK -> Color(0xFFEF4444) // Rot
-                            else -> Color(0xFF6366F1) // Indigo
-                        }
-                        else -> Color.Transparent
+            // Event-Info (wie Google Calendar - farbige Zeile)
+            if (entry != null || isHoliday) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Feiertag-Indikator
+                    if (isHoliday) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(3.dp),
+                            color = Color(0xFFFFD700),
+                            shape = RoundedCornerShape(2.dp)
+                        ) {}
                     }
 
-                    if (dotColor != Color.Transparent) {
-                        Box(
+                    // Entry-Status als farbiger Balken
+                    if (entry != null) {
+                        val (barColor, label) = when {
+                            entry.typ == TimeEntry.TYP_URLAUB -> Color(0xFF06B6D4) to "U"
+                            entry.typ == TimeEntry.TYP_KRANK -> Color(0xFFEF4444) to "K"
+                            entry.typ == TimeEntry.TYP_FEIERTAG -> Color(0xFF6366F1) to "F"
+                            entry.typ == TimeEntry.TYP_ABWESEND -> Color(0xFF6B7280) to "A"
+                            status == EntryStatus.COMPLETE -> Color(0xFF10B981) to "✓"
+                            status == EntryStatus.PARTIAL -> Color(0xFFF59E0B) to "~"
+                            else -> Color(0xFF9CA3AF) to "○"
+                        }
+
+                        // Farbiger Balken mit Label
+                        Surface(
                             modifier = Modifier
-                                .size(5.dp)
-                                .background(
-                                    color = dotColor,
-                                    shape = CircleShape
+                                .fillMaxWidth(0.8f)
+                                .height(14.dp),
+                            color = barColor,
+                            shape = RoundedCornerShape(3.dp)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1
                                 )
-                        )
+                            }
+                        }
+
+                        // Arbeitszeit-Info (wenn normal)
+                        if (entry.typ == TimeEntry.TYP_NORMAL && (entry.startZeit != null || entry.endZeit != null)) {
+                            val timeText = when {
+                                entry.startZeit != null && entry.endZeit != null -> {
+                                    "${TimeUtils.minutesToTimeString(entry.startZeit)}-${TimeUtils.minutesToTimeString(entry.endZeit)}"
+                                }
+                                entry.startZeit != null -> TimeUtils.minutesToTimeString(entry.startZeit)
+                                entry.endZeit != null -> TimeUtils.minutesToTimeString(entry.endZeit)
+                                else -> ""
+                            }
+
+                            if (timeText.isNotEmpty()) {
+                                Text(
+                                    text = timeText,
+                                    fontSize = 8.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 2.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Überstunden-Badge (nur wenn signifikant)
+        // Überstunden-Badge (Ecke)
         if (entry != null && entry.typ == TimeEntry.TYP_NORMAL) {
             val diff = entry.getDifferenzMinuten()
-            if (kotlin.math.abs(diff) >= 60) { // Nur bei >= 1h
+            if (kotlin.math.abs(diff) >= 30) {
                 Surface(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -482,7 +516,7 @@ private fun MinimalDayCell(
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 9.sp,
+                        fontSize = 8.sp,
                         modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
                     )
                 }
