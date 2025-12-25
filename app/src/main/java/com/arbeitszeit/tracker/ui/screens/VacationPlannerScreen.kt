@@ -117,7 +117,7 @@ fun VacationPlannerScreen(
 
             // Tabs
             item {
-                androidx.compose.material3.TabRow(
+                androidx.compose.material3.PrimaryTabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = MaterialTheme.colorScheme.surface
                 ) {
@@ -137,7 +137,7 @@ fun VacationPlannerScreen(
                         selected = selectedTab == 2,
                         onClick = { selectedTab = 2 },
                         text = { Text("Brückentage") },
-                        icon = { Icon(Icons.Default.TrendingUp, null) }
+                        icon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null) }
                     )
                 }
             }
@@ -391,7 +391,7 @@ fun YearSelector(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { onYearChange(selectedYear - 1) }) {
-                Icon(Icons.Default.KeyboardArrowLeft, "Vorheriges Jahr")
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Vorheriges Jahr")
             }
 
             Text(
@@ -401,7 +401,7 @@ fun YearSelector(
             )
 
             IconButton(onClick = { onYearChange(selectedYear + 1) }) {
-                Icon(Icons.Default.KeyboardArrowRight, "Nächstes Jahr")
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Nächstes Jahr")
             }
         }
     }

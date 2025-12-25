@@ -42,7 +42,7 @@ fun YearManagementScreen(
                 title = { Text("Jahre verwalten") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
                     }
                 },
                 actions = {

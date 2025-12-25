@@ -105,7 +105,7 @@ class LiveActivityWidget : AppWidgetProvider() {
             withContext(Dispatchers.Main) {
                 val views = RemoteViews(context.packageName, R.layout.widget_live_activity)
 
-                if (isRunning && todayEntry != null) {
+                if (isRunning) {
                     // Es läuft eine Arbeitszeit - Zeige aktiven Status
 
                     // Verstecke "Inaktiv"-Container, zeige aktive Elemente

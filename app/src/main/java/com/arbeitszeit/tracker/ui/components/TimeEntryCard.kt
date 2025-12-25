@@ -373,7 +373,7 @@ fun QuickTypeButton(
             containerColor = if (isSelected) color.copy(alpha = 0.2f) else Color.Transparent,
             contentColor = if (isSelected) color else MaterialTheme.colorScheme.onSurface
         ),
-        border = ButtonDefaults.outlinedButtonBorder.copy(
+        border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
             width = if (isSelected) 2.dp else 1.dp,
             brush = androidx.compose.ui.graphics.SolidColor(
                 if (isSelected) color else MaterialTheme.colorScheme.outline

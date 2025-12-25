@@ -72,6 +72,7 @@ data class WorkLocation(
      * - Für Kreis: Distanz-Check
      * - Für Polygon: Point-in-Polygon Check
      */
+    @Suppress("DEPRECATION")
     fun containsPoint(latitude: Double, longitude: Double): Boolean {
         return if (isPolygon()) {
             isPointInPolygon(latitude, longitude, getPolygonPointsList())

@@ -184,7 +184,7 @@ object DatabaseMigrations {
                     (year, ersterMontagImJahr, urlaubsanspruchTage, vorjahresUebertragMinuten,
                      hasExcelTemplate, isActive, createdAt, isArchived)
                     VALUES (?, ?, ?, ?, ?, ?, ?, 0)
-                """, arrayOf(
+                """, arrayOf<Any>(
                     year,
                     ersterMontag,
                     currentUrlaubsanspruch,
@@ -203,7 +203,7 @@ object DatabaseMigrations {
                     (year, ersterMontagImJahr, urlaubsanspruchTage, vorjahresUebertragMinuten,
                      hasExcelTemplate, isActive, createdAt, isArchived)
                     VALUES (?, ?, ?, ?, 0, 1, ?, 0)
-                """, arrayOf(
+                """, arrayOf<Any>(
                     currentYear,
                     ersterMontag,
                     currentUrlaubsanspruch,

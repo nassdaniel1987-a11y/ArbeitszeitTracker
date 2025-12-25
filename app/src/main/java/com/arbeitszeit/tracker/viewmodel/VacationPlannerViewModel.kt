@@ -10,6 +10,7 @@ import com.arbeitszeit.tracker.data.entity.SchoolHoliday
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.data.entity.UserSettings
 import com.arbeitszeit.tracker.vacation.SchoolHolidayManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -17,6 +18,7 @@ import java.time.LocalDate
 /**
  * ViewModel für die KI-gestützte Urlaubsplanung
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class VacationPlannerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = AppDatabase.getDatabase(application)

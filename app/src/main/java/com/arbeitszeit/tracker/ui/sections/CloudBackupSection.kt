@@ -174,7 +174,7 @@ fun CloudBackupSection(
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Default.Login, contentDescription = null)
+                                Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text("Mit Google anmelden")
                             }

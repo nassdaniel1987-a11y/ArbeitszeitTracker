@@ -152,7 +152,7 @@ fun HelpScreen(
         ),
         HelpSection(
             title = "📈 Überstunden-Tracking",
-            icon = Icons.Filled.TrendingUp,
+            icon = Icons.AutoMirrored.Filled.TrendingUp,
             items = listOf(
                 HelpItem(
                     "Gesamt-Übersicht",
@@ -484,7 +484,7 @@ fun HelpScreen(
                 title = { Text("Hilfe & Funktionen") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Filled.ArrowBack, "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

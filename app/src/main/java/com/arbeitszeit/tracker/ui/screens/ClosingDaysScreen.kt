@@ -61,7 +61,7 @@ fun ClosingDaysScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { selectedYear-- }) {
-                    Icon(Icons.Default.KeyboardArrowLeft, "Vorheriges Jahr")
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Vorheriges Jahr")
                 }
 
                 Text(
@@ -71,7 +71,7 @@ fun ClosingDaysScreen(
                 )
 
                 IconButton(onClick = { selectedYear++ }) {
-                    Icon(Icons.Default.KeyboardArrowRight, "Nächstes Jahr")
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Nächstes Jahr")
                 }
             }
 

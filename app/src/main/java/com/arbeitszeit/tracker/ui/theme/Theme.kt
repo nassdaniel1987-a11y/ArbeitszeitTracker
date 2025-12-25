@@ -84,6 +84,7 @@ fun ArbeitszeitTrackerTheme(
         SideEffect {
             val window = (view.context as Activity).window
             // Moderne transparente Status Bar statt solidem Blau
+            @Suppress("DEPRECATION")
             window.statusBarColor = android.graphics.Color.TRANSPARENT
             WindowCompat.setDecorFitsSystemWindows(window, false)
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme

@@ -26,7 +26,7 @@ fun DataManagementScreen(viewModel: ExportViewModel) {
                 )
 
                 // Tab Row
-                TabRow(
+                PrimaryTabRow(
                     selectedTabIndex = selectedTabIndex,
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer

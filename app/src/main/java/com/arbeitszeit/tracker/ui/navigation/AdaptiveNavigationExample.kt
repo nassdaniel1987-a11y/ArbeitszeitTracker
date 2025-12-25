@@ -42,7 +42,7 @@ fun AdaptiveNavigationLayout(
         NavigationItem(Screen.Home.route, Icons.Default.Home, "Home"),
         NavigationItem(Screen.Ueberstunden.route, Icons.Default.Timeline, "Überstunden"),
         NavigationItem(Screen.Calendar.route, Icons.Default.CalendarMonth, "Kalender"),
-        NavigationItem(Screen.Export.route, Icons.Default.FileDownload, "Export"),
+        NavigationItem(Screen.DataManagement.route, Icons.Default.FileDownload, "Export"),
         NavigationItem(Screen.Settings.route, Icons.Default.Settings, "Einstellungen")
     )
 
