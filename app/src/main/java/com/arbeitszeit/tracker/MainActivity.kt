@@ -89,9 +89,23 @@ class MainActivity : ComponentActivity() {
                 else -> isSystemInDarkTheme() // "system" or null
             }
 
+            // Setup Detection
+            var setupCompleted by remember { mutableStateOf(false) }
+            val needsSetup = settings != null &&
+                             !setupCompleted &&
+                             (settings.name.isBlank() || settings.einrichtung.isBlank())
+
             ArbeitszeitTrackerTheme(darkTheme = darkTheme) {
-                // Normale App
-                val navController = rememberNavController()
+                if (needsSetup) {
+                    // Setup Wizard für neue Benutzer
+                    com.arbeitszeit.tracker.ui.screens.SetupScreen(
+                        onSetupComplete = {
+                            setupCompleted = true
+                        }
+                    )
+                } else {
+                    // Normale App
+                    val navController = rememberNavController()
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -365,6 +379,7 @@ class MainActivity : ComponentActivity() {
                         Text(message)
                     }
                 }
+                } // Ende else (Normale App)
             }
         }
     }
