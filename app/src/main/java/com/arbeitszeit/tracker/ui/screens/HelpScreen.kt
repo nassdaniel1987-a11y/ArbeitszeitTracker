@@ -21,6 +21,24 @@ fun HelpScreen(
 
     val helpSections = listOf(
         HelpSection(
+            title = "🆕 Erste Schritte - Setup Wizard",
+            icon = Icons.Default.Start,
+            items = listOf(
+                HelpItem(
+                    "Setup-Assistent",
+                    "Beim ersten Start führt dich ein 4-Schritte-Wizard durch die Einrichtung:\n• Willkommen & App-Vorstellung\n• Optional: Excel-Vorlage hochladen (Daten werden automatisch übernommen)\n• Benutzerdaten eingeben (Name, Einrichtung, Wochenstunden, etc.)\n• Abschluss & Start der App"
+                ),
+                HelpItem(
+                    "Excel-Import im Setup",
+                    "Lade deine Excel-Arbeitszeit-Vorlage hoch:\n• Automatisches Auslesen von Name, Einrichtung, Wochenstunden\n• Arbeitszeiten werden direkt importiert\n• Kann übersprungen werden für manuelle Eingabe"
+                ),
+                HelpItem(
+                    "Was wird beim Setup angelegt?",
+                    "Der Wizard erstellt automatisch:\n• Deine persönlichen Einstellungen (UserSettings)\n• Das aktuelle Jahr (z.B. 2025) mit allen Standardwerten\n• Optional: Importierte Zeiteinträge aus Excel"
+                )
+            )
+        ),
+        HelpSection(
             title = "🏠 Startseite & Schnellzugriff",
             icon = Icons.Default.Home,
             items = listOf(
@@ -51,32 +69,40 @@ fun HelpScreen(
             )
         ),
         HelpSection(
-            title = "📅 Kalenderansicht",
+            title = "📅 Kalenderansicht (Android-Stil)",
             icon = Icons.Default.CalendarToday,
             items = listOf(
                 HelpItem(
-                    "Monats-Navigation",
-                    "Wechsle zwischen Monaten:\n• Swipen nach links/rechts\n• Oder Pfeil-Buttons nutzen\n• Monat/Jahr-Anzeige oben"
+                    "Swipe-Navigation",
+                    "Moderne Monatsnavigation wie im Google Kalender:\n• Nach links/rechts swipen für Monatswechsel\n• Flüssige Animationen zwischen Monaten\n• 'Heute'-Button zum schnellen Zurückspringen"
+                ),
+                HelpItem(
+                    "Große, lesbare Zellen",
+                    "Der Kalender nutzt den gesamten Bildschirm:\n• Große Tag-Nummern (18sp)\n• Event-Balken mit Labels (Urlaub, Krank, etc.)\n• Arbeitszeiten direkt sichtbar (z.B. 8:00-16:00)\n• Differenz-Anzeige (+2h oder -1h)"
                 ),
                 HelpItem(
                     "Tag bearbeiten",
                     "Auf Datum tippen für Details und Bearbeitung:\n• Start-/End-Zeit ändern\n• Pause einstellen\n• Typ wechseln (Normal/Urlaub/Krank/etc.)\n• Notizen hinzufügen"
                 ),
                 HelpItem(
-                    "Tag löschen",
-                    "Nach links wischen zum Löschen:\n• Undo-Funktion in Snackbar\n• Alle Zeiten werden zurückgesetzt\n• Oder: Long-Press in Wochenansicht"
+                    "Event-Balken (Android-Kalender-Stil)",
+                    "Farbige Balken zeigen den Status jedes Tages:\n• Grün (✓) = Vollständig gearbeitet\n• Orange (~) = Teilweise gearbeitet\n• Cyan (Urlaub) = Urlaubstag\n• Rot (Krank) = Krankheitstag\n• Indigo (Feiertag) = Feiertagstyp\n• Gold (⭐) = Gesetzlicher Feiertag"
                 ),
                 HelpItem(
-                    "Farbcodierung",
-                    "Tagesfarben zeigen Status auf einen Blick:\n🟢 Grün = Soll-Zeit erfüllt/übertroffen\n🟠 Orange = Teilzeit (unter Soll)\n🔴 Rot = Fehlzeit (kein Eintrag)\n🔵 Blau = Urlaub/Krank/Feiertag/Abwesend"
+                    "Legende",
+                    "Am unteren Rand des Kalenders:\n• Erklärt alle Farben und Symbole\n• 2-spaltige Übersicht\n• Farbige Balken wie im Kalender\n• Immer sichtbar zur Orientierung"
                 ),
                 HelpItem(
-                    "Feiertags-Badge",
-                    "Goldener Stern ⭐ markiert Feiertage:\n• Basiert auf deinem Bundesland\n• Automatische Erkennung\n• In Einstellungen konfigurierbar"
+                    "Arbeitszeit-Anzeige",
+                    "Direkt unter dem Event-Balken:\n• Start-Ende-Zeit (z.B. 8:00-16:00)\n• Nur Start oder nur Ende möglich\n• Differenz zu Soll-Zeit (+2h / -1h)\n• Farbcodiert: Grün (Plus) / Rot (Minus)"
                 ),
                 HelpItem(
-                    "Überstunden-Badge",
-                    "Rechts oben auf jedem Tag:\n• +/- Stunden für den Tag\n• Kumulative Anzeige\n• Rot bei Minusstunden"
+                    "Heute-Markierung",
+                    "Der heutige Tag ist besonders gekennzeichnet:\n• Blauer Kreis um die Tag-Nummer\n• Leichte Elevation (hebt sich ab)\n• Bold-Schrift für bessere Sichtbarkeit"
+                ),
+                HelpItem(
+                    "Feiertags-Balken",
+                    "Goldener Balken über dem Event-Balken:\n• Zeigt gesetzliche Feiertage\n• Basiert auf deinem Bundesland\n• Automatische Erkennung\n• In Einstellungen konfigurierbar"
                 )
             )
         ),
