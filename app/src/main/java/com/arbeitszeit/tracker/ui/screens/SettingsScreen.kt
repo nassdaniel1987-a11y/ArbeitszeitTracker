@@ -28,7 +28,8 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onNavigateToGeofencing: () -> Unit = {},
-    onNavigateToTemplateManagement: () -> Unit = {}
+    onNavigateToTemplateManagement: () -> Unit = {},
+    onNavigateToYearManagement: () -> Unit = {}
 ) {
     val settings by viewModel.userSettings.collectAsState()
     var selectedSection by remember { mutableStateOf<SettingsSection?>(null) }
@@ -43,7 +44,8 @@ fun SettingsScreen(
             snackbarHostState = snackbarHostState,
             onNavigateBack = { selectedSection = null },
             onNavigateToGeofencing = onNavigateToGeofencing,
-            onNavigateToTemplateManagement = onNavigateToTemplateManagement
+            onNavigateToTemplateManagement = onNavigateToTemplateManagement,
+            onNavigateToYearManagement = onNavigateToYearManagement
         )
         return
     }
@@ -152,6 +154,14 @@ fun SettingsScreen(
                     title = "Automatischer Jahreswechsel",
                     subtitle = if (settings?.autoSwitchYear == true) "Aktiviert" else "Deaktiviert",
                     onClick = { selectedSection = SettingsSection.YEAR_MANAGEMENT }
+                )
+            }
+            item {
+                SettingsMenuItem(
+                    icon = Icons.Default.DateRange,
+                    title = "Jahre verwalten",
+                    subtitle = "Jahre erstellen, bearbeiten & löschen",
+                    onClick = onNavigateToYearManagement
                 )
             }
 
@@ -319,7 +329,8 @@ private fun SettingsDetailScreen(
     snackbarHostState: SnackbarHostState,
     onNavigateBack: () -> Unit,
     onNavigateToGeofencing: () -> Unit,
-    onNavigateToTemplateManagement: () -> Unit
+    onNavigateToTemplateManagement: () -> Unit,
+    onNavigateToYearManagement: () -> Unit
 ) {
     // System-Back-Geste abfangen (vom Rand wischen)
     BackHandler {
