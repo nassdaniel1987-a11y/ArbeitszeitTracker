@@ -91,9 +91,10 @@ class MainActivity : ComponentActivity() {
 
             // Setup Detection
             var setupCompleted by remember { mutableStateOf(false) }
-            val needsSetup = settings != null &&
+            val currentSettings = settings
+            val needsSetup = currentSettings != null &&
                              !setupCompleted &&
-                             (settings.name.isBlank() || settings.einrichtung.isBlank())
+                             (currentSettings.name.isBlank() || currentSettings.einrichtung.isBlank())
 
             ArbeitszeitTrackerTheme(darkTheme = darkTheme) {
                 if (needsSetup) {
