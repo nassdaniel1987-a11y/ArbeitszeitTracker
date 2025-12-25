@@ -1,30 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Modernisiertes kleines Widget (2x1)
+    - Rounded corners
+    - Modern colors
+    - Compact design
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="8dp"
-    android:gravity="center"
-    android:background="@color/widget_background">
+    android:padding="6dp"
+    android:background="@android:color/transparent">
 
-    <!-- Kompakte Zeit-Anzeige -->
-    <TextView
-        android:id="@+id/widget_duration_small"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0:00h"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@color/widget_primary"
-        android:paddingBottom="4dp" />
-
-    <!-- Single Quick-Stempel Button -->
-    <Button
-        android:id="@+id/widget_quick_stamp_button"
+    <!-- Card-Container -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="STEMPEL"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/widget_background_modern"
+        android:elevation="4dp">
+
+        <!-- Kompakte Zeit-Anzeige -->
+        <TextView
+            android:id="@+id/widget_duration_small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0:00h"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#6750A4"
+            android:fontFamily="sans-serif-medium"
+            android:paddingBottom="8dp" />
+
+        <!-- Single Quick-Stempel Button -->
+        <Button
+            android:id="@+id/widget_quick_stamp_button"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:text="STEMPEL"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/widget_button_primary"
+            android:fontFamily="sans-serif-medium"
+            android:elevation="2dp" />
+
+    </LinearLayout>
 
 </LinearLayout>

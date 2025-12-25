@@ -66,10 +66,17 @@ object NotificationHelper {
         val today = DateUtils.today()
         val entry = database.timeEntryDao().getEntryByDate(today)
 
+        // Logging für Debugging
+        android.util.Log.d("NotificationHelper", "showMorningReminder - Entry: $entry")
+        android.util.Log.d("NotificationHelper", "showMorningReminder - startZeit: ${entry?.startZeit}")
+
         // Nicht benachrichtigen wenn bereits eingestempelt
         if (entry != null && entry.startZeit != null) {
+            android.util.Log.d("NotificationHelper", "showMorningReminder - Abbruch: Bereits eingestempelt (startZeit = ${entry.startZeit})")
             return
         }
+
+        android.util.Log.i("NotificationHelper", "showMorningReminder - Sende Benachrichtigung!")
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -135,29 +142,42 @@ object NotificationHelper {
         val today = DateUtils.today()
         val entry = database.timeEntryDao().getEntryByDate(today)
 
+        // Logging für Debugging
+        android.util.Log.d("NotificationHelper", "showEveningReminder - Entry: $entry")
+        android.util.Log.d("NotificationHelper", "showEveningReminder - startZeit: ${entry?.startZeit}, endZeit: ${entry?.endZeit}")
+
         // Status-Prüfung: Nur benachrichtigen wenn eingestempelt aber noch nicht ausgestempelt
-        if (entry == null || entry.startZeit == null || entry.endZeit != null) {
+        if (entry == null) {
+            android.util.Log.d("NotificationHelper", "showEveningReminder - Abbruch: Kein Eintrag für heute")
             return
         }
 
-        val infoText = if (entry != null && entry.startZeit != null) {
-            val istMinuten = entry.getIstMinuten()
-            val sollMinuten = entry.sollMinuten
-            val differenz = istMinuten - sollMinuten
+        if (entry.startZeit == null) {
+            android.util.Log.d("NotificationHelper", "showEveningReminder - Abbruch: Nicht eingestempelt (startZeit == null)")
+            return
+        }
 
-            when {
-                differenz >= 0 -> {
-                    val diffText = TimeUtils.formatDifferenz(differenz)
-                    "Du hast dein Soll erreicht! Überstunden: $diffText ✓"
-                }
-                else -> {
-                    val remainingMinutes = -differenz
-                    val remainingText = TimeUtils.minutesToHoursMinutes(remainingMinutes)
-                    "Noch $remainingText bis zum Soll"
-                }
+        if (entry.endZeit != null) {
+            android.util.Log.d("NotificationHelper", "showEveningReminder - Abbruch: Bereits ausgestempelt (endZeit = ${entry.endZeit})")
+            return
+        }
+
+        android.util.Log.i("NotificationHelper", "showEveningReminder - Sende Benachrichtigung!")
+
+        val istMinuten = entry.getIstMinuten()
+        val sollMinuten = entry.sollMinuten
+        val differenz = istMinuten - sollMinuten
+
+        val infoText = when {
+            differenz >= 0 -> {
+                val diffText = TimeUtils.formatDifferenz(differenz)
+                "Du hast dein Soll erreicht! Überstunden: $diffText ✓"
             }
-        } else {
-            "Jetzt ausstempeln! 🏠"
+            else -> {
+                val remainingMinutes = -differenz
+                val remainingText = TimeUtils.minutesToHoursMinutes(remainingMinutes)
+                "Noch $remainingText bis zum Soll"
+            }
         }
 
         val intent = Intent(context, MainActivity::class.java).apply {
