@@ -97,6 +97,18 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Setzt einen spezifischen Monat (z.B. für Pager-Navigation oder "Heute"-Button)
+     */
+    fun setMonth(month: YearMonth) {
+        viewModelScope.launch {
+            if (yearBoundaryService.canNavigateToMonth(month)) {
+                _currentMonth.value = month
+                loadMonthEntries()
+            }
+        }
+    }
+
+    /**
      * Wählt einen Eintrag aus (für Detail-Ansicht)
      */
     fun selectEntry(date: String) {

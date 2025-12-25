@@ -2,12 +2,15 @@ package com.arbeitszeit.tracker.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,7 +23,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
 import com.arbeitszeit.tracker.ui.components.EditEntryDialog
 import com.arbeitszeit.tracker.ui.theme.*
@@ -28,12 +33,17 @@ import com.arbeitszeit.tracker.utils.HolidayUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
 import com.arbeitszeit.tracker.viewmodel.CalendarViewModel
 import com.arbeitszeit.tracker.viewmodel.EntryStatus
+import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Moderner Kalender-Screen mit Swipe-Gesten und Material 3 Design
+ * Orientiert am Android-Kalender
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CalendarScreen(viewModel: CalendarViewModel) {
     val month by viewModel.currentMonth.collectAsState()
@@ -46,6 +56,27 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     val today = LocalDate.now()
+    val scope = rememberCoroutineScope()
+
+    // Pager für Swipe-Gesten zwischen Monaten
+    val initialPage = 1200 // Mittlere Position für Vor-/Zurück-Navigation
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { 2400 } // Genug Pages für viele Jahre
+    )
+
+    // Berechne aktuellen Monat basierend auf Pager-Position
+    val currentPageMonth = remember(pagerState.currentPage) {
+        val offset = pagerState.currentPage - initialPage
+        month.plusMonths(offset.toLong())
+    }
+
+    // Synchronisiere ViewModel wenn User swipet
+    LaunchedEffect(currentPageMonth) {
+        if (currentPageMonth != month) {
+            viewModel.setMonth(currentPageMonth)
+        }
+    }
 
     // Zeige Snackbar wenn Eintrag gelöscht wurde
     LaunchedEffect(deletedEntry) {
@@ -57,335 +88,103 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
             )
 
             when (result) {
-                SnackbarResult.ActionPerformed -> {
-                    // User hat auf "Rückgängig" geklickt
-                    viewModel.undoDeleteEntry()
-                }
-                SnackbarResult.Dismissed -> {
-                    // Snackbar wurde geschlossen ohne Undo
-                    viewModel.clearDeletedEntry()
-                }
+                SnackbarResult.ActionPerformed -> viewModel.undoDeleteEntry()
+                SnackbarResult.Dismissed -> viewModel.clearDeletedEntry()
             }
         }
     }
-
-    // Berechne Monats-Statistik
-    val (totalSoll, totalIst, diffAndCompleted) = remember(entries) {
-        val totalSoll = entries.sumOf { it.sollMinuten }
-        val totalIst = entries.sumOf { it.getIstMinuten() }
-        val totalDiff = totalIst - totalSoll
-        val completedDays = entries.count { it.isComplete() }
-        Triple(totalSoll, totalIst, totalDiff to completedDays)
-    }
-    val (totalDiff, completedDays) = diffAndCompleted
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-        // Monatsnavigation
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { viewModel.previousMonth() }) {
-                    Icon(Icons.Default.ChevronLeft, "Vorheriger Monat")
-                }
-                Text(
-                    text = month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMAN)),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = { viewModel.nextMonth() }) {
-                    Icon(Icons.Default.ChevronRight, "Nächster Monat")
-                }
-            }
-        }
-
-        // Monats-Statistik mit Fade-In Animation
-        if (entries.isNotEmpty()) {
-            item {
-                var visible by remember { mutableStateOf(false) }
-
-                LaunchedEffect(month) {
-                    visible = false
-                    delay(100)
-                    visible = true
-                }
-
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(animationSpec = tween(400)) +
-                            expandVertically(animationSpec = tween(400))
-                ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = when {
-                                totalDiff > 0 -> MaterialTheme.colorScheme.primaryContainer
-                                totalDiff < 0 -> MaterialTheme.colorScheme.errorContainer
-                                else -> MaterialTheme.colorScheme.secondaryContainer
-                            }
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        shape = MaterialTheme.shapes.large
-                    ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = "Monats-Übersicht",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = "Soll: ${TimeUtils.minutesToHoursMinutes(totalSoll)}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = "Ist: ${TimeUtils.minutesToHoursMinutes(totalIst)}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = TimeUtils.formatDifferenz(totalDiff),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = when {
-                                    totalDiff > 0 -> OvertimeColor
-                                    totalDiff < 0 -> UndertimeColor
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                }
-                            )
-                            Text(
-                                text = "$completedDays von ${entries.size} Tagen",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    }
-                }
-            }
-        }
-
-        // Farb-Legende
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = MaterialTheme.shapes.large
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            // Kompakte TopBar mit Heute-Button
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    LegendItem(StatusComplete, "Vollständig")
-                    LegendItem(StatusPartial, "Teilweise")
-                    LegendItem(StatusEmpty, "Leer")
-                    LegendItem(StatusSpecial, "Urlaub/Krank")
-                }
-            }
-        }
-
-        // Wochentag-Header
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So").forEach { day ->
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = day,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
-
-        // Kalender-Grid
-        item {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(7),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.height(80.dp * ((month.lengthOfMonth() + (month.atDay(1).dayOfWeek.value - 1)) / 7 + 1))
-            ) {
-                // Berechne Offset für ersten Tag des Monats
-                val firstDayOfMonth = month.atDay(1)
-                val dayOfWeek = firstDayOfMonth.dayOfWeek.value
-                val offset = dayOfWeek - 1
-
-                // Füge leere Zellen für Tage vor dem ersten des Monats hinzu
-                items(offset) {
-                    Box(modifier = Modifier.aspectRatio(1f))
-                }
-
-                // Füge die eigentlichen Tage des Monats hinzu mit staggered Animation
-                items(month.lengthOfMonth()) { day ->
-                    val date = month.atDay(day + 1)
-                    val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                    val entry = entries.find { it.datum == dateString }
-                    val status = viewModel.getEntryStatus(entry)
-                    val isToday = date == today
-
-                    // Staggered Fade-in Animation
-                    var visible by remember(month) { mutableStateOf(false) }
-                    LaunchedEffect(month) {
-                        delay((day * 15L).coerceAtMost(300))
-                        visible = true
-                    }
-
-                    // Scale Animation beim Klicken
-                    var isPressed by remember { mutableStateOf(false) }
-                    val scale by animateFloatAsState(
-                        targetValue = if (isPressed) 0.95f else 1f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
+                    // Monat/Jahr Anzeige
+                    Text(
+                        text = currentPageMonth.atDay(1).format(
+                            DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMAN)
                         ),
-                        label = "day_click_scale"
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
 
-                    AnimatedVisibility(
-                        visible = visible,
-                        enter = fadeIn(animationSpec = tween(300)) +
-                                scaleIn(initialScale = 0.8f, animationSpec = tween(300))
-                    ) {
-                        Card(
-                            modifier = Modifier
-                                .aspectRatio(1f)
-                                .scale(scale)
-                                .then(
-                                    if (isToday) Modifier.border(
-                                        width = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = RoundedCornerShape(8.dp)
-                                    ) else Modifier
-                                )
-                                .clickable {
-                                    isPressed = true
-                                    selectedDate = dateString
-                                    showEditDialog = true
-                                },
-                            colors = CardDefaults.cardColors(
-                                containerColor = when (status) {
-                                    EntryStatus.COMPLETE -> StatusComplete
-                                    EntryStatus.PARTIAL -> StatusPartial
-                                    EntryStatus.EMPTY -> StatusEmpty
-                                    EntryStatus.SPECIAL -> StatusSpecial
-                                    else -> MaterialTheme.colorScheme.surfaceVariant
-                                }
-                            )
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                // Prüfe ob Tag ein Feiertag ist (mit Bundesland-Filter)
-                                val bundesland = HolidayUtils.Bundesland.fromShortCode(userSettings?.bundesland)
-                                val isHoliday = HolidayUtils.isHoliday(date, bundesland)
-                                val holidayName = HolidayUtils.getHolidayName(date, bundesland)
-
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = "${day + 1}",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                    // Zeige Icon für Typ
-                                    if (entry != null) {
-                                        Spacer(Modifier.height(2.dp))
-                                        Icon(
-                                            imageVector = when (entry.typ) {
-                                                TimeEntry.TYP_URLAUB -> Icons.Default.BeachAccess
-                                                TimeEntry.TYP_KRANK -> Icons.Default.LocalHospital
-                                                TimeEntry.TYP_FEIERTAG -> Icons.Default.Event
-                                                TimeEntry.TYP_ABWESEND -> Icons.Default.EventBusy
-                                                else -> Icons.Default.Work
-                                            },
-                                            contentDescription = entry.typ,
-                                            modifier = Modifier.size(16.dp),
-                                            tint = Color.White.copy(alpha = 0.8f)
-                                        )
-                                    }
-                                }
-
-                                // Feiertags-Badge (links oben) 🎉
-                                if (isHoliday) {
-                                    Surface(
-                                        modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .padding(2.dp),
-                                        color = Color(0xFFFFD700),  // Gold
-                                        shape = CircleShape
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Star,
-                                            contentDescription = holidayName,
-                                            modifier = Modifier
-                                                .size(16.dp)
-                                                .padding(2.dp),
-                                            tint = Color.White
-                                        )
-                                    }
-                                }
-
-                                // Mini-Badge mit Überstunden (rechts oben)
-                                if (entry != null && entry.typ == TimeEntry.TYP_NORMAL) {
-                                    val diff = entry.getDifferenzMinuten()
-                                    if (diff != 0) {
-                                        Surface(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(2.dp),
-                                            color = if (diff > 0)
-                                                Color(0xFF4CAF50)  // Grün für Plus
-                                            else
-                                                Color(0xFFFF5252),  // Rot für Minus
-                                            shape = RoundedCornerShape(4.dp)
-                                        ) {
-                                            Text(
-                                                text = TimeUtils.formatDifferenz(diff),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
-                                            )
-                                        }
-                                    }
-                                }
+                    // Heute-Button
+                    FilledTonalButton(
+                        onClick = {
+                            scope.launch {
+                                pagerState.animateScrollToPage(initialPage)
+                                viewModel.setMonth(month)
                             }
-                        }
+                        },
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Today,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("Heute", fontSize = 14.sp)
                     }
                 }
             }
         }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Monats-Statistik (kompakter)
+            MonthStatistics(
+                entries = entries,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            )
+
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+            // Wochentag-Header
+            WeekdayHeader(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+
+            // Swipe-able Kalender
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                val pageMonth = month.plusMonths((page - initialPage).toLong())
+                val pageEntries = remember(pageMonth) {
+                    if (pageMonth == month) entries else emptyList()
+                }
+
+                CalendarMonthGrid(
+                    month = pageMonth,
+                    entries = pageEntries,
+                    today = today,
+                    userSettings = userSettings,
+                    onDayClick = { date ->
+                        selectedDate = date
+                        showEditDialog = true
+                    },
+                    viewModel = viewModel,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp)
+                )
+            }
         }
 
         // Edit Dialog
@@ -421,21 +220,302 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     }
 }
 
+/**
+ * Kompakte Monats-Statistik
+ */
 @Composable
-fun LegendItem(color: Color, label: String) {
+private fun MonthStatistics(
+    entries: List<TimeEntry>,
+    modifier: Modifier = Modifier
+) {
+    if (entries.isEmpty()) return
+
+    val (totalSoll, totalIst, totalDiff) = remember(entries) {
+        val soll = entries.sumOf { it.sollMinuten }
+        val ist = entries.sumOf { it.getIstMinuten() }
+        val diff = ist - soll
+        Triple(soll, ist, diff)
+    }
+
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                totalDiff > 0 -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                totalDiff < 0 -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+            }
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Soll/Ist
+            Column {
+                Text(
+                    text = "Soll: ${TimeUtils.minutesToHoursMinutes(totalSoll)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "Ist: ${TimeUtils.minutesToHoursMinutes(totalIst)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            // Differenz
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = TimeUtils.formatDifferenz(totalDiff),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = when {
+                        totalDiff > 0 -> OvertimeColor
+                        totalDiff < 0 -> UndertimeColor
+                        else -> MaterialTheme.colorScheme.onSurface
+                    }
+                )
+                Text(
+                    text = "${entries.count { it.isComplete() }} / ${entries.size} Tage",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Wochentag-Header
+ */
+@Composable
+private fun WeekdayHeader(modifier: Modifier = Modifier) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(12.dp)
-                .clip(CircleShape)
-                .background(color)
+        listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So").forEach { day ->
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = day,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Kalender-Grid für einen Monat
+ */
+@Composable
+private fun CalendarMonthGrid(
+    month: YearMonth,
+    entries: List<TimeEntry>,
+    today: LocalDate,
+    userSettings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    onDayClick: (String) -> Unit,
+    viewModel: CalendarViewModel,
+    modifier: Modifier = Modifier
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(7),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        contentPadding = PaddingValues(bottom = 16.dp),
+        modifier = modifier
+    ) {
+        // Offset für ersten Tag
+        val firstDayOfMonth = month.atDay(1)
+        val offset = firstDayOfMonth.dayOfWeek.value - 1
+
+        // Leere Zellen vor Monatsbeginn
+        items(offset) {
+            Box(modifier = Modifier.aspectRatio(1f))
+        }
+
+        // Tage des Monats
+        items(month.lengthOfMonth()) { day ->
+            val date = month.atDay(day + 1)
+            val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+            val entry = entries.find { it.datum == dateString }
+            val status = viewModel.getEntryStatus(entry)
+            val isToday = date == today
+
+            CalendarDayCell(
+                date = date,
+                entry = entry,
+                status = status,
+                isToday = isToday,
+                userSettings = userSettings,
+                onClick = { onDayClick(dateString) }
+            )
+        }
+    }
+}
+
+/**
+ * Einzelne Tag-Zelle (größer und schöner)
+ */
+@Composable
+private fun CalendarDayCell(
+    date: LocalDate,
+    entry: TimeEntry?,
+    status: EntryStatus,
+    isToday: Boolean,
+    userSettings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    onClick: () -> Unit
+) {
+    // Feiertag-Info
+    val bundesland = HolidayUtils.Bundesland.fromShortCode(userSettings?.bundesland)
+    val isHoliday = HolidayUtils.isHoliday(date, bundesland)
+
+    // Click Animation
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessHigh
+        ),
+        label = "day_click_scale"
+    )
+
+    Card(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .scale(scale)
+            .then(
+                if (isToday) Modifier.border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(12.dp)
+                ) else Modifier
+            )
+            .clickable {
+                isPressed = true
+                onClick()
+            },
+        colors = CardDefaults.cardColors(
+            containerColor = when (status) {
+                EntryStatus.COMPLETE -> StatusComplete
+                EntryStatus.PARTIAL -> StatusPartial
+                EntryStatus.EMPTY -> StatusEmpty
+                EntryStatus.SPECIAL -> StatusSpecial
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isToday) 4.dp else 1.dp
         )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall
-        )
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Haupt-Content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Tag-Nummer
+                Text(
+                    text = "${date.dayOfMonth}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 18.sp,
+                    color = if (status == EntryStatus.EMPTY)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    else
+                        Color.White
+                )
+
+                // Typ-Icon
+                if (entry != null && entry.typ != TimeEntry.TYP_NORMAL) {
+                    Spacer(Modifier.height(2.dp))
+                    Icon(
+                        imageVector = when (entry.typ) {
+                            TimeEntry.TYP_URLAUB -> Icons.Default.BeachAccess
+                            TimeEntry.TYP_KRANK -> Icons.Default.LocalHospital
+                            TimeEntry.TYP_FEIERTAG -> Icons.Default.Event
+                            TimeEntry.TYP_ABWESEND -> Icons.Default.EventBusy
+                            else -> Icons.Default.Work
+                        },
+                        contentDescription = entry.typ,
+                        modifier = Modifier.size(14.dp),
+                        tint = Color.White.copy(alpha = 0.9f)
+                    )
+                }
+            }
+
+            // Feiertags-Badge
+            if (isHoliday) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(3.dp),
+                    color = Color(0xFFFFD700),
+                    shape = CircleShape,
+                    shadowElevation = 2.dp
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Feiertag",
+                        modifier = Modifier
+                            .size(14.dp)
+                            .padding(2.dp),
+                        tint = Color.White
+                    )
+                }
+            }
+
+            // Überstunden-Badge
+            if (entry != null && entry.typ == TimeEntry.TYP_NORMAL) {
+                val diff = entry.getDifferenzMinuten()
+                if (diff != 0) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(3.dp),
+                        color = if (diff > 0)
+                            Color(0xFF4CAF50).copy(alpha = 0.95f)
+                        else
+                            Color(0xFFFF5252).copy(alpha = 0.95f),
+                        shape = RoundedCornerShape(6.dp),
+                        shadowElevation = 2.dp
+                    ) {
+                        Text(
+                            text = if (diff > 0) "+${diff / 60}h" else "${diff / 60}h",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                            modifier = Modifier.padding(horizontal = 3.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Reset press state
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            kotlinx.coroutines.delay(100)
+            isPressed = false
+        }
     }
 }
