@@ -78,13 +78,12 @@ fun NavGraph(
             DataManagementScreen(viewModel = viewModel)
         }
 
-        @Deprecated("Use DataManagement instead")
+        // Backward compatibility - deprecated routes
         composable(Screen.Export.route) {
             val viewModel: ExportViewModel = viewModel()
             ExportScreen(viewModel = viewModel)
         }
 
-        @Deprecated("Use DataManagement instead")
         composable(Screen.Import.route) {
             val viewModel: ExportViewModel = viewModel()
             ImportScreen(viewModel = viewModel)
