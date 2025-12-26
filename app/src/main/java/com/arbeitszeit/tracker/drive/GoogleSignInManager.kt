@@ -19,9 +19,22 @@ import kotlinx.coroutines.tasks.await
 /**
  * Google Sign-In Manager
  *
+ * @deprecated Diese Klasse verwendet die veraltete Google Sign-In API.
+ * Bitte verwende stattdessen [CredentialAuthManager], der die moderne
+ * Credential Manager API (Android 14+) nutzt.
+ *
+ * Migration:
+ * - Ersetze `GoogleSignInManager` durch `CredentialAuthManager`
+ * - Verwende `signIn()` als suspend function statt Intent-Launcher
+ * - `AccountState.SignedIn` enthält jetzt `AccountInfo` statt `GoogleSignInAccount`
+ *
  * Verwaltet die Google-Authentifizierung und den Account-Status.
  * Verwendet Google Sign-In API für OAuth 2.0 Flow.
  */
+@Deprecated(
+    message = "Verwende CredentialAuthManager für moderne Credential Manager API",
+    replaceWith = ReplaceWith("CredentialAuthManager", "com.arbeitszeit.tracker.drive.CredentialAuthManager")
+)
 class GoogleSignInManager(private val context: Context) {
 
     private val _accountState = MutableStateFlow<AccountState>(AccountState.SignedOut)
