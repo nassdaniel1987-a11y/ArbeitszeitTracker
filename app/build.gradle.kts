@@ -114,6 +114,17 @@ android {
     }
 }
 
+// Dependency Resolution für Google API + Guava Konflikt
+configurations.all {
+    resolutionStrategy {
+        // Erzwinge Guava Android-Variante statt JRE
+        force("com.google.guava:guava:33.1.0-android")
+    }
+
+    // Exclude listenablefuture überall
+    exclude(group = "com.google.guava", module = "listenablefuture")
+}
+
 // Detekt Konfiguration
 detekt {
     buildUponDefaultConfig = true
