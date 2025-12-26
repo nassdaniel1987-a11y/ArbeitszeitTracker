@@ -67,8 +67,8 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun ArbeitszeitTrackerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color on Android 12+ (Material You)
-    dynamicColor: Boolean = true,
+    // Dynamic color deaktiviert - eigene Farben für bessere Lesbarkeit
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
