@@ -31,12 +31,17 @@ fun WeekSummaryCard(summary: WeekSummary) {
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 4.dp
+        ),
         shape = MaterialTheme.shapes.large
     ) {
         Column(
             modifier = Modifier
-                .padding(20.dp)
+                .padding(24.dp)
                 .fillMaxWidth()
         ) {
             // Header mit Icon und Status

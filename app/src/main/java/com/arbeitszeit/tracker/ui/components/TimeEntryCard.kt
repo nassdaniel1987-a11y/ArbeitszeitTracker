@@ -38,7 +38,12 @@ fun TimeEntryCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 4.dp
+        ),
         shape = MaterialTheme.shapes.large
     ) {
         Column {
@@ -176,8 +181,8 @@ fun TimeEntryCard(
 
             // Content Area - weiß
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 // Zeit Buttons - immer anzeigen (auch bei Urlaub/Krank/Feiertag)
                 if (entry != null) {

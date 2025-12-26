@@ -30,7 +30,13 @@ fun EmptyStateCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 1.dp,
+            pressedElevation = 1.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 3.dp
+        ),
+        shape = MaterialTheme.shapes.large
     ) {
         Column(
             modifier = Modifier
