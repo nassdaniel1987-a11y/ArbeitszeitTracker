@@ -96,6 +96,15 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### Dynamic Color Lesbarkeits-Fix
+- **Fix:** Material You Dynamic Color deaktiviert für bessere Lesbarkeit
+- **Problem:** Wallpaper-basierte Farben sorgten für schlechte Kontraste (grauer Hintergrund mit dunklem Text)
+- **Lösung:** Eigene optimierte Farbschemata verwenden
+  - `dynamicColor: Boolean = false` als Default in Theme.kt
+  - LightColorScheme und DarkColorScheme mit hohem Kontrast
+- **Betroffene Screens:** Alle (besonders Urlaubsplaner, Settings, Kalender)
+- **Datei:** `ui/theme/Theme.kt:71`
+
 #### Widget-Ladeproblem behoben (goAsync Pattern)
 - **Fix:** "Widget kann nicht geladen werden" Fehler in allen 6 Widgets behoben
 - **Problem:** Async DB-Operationen wurden vor Abschluss unterbrochen
