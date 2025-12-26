@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalTime
@@ -65,8 +66,8 @@ class LockScreenGlanceWidget : AppWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
+    ) = runBlocking {
+        try {
             val database = AppDatabase.getDatabase(context)
             val timeEntryDao = database.timeEntryDao()
             val settingsDao = database.userSettingsDao()
@@ -94,61 +95,65 @@ class LockScreenGlanceWidget : AppWidgetProvider() {
             val laufendesJahrUeberstunden = currentYearEntries.sumOf { it.getDifferenzMinuten() }
             val gesamtUeberstunden = laufendesJahrUeberstunden + (settings?.ueberstundenVorjahrMinuten ?: 0)
 
-            withContext(Dispatchers.Main) {
-                val views = RemoteViews(context.packageName, R.layout.widget_lockscreen_glance)
+            val views = RemoteViews(context.packageName, R.layout.widget_lockscreen_glance)
 
-                // Status anzeigen
-                if (isRunning) {
-                    // Arbeitszeit läuft
-                    views.setTextViewText(R.id.widget_lockscreen_status_icon, "▶")
-                    views.setTextViewText(R.id.widget_lockscreen_status_text, "Arbeitszeit läuft")
+            // Status anzeigen
+            if (isRunning) {
+                // Arbeitszeit läuft
+                views.setTextViewText(R.id.widget_lockscreen_status_icon, "▶")
+                views.setTextViewText(R.id.widget_lockscreen_status_text, "Arbeitszeit läuft")
 
-                    val startTime = TimeUtils.formatTimeForDisplay(todayEntry.startZeit)
-                    views.setTextViewText(R.id.widget_lockscreen_time_info, "seit $startTime")
-                } else if (todayEntry != null && todayEntry.endZeit != null) {
-                    // Arbeitszeit beendet
-                    views.setTextViewText(R.id.widget_lockscreen_status_icon, "✓")
-                    views.setTextViewText(R.id.widget_lockscreen_status_text, "Arbeitszeit beendet")
+                val startTime = TimeUtils.formatTimeForDisplay(todayEntry.startZeit)
+                views.setTextViewText(R.id.widget_lockscreen_time_info, "seit $startTime")
+            } else if (todayEntry != null && todayEntry.endZeit != null) {
+                // Arbeitszeit beendet
+                views.setTextViewText(R.id.widget_lockscreen_status_icon, "✓")
+                views.setTextViewText(R.id.widget_lockscreen_status_text, "Arbeitszeit beendet")
 
-                    val endTime = TimeUtils.formatTimeForDisplay(todayEntry.endZeit)
-                    views.setTextViewText(R.id.widget_lockscreen_time_info, "um $endTime")
-                } else {
-                    // Noch nicht gestartet
-                    views.setTextViewText(R.id.widget_lockscreen_status_icon, "⏸")
-                    views.setTextViewText(R.id.widget_lockscreen_status_text, "Noch nicht gestartet")
-                    views.setTextViewText(R.id.widget_lockscreen_time_info, "Heute")
-                }
-
-                // Heute Arbeitszeit
-                val todayText = minutesToHoursString(todayMinutes)
-                views.setTextViewText(R.id.widget_lockscreen_today_hours, todayText)
-
-                // Überstunden
-                val overtimeText = minutesToHoursString(gesamtUeberstunden)
-                val overtimeFormatted = if (gesamtUeberstunden >= 0) "+$overtimeText" else overtimeText
-                views.setTextViewText(R.id.widget_lockscreen_overtime, overtimeFormatted)
-
-                // Farbe für Überstunden
-                val overtimeColor = when {
-                    gesamtUeberstunden > 0 -> context.getColor(R.color.widget_status_active) // Grün
-                    gesamtUeberstunden < 0 -> context.getColor(R.color.widget_error) // Rot
-                    else -> context.getColor(R.color.widget_text) // Neutral
-                }
-                views.setTextColor(R.id.widget_lockscreen_overtime, overtimeColor)
-
-                // Öffne App beim Klick auf Widget
-                val appIntent = Intent(context, MainActivity::class.java)
-                val appPendingIntent = PendingIntent.getActivity(
-                    context,
-                    0,
-                    appIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_lockscreen_status_text, appPendingIntent)
-                views.setOnClickPendingIntent(R.id.widget_lockscreen_today_hours, appPendingIntent)
-
-                appWidgetManager.updateAppWidget(appWidgetId, views)
+                val endTime = TimeUtils.formatTimeForDisplay(todayEntry.endZeit)
+                views.setTextViewText(R.id.widget_lockscreen_time_info, "um $endTime")
+            } else {
+                // Noch nicht gestartet
+                views.setTextViewText(R.id.widget_lockscreen_status_icon, "⏸")
+                views.setTextViewText(R.id.widget_lockscreen_status_text, "Noch nicht gestartet")
+                views.setTextViewText(R.id.widget_lockscreen_time_info, "Heute")
             }
+
+            // Heute Arbeitszeit
+            val todayText = minutesToHoursString(todayMinutes)
+            views.setTextViewText(R.id.widget_lockscreen_today_hours, todayText)
+
+            // Überstunden
+            val overtimeText = minutesToHoursString(gesamtUeberstunden)
+            val overtimeFormatted = if (gesamtUeberstunden >= 0) "+$overtimeText" else overtimeText
+            views.setTextViewText(R.id.widget_lockscreen_overtime, overtimeFormatted)
+
+            // Farbe für Überstunden
+            val overtimeColor = when {
+                gesamtUeberstunden > 0 -> context.getColor(R.color.widget_status_active) // Grün
+                gesamtUeberstunden < 0 -> context.getColor(R.color.widget_error) // Rot
+                else -> context.getColor(R.color.widget_text) // Neutral
+            }
+            views.setTextColor(R.id.widget_lockscreen_overtime, overtimeColor)
+
+            // Öffne App beim Klick auf Widget
+            val appIntent = Intent(context, MainActivity::class.java)
+            val appPendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                appIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_lockscreen_status_text, appPendingIntent)
+            views.setOnClickPendingIntent(R.id.widget_lockscreen_today_hours, appPendingIntent)
+
+            appWidgetManager.updateAppWidget(appWidgetId, views)
+        } catch (e: Exception) {
+            // Fallback: Zeige Fehler-Widget
+            val views = RemoteViews(context.packageName, R.layout.widget_lockscreen_glance)
+            views.setTextViewText(R.id.widget_lockscreen_status_text, "ERROR")
+            views.setTextViewText(R.id.widget_lockscreen_today_hours, "0:00")
+            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 

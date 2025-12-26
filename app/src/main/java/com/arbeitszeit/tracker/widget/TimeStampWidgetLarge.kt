@@ -14,6 +14,7 @@ import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.Calendar
@@ -149,8 +150,8 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
+    ) = runBlocking {
+        try {
             val database = AppDatabase.getDatabase(context)
             val timeEntryDao = database.timeEntryDao()
 
@@ -254,6 +255,13 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_end_button_large, endPendingIntent)
 
+            appWidgetManager.updateAppWidget(appWidgetId, views)
+        } catch (e: Exception) {
+            // Fallback: Zeige Fehler-Widget
+            val views = RemoteViews(context.packageName, R.layout.widget_time_stamp_large)
+            views.setTextViewText(R.id.widget_start_time_large, "ERROR")
+            views.setTextViewText(R.id.widget_end_time_large, "ERROR")
+            views.setTextViewText(R.id.widget_duration_large, "0:00h")
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
