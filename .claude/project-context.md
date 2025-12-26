@@ -96,6 +96,19 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### UI Modernisierung - Cards mit Elevation & Spacing
+- **Feature:** Gesamte UI modernisiert für plastischeres, moderneres Design
+- **Änderungen:**
+  - **Card Elevation**: 2dp (Haupt-Cards) / 1dp (Listen-Cards) statt 0dp
+  - **Hover-Effekte**: 4dp bzw. 3dp bei Hover für interaktives Feedback
+  - **Konsistente Shapes**: large (24dp) für Haupt-Cards, medium (16dp) für Listen
+  - **Optimiertes Spacing**: 18-24dp Padding statt 16dp, luftigeres Layout
+- **Betroffene Components**: TimeEntryCard, WeekStatsCard, WeekEntryCard, WeekSummaryCard, GeofencingStatusCard, EmptyStateCard, DarkModeCard
+- **Betroffene Screens**: SettingsScreen, ImportScreen, ExportScreen
+- **Vorher**: Flaches Design ohne Schatten
+- **Nachher**: Subtile Schatten + große Radien = Modern & Clean
+- **Design-Philosophie**: Subtile Elevation für Tiefe, konsistente Shapes für Einheitlichkeit
+
 #### Dynamic Color Lesbarkeits-Fix
 - **Fix:** Material You Dynamic Color deaktiviert für bessere Lesbarkeit
 - **Problem:** Wallpaper-basierte Farben sorgten für schlechte Kontraste (grauer Hintergrund mit dunklem Text)

@@ -50,7 +50,12 @@ fun ImportScreen(viewModel: ExportViewModel) {
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 4.dp
+        ),
             shape = MaterialTheme.shapes.large
         ) {
             Column(
@@ -94,7 +99,12 @@ fun ImportScreen(viewModel: ExportViewModel) {
                             containerColor = MaterialTheme.colorScheme.tertiaryContainer
                         ),
                         shape = MaterialTheme.shapes.medium,
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 4.dp
+        )
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -124,7 +134,12 @@ fun ImportScreen(viewModel: ExportViewModel) {
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 4.dp
+        ),
             shape = MaterialTheme.shapes.large
         ) {
             Column(
@@ -165,7 +180,12 @@ fun ImportScreen(viewModel: ExportViewModel) {
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 4.dp
+        ),
                 shape = MaterialTheme.shapes.large
             ) {
                 Row(
