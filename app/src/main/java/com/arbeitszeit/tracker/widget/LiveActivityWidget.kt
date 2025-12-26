@@ -15,8 +15,6 @@ import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
 /**
  * Live Activity Widget - Zeigt laufende Arbeitszeit
@@ -34,8 +32,17 @@ class LiveActivityWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+        // Use goAsync() to allow async operations
+        val pendingResult = goAsync()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                for (appWidgetId in appWidgetIds) {
+                    updateAppWidget(context, appWidgetManager, appWidgetId)
+                }
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 
@@ -57,8 +64,11 @@ class LiveActivityWidget : AppWidgetProvider() {
         val appWidgetIds = appWidgetManager.getAppWidgetIds(
             android.content.ComponentName(context, LiveActivityWidget::class.java)
         )
-        for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            for (appWidgetId in appWidgetIds) {
+                updateAppWidget(context, appWidgetManager, appWidgetId)
+            }
         }
     }
 
@@ -80,18 +90,16 @@ class LiveActivityWidget : AppWidgetProvider() {
                 timeEntryDao.insert(updatedEntry)
 
                 // Widget aktualisieren
-                withContext(Dispatchers.Main) {
-                    refreshWidget(context)
-                }
+                refreshWidget(context)
             }
         }
     }
 
-    private fun updateAppWidget(
+    private suspend fun updateAppWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
-    ) = runBlocking {
+    ) {
         try {
             val database = AppDatabase.getDatabase(context)
             val timeEntryDao = database.timeEntryDao()

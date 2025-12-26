@@ -14,7 +14,6 @@ import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.Calendar
@@ -40,8 +39,17 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
     ) {
         scheduleMidnightReset(context)
 
-        for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+        // Use goAsync() to allow async operations
+        val pendingResult = goAsync()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                for (appWidgetId in appWidgetIds) {
+                    updateAppWidget(context, appWidgetManager, appWidgetId)
+                }
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 
@@ -141,16 +149,18 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
             android.content.ComponentName(context, TimeStampWidgetLarge::class.java)
         )
 
-        for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+        CoroutineScope(Dispatchers.IO).launch {
+            for (appWidgetId in appWidgetIds) {
+                updateAppWidget(context, appWidgetManager, appWidgetId)
+            }
         }
     }
 
-    private fun updateAppWidget(
+    private suspend fun updateAppWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
-    ) = runBlocking {
+    ) {
         try {
             val database = AppDatabase.getDatabase(context)
             val timeEntryDao = database.timeEntryDao()

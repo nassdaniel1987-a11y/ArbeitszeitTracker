@@ -96,6 +96,27 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### Widget-Ladeproblem behoben (goAsync Pattern)
+- **Fix:** "Widget kann nicht geladen werden" Fehler in allen 6 Widgets behoben
+- **Problem:** Async DB-Operationen wurden vor Abschluss unterbrochen
+- **Lösung:** goAsync() Pattern implementiert
+  - `onUpdate()` nutzt jetzt `goAsync()` + `pendingResult.finish()`
+  - `updateAppWidget()` als `suspend fun` statt `runBlocking`
+  - `refreshWidget()` verwendet CoroutineScope
+  - Unnötiges `withContext(Dispatchers.Main)` entfernt
+- **Betroffene Widgets:**
+  - TimeStampWidget (2x2 - Hauptwidget)
+  - TimeStampWidgetSmall (2x1 - Quick Stamp)
+  - TimeStampWidgetLarge (4x2 - mit Wochenübersicht)
+  - StatistikWidget (Heute, Woche, Überstunden)
+  - LockScreenGlanceWidget (Sperrbildschirm)
+  - LiveActivityWidget (Live-Anzeige)
+- **Technischer Hintergrund:**
+  - `goAsync()` verlängert Prozess-Lebenszeit in BroadcastReceiver
+  - Ermöglicht Abschluss von async DB-Operationen
+  - Wichtig für Room Database Zugriffe in Widgets
+- **Dateien:** `app/src/main/java/com/arbeitszeit/tracker/widget/*.kt`
+
 #### Projekt-Modernisierung - 5 Major Updates
 - **Feature:** Gradle Version Catalog für zentrales Dependency Management
   - Datei: `gradle/libs.versions.toml`
