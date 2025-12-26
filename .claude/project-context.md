@@ -256,7 +256,8 @@ Button(onClick = onComplete) { }
 - **minSdk:** 26 (Android 8.0)
 - **targetSdk:** 35 (Android 15)
 - **compileSdk:** 35 (Android 15)
-- **Kotlin:** 2.0.0
+- **Kotlin:** 2.2.20
+- **KSP:** 2.2.20-2.0.4
 - **Compose BOM:** 2025.11.01
 - **AGP:** 8.7.3
 - **Room:** 2.8.4
