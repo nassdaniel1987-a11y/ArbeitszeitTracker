@@ -67,7 +67,8 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun ArbeitszeitTrackerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Disable dynamic color for custom branding
+    // Dynamic color on Android 12+ (Material You)
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -83,11 +84,21 @@ fun ArbeitszeitTrackerTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Moderne transparente Status Bar statt solidem Blau
+
+            // Edge-to-Edge Display (Android 15 Best Practice)
+            // System Bars transparent und Content dahinter
             @Suppress("DEPRECATION")
             window.statusBarColor = android.graphics.Color.TRANSPARENT
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+
+            // System Bars verschieben Content nicht mehr
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+
+            // System Bar Icons Farbe (hell/dunkel)
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

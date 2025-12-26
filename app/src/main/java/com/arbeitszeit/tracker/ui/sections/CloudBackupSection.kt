@@ -1,8 +1,5 @@
 package com.arbeitszeit.tracker.ui.sections
 
-import android.app.Activity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,8 +14,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.backup.BackupManager
+import com.arbeitszeit.tracker.drive.CredentialAuthManager
 import com.arbeitszeit.tracker.drive.DriveManager
-import com.arbeitszeit.tracker.drive.GoogleSignInManager
 import com.arbeitszeit.tracker.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 import java.io.File
@@ -41,59 +38,29 @@ fun CloudBackupSection(
     val scope = rememberCoroutineScope()
 
     val backupManager = remember { BackupManager(context) }
-    val signInManager = remember { GoogleSignInManager(context) }
+    val authManager = remember { CredentialAuthManager(context) }
 
     // State
-    val accountState by signInManager.accountState.collectAsState()
+    val accountState by authManager.accountState.collectAsState()
     var driveBackups by remember { mutableStateOf<List<DriveManager.DriveFile>>(emptyList()) }
     var isLoadingDriveBackups by remember { mutableStateOf(false) }
     var isUploadingToDrive by remember { mutableStateOf(false) }
+    var isSigningIn by remember { mutableStateOf(false) }
     var showDriveRestoreDialog by remember { mutableStateOf<DriveManager.DriveFile?>(null) }
 
     // DriveManager nur erstellen wenn angemeldet
     val driveManager = remember(accountState) {
-        if (accountState is GoogleSignInManager.AccountState.SignedIn) {
-            val credential = signInManager.getCredentials()
+        if (accountState is CredentialAuthManager.AccountState.SignedIn) {
+            val credential = authManager.getCredentials()
             if (credential != null) DriveManager(context, credential) else null
         } else {
             null
         }
     }
 
-    // Sign-In Launcher
-    val signInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val signInResult = signInManager.handleSignInResult(result.data)
-            when (signInResult) {
-                is GoogleSignInManager.SignInResult.Success -> {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            "Erfolgreich bei Google angemeldet",
-                            duration = SnackbarDuration.Short
-                        )
-                        // Lade Drive Backups
-                        loadDriveBackups(driveManager, snackbarHostState) { backups ->
-                            driveBackups = backups
-                        }
-                    }
-                }
-                is GoogleSignInManager.SignInResult.Error -> {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            "Anmeldung fehlgeschlagen: ${signInResult.message}",
-                            duration = SnackbarDuration.Long
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     // Lade Drive Backups beim Start (wenn angemeldet)
     LaunchedEffect(accountState) {
-        if (accountState is GoogleSignInManager.AccountState.SignedIn && driveManager != null) {
+        if (accountState is CredentialAuthManager.AccountState.SignedIn && driveManager != null) {
             isLoadingDriveBackups = true
             loadDriveBackups(driveManager, snackbarHostState) { backups ->
                 driveBackups = backups
@@ -149,7 +116,7 @@ fun CloudBackupSection(
         // Google Sign-In Status
         item {
             when (val state = accountState) {
-                is GoogleSignInManager.AccountState.SignedOut -> {
+                is CredentialAuthManager.AccountState.SignedOut -> {
                     Card {
                         Column(
                             modifier = Modifier
@@ -170,20 +137,52 @@ fun CloudBackupSection(
 
                             Button(
                                 onClick = {
-                                    val signInIntent = signInManager.getSignInIntent()
-                                    signInLauncher.launch(signInIntent)
+                                    scope.launch {
+                                        isSigningIn = true
+                                        val result = authManager.signIn()
+                                        when (result) {
+                                            is CredentialAuthManager.SignInResult.Success -> {
+                                                snackbarHostState.showSnackbar(
+                                                    "Erfolgreich bei Google angemeldet",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                // Lade Drive Backups
+                                                loadDriveBackups(driveManager, snackbarHostState) { backups ->
+                                                    driveBackups = backups
+                                                }
+                                            }
+                                            is CredentialAuthManager.SignInResult.Error -> {
+                                                snackbarHostState.showSnackbar(
+                                                    "Anmeldung fehlgeschlagen: ${result.message}",
+                                                    duration = SnackbarDuration.Long
+                                                )
+                                            }
+                                        }
+                                        isSigningIn = false
+                                    }
                                 },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !isSigningIn
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Mit Google anmelden")
+                                if (isSigningIn) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Wird angemeldet...")
+                                } else {
+                                    Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Mit Google anmelden")
+                                }
                             }
                         }
                     }
                 }
 
-                is GoogleSignInManager.AccountState.SignedIn -> {
+                is CredentialAuthManager.AccountState.SignedIn -> {
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -208,17 +207,24 @@ fun CloudBackupSection(
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Text(
-                                        state.account.email ?: "Unbekannt",
+                                        state.account.email,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
+                                    state.account.displayName?.let { name ->
+                                        Text(
+                                            name,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                        )
+                                    }
                                 }
 
                                 TextButton(
                                     onClick = {
+                                        authManager.signOut()
+                                        driveBackups = emptyList()
                                         scope.launch {
-                                            signInManager.signOut()
-                                            driveBackups = emptyList()
                                             snackbarHostState.showSnackbar(
                                                 "Abgemeldet",
                                                 duration = SnackbarDuration.Short
@@ -236,7 +242,7 @@ fun CloudBackupSection(
         }
 
         // Cloud Backup Aktionen (nur wenn angemeldet)
-        if (accountState is GoogleSignInManager.AccountState.SignedIn && driveManager != null) {
+        if (accountState is CredentialAuthManager.AccountState.SignedIn && driveManager != null) {
             item {
                 Text(
                     "Cloud Backup erstellen",
