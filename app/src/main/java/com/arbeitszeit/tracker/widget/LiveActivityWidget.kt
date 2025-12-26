@@ -15,6 +15,7 @@ import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 /**
@@ -90,8 +91,8 @@ class LiveActivityWidget : AppWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
+    ) = runBlocking {
+        try {
             val database = AppDatabase.getDatabase(context)
             val timeEntryDao = database.timeEntryDao()
 
@@ -102,67 +103,71 @@ class LiveActivityWidget : AppWidgetProvider() {
             // Prüfe ob es einen laufenden Eintrag gibt
             val isRunning = todayEntry != null && todayEntry.endZeit == null
 
-            withContext(Dispatchers.Main) {
-                val views = RemoteViews(context.packageName, R.layout.widget_live_activity)
+            val views = RemoteViews(context.packageName, R.layout.widget_live_activity)
 
-                if (isRunning) {
-                    // Es läuft eine Arbeitszeit - Zeige aktiven Status
+            if (isRunning) {
+                // Es läuft eine Arbeitszeit - Zeige aktiven Status
 
-                    // Verstecke "Inaktiv"-Container, zeige aktive Elemente
-                    views.setViewVisibility(R.id.widget_live_inactive_container, View.GONE)
-                    views.setViewVisibility(R.id.widget_live_status, View.VISIBLE)
-                    views.setViewVisibility(R.id.widget_live_start_time, View.VISIBLE)
-                    views.setViewVisibility(R.id.widget_live_elapsed_container, View.VISIBLE)
-                    views.setViewVisibility(R.id.widget_live_stop_button, View.VISIBLE)
+                // Verstecke "Inaktiv"-Container, zeige aktive Elemente
+                views.setViewVisibility(R.id.widget_live_inactive_container, View.GONE)
+                views.setViewVisibility(R.id.widget_live_status, View.VISIBLE)
+                views.setViewVisibility(R.id.widget_live_start_time, View.VISIBLE)
+                views.setViewVisibility(R.id.widget_live_elapsed_container, View.VISIBLE)
+                views.setViewVisibility(R.id.widget_live_stop_button, View.VISIBLE)
 
-                    // Status-Indikator
-                    views.setTextViewText(R.id.widget_live_status, "● AKTIV")
-                    views.setTextColor(R.id.widget_live_status, context.getColor(R.color.widget_status_active))
+                // Status-Indikator
+                views.setTextViewText(R.id.widget_live_status, "● AKTIV")
+                views.setTextColor(R.id.widget_live_status, context.getColor(R.color.widget_status_active))
 
-                    // Start-Zeit anzeigen
-                    val startTime = TimeUtils.formatTimeForDisplay(todayEntry.startZeit)
-                    views.setTextViewText(R.id.widget_live_start_time, startTime)
+                // Start-Zeit anzeigen
+                val startTime = TimeUtils.formatTimeForDisplay(todayEntry.startZeit)
+                views.setTextViewText(R.id.widget_live_start_time, startTime)
 
-                    // Verstrichene Zeit berechnen
-                    val elapsedMinutes = calculateElapsedMinutes(todayEntry.startZeit)
-                    val elapsedText = TimeUtils.minutesToHoursMinutes(elapsedMinutes)
-                    views.setTextViewText(R.id.widget_live_elapsed_time, elapsedText)
+                // Verstrichene Zeit berechnen
+                val elapsedMinutes = calculateElapsedMinutes(todayEntry.startZeit)
+                val elapsedText = TimeUtils.minutesToHoursMinutes(elapsedMinutes)
+                views.setTextViewText(R.id.widget_live_elapsed_time, elapsedText)
 
-                    // Stop Button
-                    val stopIntent = Intent(context, LiveActivityWidget::class.java).apply {
-                        action = ACTION_STOP_WORK
-                    }
-                    val stopPendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        0,
-                        stopIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    views.setOnClickPendingIntent(R.id.widget_live_stop_button, stopPendingIntent)
-
-                } else {
-                    // Keine aktive Arbeitszeit - Zeige inaktiven Status
-
-                    // Verstecke aktive Elemente, zeige "Inaktiv"-Container
-                    views.setViewVisibility(R.id.widget_live_inactive_container, View.VISIBLE)
-                    views.setViewVisibility(R.id.widget_live_status, View.GONE)
-                    views.setViewVisibility(R.id.widget_live_start_time, View.GONE)
-                    views.setViewVisibility(R.id.widget_live_elapsed_container, View.GONE)
-                    views.setViewVisibility(R.id.widget_live_stop_button, View.GONE)
+                // Stop Button
+                val stopIntent = Intent(context, LiveActivityWidget::class.java).apply {
+                    action = ACTION_STOP_WORK
                 }
-
-                // Öffne App beim Klick auf Widget (Header)
-                val appIntent = Intent(context, MainActivity::class.java)
-                val appPendingIntent = PendingIntent.getActivity(
+                val stopPendingIntent = PendingIntent.getBroadcast(
                     context,
                     0,
-                    appIntent,
+                    stopIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                views.setOnClickPendingIntent(R.id.widget_live_elapsed_container, appPendingIntent)
+                views.setOnClickPendingIntent(R.id.widget_live_stop_button, stopPendingIntent)
 
-                appWidgetManager.updateAppWidget(appWidgetId, views)
+            } else {
+                // Keine aktive Arbeitszeit - Zeige inaktiven Status
+
+                // Verstecke aktive Elemente, zeige "Inaktiv"-Container
+                views.setViewVisibility(R.id.widget_live_inactive_container, View.VISIBLE)
+                views.setViewVisibility(R.id.widget_live_status, View.GONE)
+                views.setViewVisibility(R.id.widget_live_start_time, View.GONE)
+                views.setViewVisibility(R.id.widget_live_elapsed_container, View.GONE)
+                views.setViewVisibility(R.id.widget_live_stop_button, View.GONE)
             }
+
+            // Öffne App beim Klick auf Widget (Header)
+            val appIntent = Intent(context, MainActivity::class.java)
+            val appPendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                appIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_live_elapsed_container, appPendingIntent)
+
+            appWidgetManager.updateAppWidget(appWidgetId, views)
+        } catch (e: Exception) {
+            // Fallback: Zeige Fehler-Widget
+            val views = RemoteViews(context.packageName, R.layout.widget_live_activity)
+            views.setViewVisibility(R.id.widget_live_inactive_container, View.VISIBLE)
+            views.setViewVisibility(R.id.widget_live_status, View.GONE)
+            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 

@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -63,8 +64,8 @@ class StatistikWidget : AppWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
+    ) = runBlocking {
+        try {
             val database = AppDatabase.getDatabase(context)
             val timeEntryDao = database.timeEntryDao()
             val settingsDao = database.userSettingsDao()
@@ -101,64 +102,69 @@ class StatistikWidget : AppWidgetProvider() {
             val gesamtUeberstunden = laufendesJahrUeberstunden + (settings?.ueberstundenVorjahrMinuten ?: 0)
 
             // Update UI
-            withContext(Dispatchers.Main) {
-                val views = RemoteViews(context.packageName, R.layout.widget_statistik)
+            val views = RemoteViews(context.packageName, R.layout.widget_statistik)
 
-                // Setze Daten
-                views.setTextViewText(
-                    R.id.widget_stats_today,
-                    minutesToHoursString(todayMinutes)
-                )
+            // Setze Daten
+            views.setTextViewText(
+                R.id.widget_stats_today,
+                minutesToHoursString(todayMinutes)
+            )
 
-                views.setTextViewText(
-                    R.id.widget_stats_week,
-                    minutesToHoursString(weekMinutes)
-                )
+            views.setTextViewText(
+                R.id.widget_stats_week,
+                minutesToHoursString(weekMinutes)
+            )
 
-                val overtimeText = minutesToHoursString(gesamtUeberstunden)
-                val overtimeFormatted = if (gesamtUeberstunden >= 0) "+$overtimeText" else overtimeText
-                views.setTextViewText(
-                    R.id.widget_stats_overtime,
-                    overtimeFormatted
-                )
+            val overtimeText = minutesToHoursString(gesamtUeberstunden)
+            val overtimeFormatted = if (gesamtUeberstunden >= 0) "+$overtimeText" else overtimeText
+            views.setTextViewText(
+                R.id.widget_stats_overtime,
+                overtimeFormatted
+            )
 
-                // Farbe für Überstunden
-                val overtimeColor = when {
-                    gesamtUeberstunden > 0 -> context.getColor(R.color.widget_status_active) // Grün
-                    gesamtUeberstunden < 0 -> context.getColor(R.color.widget_error) // Rot
-                    else -> context.getColor(R.color.widget_text) // Neutral
-                }
-                views.setTextColor(R.id.widget_stats_overtime, overtimeColor)
-
-                // Datum anzeigen
-                val dateText = DateUtils.formatForDisplay(LocalDate.now())
-                views.setTextViewText(R.id.widget_stats_date, dateText)
-
-                // Refresh Button
-                val refreshIntent = Intent(context, StatistikWidget::class.java).apply {
-                    action = ACTION_REFRESH_STATS
-                }
-                val refreshPendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    0,
-                    refreshIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_stats_refresh_button, refreshPendingIntent)
-
-                // Öffne App beim Klick auf Widget
-                val appIntent = Intent(context, MainActivity::class.java)
-                val appPendingIntent = PendingIntent.getActivity(
-                    context,
-                    0,
-                    appIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_stats_today, appPendingIntent)
-                views.setOnClickPendingIntent(R.id.widget_stats_week, appPendingIntent)
-
-                appWidgetManager.updateAppWidget(appWidgetId, views)
+            // Farbe für Überstunden
+            val overtimeColor = when {
+                gesamtUeberstunden > 0 -> context.getColor(R.color.widget_status_active) // Grün
+                gesamtUeberstunden < 0 -> context.getColor(R.color.widget_error) // Rot
+                else -> context.getColor(R.color.widget_text) // Neutral
             }
+            views.setTextColor(R.id.widget_stats_overtime, overtimeColor)
+
+            // Datum anzeigen
+            val dateText = DateUtils.formatForDisplay(LocalDate.now())
+            views.setTextViewText(R.id.widget_stats_date, dateText)
+
+            // Refresh Button
+            val refreshIntent = Intent(context, StatistikWidget::class.java).apply {
+                action = ACTION_REFRESH_STATS
+            }
+            val refreshPendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                refreshIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_stats_refresh_button, refreshPendingIntent)
+
+            // Öffne App beim Klick auf Widget
+            val appIntent = Intent(context, MainActivity::class.java)
+            val appPendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                appIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_stats_today, appPendingIntent)
+            views.setOnClickPendingIntent(R.id.widget_stats_week, appPendingIntent)
+
+            appWidgetManager.updateAppWidget(appWidgetId, views)
+        } catch (e: Exception) {
+            // Fallback: Zeige Fehler-Widget
+            val views = RemoteViews(context.packageName, R.layout.widget_statistik)
+            views.setTextViewText(R.id.widget_stats_today, "ERROR")
+            views.setTextViewText(R.id.widget_stats_week, "ERROR")
+            views.setTextViewText(R.id.widget_stats_overtime, "ERROR")
+            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 
