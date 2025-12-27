@@ -58,24 +58,30 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
     val today = LocalDate.now()
     val scope = rememberCoroutineScope()
 
-    // Pager für Swipe-Gesten
+    // Fester Referenzmonat für Pager-Berechnung (verhindert Sprünge)
+    val referenceMonth = remember { YearMonth.of(2020, 1) }
     val initialPage = 1200
+
+    // Berechne initialPage basierend auf aktuellem Monat
+    val startPage = remember(month) {
+        val monthsSinceReference = java.time.temporal.ChronoUnit.MONTHS.between(referenceMonth, month)
+        initialPage + monthsSinceReference.toInt()
+    }
+
     val pagerState = rememberPagerState(
-        initialPage = initialPage,
+        initialPage = startPage,
         pageCount = { 2400 }
     )
 
-    // Berechne aktuellen Monat
+    // Berechne aktuellen Monat basierend auf Pager-Position
     val currentPageMonth = remember(pagerState.currentPage) {
         val offset = pagerState.currentPage - initialPage
-        month.plusMonths(offset.toLong())
+        referenceMonth.plusMonths(offset.toLong())
     }
 
-    // Synchronisiere ViewModel
+    // Synchronisiere ViewModel nur wenn wirklich nötig
     LaunchedEffect(currentPageMonth) {
-        if (currentPageMonth != month) {
-            viewModel.setMonth(currentPageMonth)
-        }
+        viewModel.setMonth(currentPageMonth)
     }
 
     // Snackbar für Undo
@@ -129,8 +135,10 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                         FilledTonalButton(
                             onClick = {
                                 scope.launch {
-                                    pagerState.animateScrollToPage(initialPage)
-                                    viewModel.setMonth(month)
+                                    val currentMonth = YearMonth.now()
+                                    val monthsSinceReference = java.time.temporal.ChronoUnit.MONTHS.between(referenceMonth, currentMonth)
+                                    val targetPage = initialPage + monthsSinceReference.toInt()
+                                    pagerState.animateScrollToPage(targetPage)
                                 }
                             },
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
@@ -211,7 +219,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     .fillMaxSize()
                     .weight(1f)
             ) { page ->
-                val pageMonth = month.plusMonths((page - initialPage).toLong())
+                val pageMonth = referenceMonth.plusMonths((page - initialPage).toLong())
                 val pageEntries = remember(pageMonth) {
                     if (pageMonth == month) entries else emptyList()
                 }
@@ -287,6 +295,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                             LegendItem(Color(0xFF10B981), "✓", "Vollständig")
                             LegendItem(Color(0xFFF59E0B), "~", "Teilweise")
                             LegendItem(Color(0xFF06B6D4), "U", "Urlaub")
+                            LegendItem(Color(0xFF6B7280), "A", "Abwesend")
                         }
 
                         // Zweite Spalte
@@ -295,8 +304,8 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             LegendItem(Color(0xFFEF4444), "K", "Krank")
-                            LegendItem(Color(0xFF6366F1), "F", "Feiertag")
-                            LegendItem(Color(0xFFFFD700), "⭐", "Feiertag")
+                            LegendItem(Color(0xFF6366F1), "F", "Feiertag (Typ)")
+                            LegendItem(Color(0xFFFFD700), "—", "Feiertag (Datum)")
                         }
                     }
                 }
@@ -403,29 +412,38 @@ private fun LargeDayCell(
     Card(
         modifier = Modifier
             .aspectRatio(1f)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .then(
+                if (isToday) Modifier.border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.medium
+                ) else Modifier
+            ),
         colors = CardDefaults.cardColors(
             containerColor = cellBackgroundColor
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isToday) 2.dp else 0.dp
+            defaultElevation = if (entry != null) 1.dp else 0.dp,
+            pressedElevation = 2.dp,
+            hoveredElevation = 2.dp
         )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(6.dp)
+                .padding(8.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top,
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Tag-Nummer (GROß)
+                // Tag-Nummer
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(32.dp)
                         .background(
                             color = if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent,
                             shape = CircleShape
@@ -434,9 +452,8 @@ private fun LargeDayCell(
                 ) {
                     Text(
                         text = "${date.dayOfMonth}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                        fontSize = 18.sp,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.SemiBold,
                         color = if (isToday)
                             MaterialTheme.colorScheme.onPrimary
                         else
@@ -444,7 +461,7 @@ private fun LargeDayCell(
                     )
                 }
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Event-Infos (GROß und deutlich)
                 Column(
@@ -456,32 +473,32 @@ private fun LargeDayCell(
                     if (isHoliday) {
                         Surface(
                             modifier = Modifier
-                                .fillMaxWidth(0.85f)
-                                .height(4.dp),
+                                .fillMaxWidth(0.9f)
+                                .height(3.dp),
                             color = Color(0xFFFFD700),
-                            shape = RoundedCornerShape(2.dp)
+                            shape = MaterialTheme.shapes.extraSmall
                         ) {}
                     }
 
-                    // Entry-Status-Balken (GROß)
+                    // Entry-Status-Balken
                     if (entry != null) {
                         val (barColor, label) = when {
-                            entry.typ == TimeEntry.TYP_URLAUB -> Color(0xFF06B6D4) to "Urlaub"
-                            entry.typ == TimeEntry.TYP_KRANK -> Color(0xFFEF4444) to "Krank"
-                            entry.typ == TimeEntry.TYP_FEIERTAG -> Color(0xFF6366F1) to "Feiertag"
-                            entry.typ == TimeEntry.TYP_ABWESEND -> Color(0xFF6B7280) to "Abwesend"
+                            entry.typ == TimeEntry.TYP_URLAUB -> Color(0xFF06B6D4) to "U"
+                            entry.typ == TimeEntry.TYP_KRANK -> Color(0xFFEF4444) to "K"
+                            entry.typ == TimeEntry.TYP_FEIERTAG -> Color(0xFF6366F1) to "F"
+                            entry.typ == TimeEntry.TYP_ABWESEND -> Color(0xFF6B7280) to "A"
                             status == EntryStatus.COMPLETE -> Color(0xFF10B981) to "✓"
                             status == EntryStatus.PARTIAL -> Color(0xFFF59E0B) to "~"
                             else -> MaterialTheme.colorScheme.outline to "○"
                         }
 
-                        // Großer farbiger Balken
+                        // Farbiger Status-Balken
                         Surface(
                             modifier = Modifier
-                                .fillMaxWidth(0.85f)
-                                .height(18.dp),
+                                .fillMaxWidth(0.9f)
+                                .height(16.dp),
                             color = barColor,
-                            shape = RoundedCornerShape(4.dp)
+                            shape = MaterialTheme.shapes.small
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -489,8 +506,8 @@ private fun LargeDayCell(
                             ) {
                                 Text(
                                     text = label,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
