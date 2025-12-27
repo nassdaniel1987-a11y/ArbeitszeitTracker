@@ -16,34 +16,24 @@ fun DataManagementScreen(viewModel: ExportViewModel) {
 
     Scaffold(
         topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text("Daten") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+            // Nur Tab Row ohne extra TopAppBar
+            PrimaryTabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = { Text("Export") },
+                    icon = { Icon(Icons.Default.FileDownload, contentDescription = null) }
                 )
-
-                // Tab Row
-                PrimaryTabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ) {
-                    Tab(
-                        selected = selectedTabIndex == 0,
-                        onClick = { selectedTabIndex = 0 },
-                        text = { Text("Export") },
-                        icon = { Icon(Icons.Default.FileDownload, contentDescription = null) }
-                    )
-                    Tab(
-                        selected = selectedTabIndex == 1,
-                        onClick = { selectedTabIndex = 1 },
-                        text = { Text("Import") },
-                        icon = { Icon(Icons.Default.FileUpload, contentDescription = null) }
-                    )
-                }
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = { Text("Import") },
+                    icon = { Icon(Icons.Default.FileUpload, contentDescription = null) }
+                )
             }
         }
     ) { paddingValues ->

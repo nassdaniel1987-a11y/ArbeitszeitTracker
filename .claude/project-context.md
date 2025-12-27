@@ -96,6 +96,27 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### Screen-Header & Kalender Fixes
+- **Fix:** Überstunden Screen Header kompakter gestaltet
+  - TopAppBar: "Überstunden" → "Zeitkonto" (weniger redundant)
+  - GesamtUeberstundenCard: Column → Row Layout (kompakter)
+  - Icon 48dp → 32dp, displayLarge → displaySmall
+  - Keine Dopplung mehr
+- **Fix:** Daten Screen TopAppBar entfernt
+  - Nur noch PrimaryTabRow (Export/Import)
+  - Spart vertikalen Platz
+- **Fix:** Kalender Scroll-Bug behoben
+  - Problem: Sprang zwischen Monat/Jahr beim Scrollen
+  - Lösung: Fester Referenzmonat (YearMonth.of(2020, 1))
+  - Alle Berechnungen basieren auf Referenz + offset
+  - Heute-Button korrigiert
+- **Feature:** Kalender Optik modernisiert
+  - Cards: 1dp elevation (statt 0dp), shapes.medium, Border für heute
+  - Tag-Nummer: 32dp (statt 36dp), kompakter
+  - Status-Balken: 16dp hoch, 90% Breite, Kurzlabels (U/K/F/A)
+  - Moderneres, klareres Design
+- **Dateien:** UeberstundenScreen.kt, DataManagementScreen.kt, CalendarScreen.kt
+
 #### UI Modernisierung - Cards mit Elevation & Spacing
 - **Feature:** Gesamte UI modernisiert für plastischeres, moderneres Design
 - **Änderungen:**

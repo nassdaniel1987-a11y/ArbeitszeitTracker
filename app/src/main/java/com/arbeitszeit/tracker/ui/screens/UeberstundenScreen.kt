@@ -41,7 +41,7 @@ fun UeberstundenScreen(
     Scaffold(
         topBar = {
             androidx.compose.material3.TopAppBar(
-                title = { Text("Überstunden") },
+                title = { Text("Zeitkonto") },
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -139,43 +139,47 @@ private fun GesamtUeberstundenCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 4.dp
+        ),
+        shape = MaterialTheme.shapes.large
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = if (isPositive) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = textColor
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = if (isPositive) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = textColor
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Column {
+                    Text(
+                        text = "Überstunden",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = textColor.copy(alpha = 0.8f)
+                    )
 
-            Text(
-                text = "Gesamtüberstunden",
-                style = MaterialTheme.typography.titleMedium,
-                color = textColor
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = viewModel.minutesToHoursString(gesamtUeberstunden),
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-                color = textColor
-            )
-
-            Text(
-                text = "Stunden",
-                style = MaterialTheme.typography.bodyMedium,
-                color = textColor.copy(alpha = 0.7f)
-            )
+                    Text(
+                        text = viewModel.minutesToHoursString(gesamtUeberstunden),
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor
+                    )
+                }
+            }
         }
     }
 }
