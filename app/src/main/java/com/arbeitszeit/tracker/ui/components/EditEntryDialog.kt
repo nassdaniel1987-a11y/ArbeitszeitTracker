@@ -24,9 +24,12 @@ fun EditEntryDialog(
     entry: TimeEntry?,
     datum: String,
     onDismiss: () -> Unit,
-    onSave: (startZeit: Int?, endZeit: Int?, pauseMinuten: Int, typ: String, notiz: String) -> Unit,
+    onSave: (startZeit: Int?, endZeit: Int?, pauseMinuten: Int, typ: String, notiz: String, urlaubsJahr: Int?) -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
+    // Extrahiere Jahr aus Datum (yyyy-MM-dd)
+    val datumJahr = datum.split("-")[0].toInt()
+
     // Zeit als Minuten speichern
     var startZeitMinuten by remember { mutableStateOf(entry?.startZeit) }
     var endZeitMinuten by remember { mutableStateOf(entry?.endZeit) }
@@ -34,6 +37,7 @@ fun EditEntryDialog(
     var pauseMinuten by remember { mutableIntStateOf(entry?.pauseMinuten ?: 0) }
     var selectedTyp by remember { mutableStateOf(entry?.typ ?: TimeEntry.TYP_NORMAL) }
     var notiz by remember { mutableStateOf(entry?.notiz ?: "") }
+    var urlaubsJahr by remember { mutableStateOf<Int?>(entry?.urlaubsJahr) }
 
     // Dialog-States
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -89,6 +93,34 @@ fun EditEntryDialog(
                         selected = selectedTyp == TimeEntry.TYP_ABWESEND,
                         onClick = { selectedTyp = TimeEntry.TYP_ABWESEND },
                         label = { Text("AB") }
+                    )
+                }
+
+                // Jahr-Auswahl für Urlaub (Resturlaub-Feature)
+                if (selectedTyp == TimeEntry.TYP_URLAUB) {
+                    HorizontalDivider()
+
+                    Text("Urlaubsjahr:", style = MaterialTheme.typography.labelMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilterChip(
+                            selected = urlaubsJahr == null,
+                            onClick = { urlaubsJahr = null },
+                            label = { Text("$datumJahr (aktuell)") }
+                        )
+                        FilterChip(
+                            selected = urlaubsJahr == datumJahr - 1,
+                            onClick = { urlaubsJahr = datumJahr - 1 },
+                            label = { Text("${datumJahr - 1} (Resturlaub)") }
+                        )
+                    }
+                    Text(
+                        text = "Wähle das Jahr, für das dieser Urlaubstag zählen soll",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -161,7 +193,7 @@ fun EditEntryDialog(
                 Button(
                     onClick = {
                         // Pause wird jetzt bei allen Typen gespeichert
-                        onSave(startZeitMinuten, endZeitMinuten, pauseMinuten, selectedTyp, notiz)
+                        onSave(startZeitMinuten, endZeitMinuten, pauseMinuten, selectedTyp, notiz, urlaubsJahr)
                     }
                 ) {
                     Text("Speichern")

@@ -127,7 +127,8 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
         endZeit: Int?,
         pauseMinuten: Int,
         typ: String,
-        notiz: String
+        notiz: String,
+        urlaubsJahr: Int? = null
     ) {
         viewModelScope.launch {
             val entry = timeEntryDao.getEntryByDate(date) ?: return@launch
@@ -139,6 +140,7 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
                 pauseMinuten = pauseMinuten,
                 typ = typ,
                 notiz = notiz,
+                urlaubsJahr = urlaubsJahr,
                 isManualEntry = true,
                 updatedAt = System.currentTimeMillis()
             ))
@@ -165,6 +167,7 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
                 pauseMinuten = 0,
                 typ = TimeEntry.TYP_NORMAL,
                 notiz = "",
+                urlaubsJahr = null,
                 isManualEntry = false,
                 updatedAt = System.currentTimeMillis()
             ))

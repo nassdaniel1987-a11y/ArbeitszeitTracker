@@ -9,7 +9,7 @@ data class TimeEntry(
     val datum: String,                  // Format: "yyyy-MM-dd"
     val wochentag: String,              // Mo, Di, Mi, Do, Fr, Sa, So
     val kalenderwoche: Int,
-    val jahr: Int,
+    val jahr: Int,                      // Kalenderjahr des Datums
     val startZeit: Int?,                // Minuten seit Mitternacht (null = nicht eingetragen)
     val endZeit: Int?,                  // Minuten seit Mitternacht
     val pauseMinuten: Int = 0,
@@ -23,7 +23,8 @@ data class TimeEntry(
     val spalteR: String = "",             // Spalte R (Excel): Notizen/Kommentare
     val isManualEntry: Boolean = false,   // War ein Nachtrag?
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val urlaubsJahr: Int? = null        // Für Resturlaub: Jahr für das der Urlaub zählt (null = jahr)
 ) {
     companion object {
         const val TYP_NORMAL = "NORMAL"
@@ -56,5 +57,13 @@ data class TimeEntry(
             TYP_NORMAL -> startZeit != null && endZeit != null
             else -> true // U/K/F/AB brauchen keine Zeiten
         }
+    }
+
+    /**
+     * Gibt das Jahr zurück, für das ein Urlaubstag zählen soll
+     * Relevant für Resturlaub (z.B. Urlaub aus 2025 genommen in 2026)
+     */
+    fun getUrlaubsJahr(): Int {
+        return urlaubsJahr ?: jahr
     }
 }
