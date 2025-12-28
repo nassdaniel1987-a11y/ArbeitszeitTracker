@@ -96,6 +96,26 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### Resturlaub-Unterstützung (DB v23)
+- **Feature:** Urlaubstage können einem anderen Jahr zugeordnet werden
+- **Use Case:** Resturlaub aus 2025 im Januar/Februar 2026 nehmen
+- **Datenbank:**
+  - Neues Feld: `TimeEntry.urlaubsJahr` (Integer, nullable)
+  - Migration MIGRATION_22_23
+  - Helper: `getUrlaubsJahr()` (gibt urlaubsJahr oder jahr zurück)
+- **UI:**
+  - EditEntryDialog: Jahr-Auswahl bei Typ "Urlaub"
+  - Optionen: "Aktuelles Jahr" oder "Vorjahr (Resturlaub)"
+  - Nur sichtbar bei Typ = URLAUB
+- **Logik:**
+  - Urlaubsberechnung nutzt getUrlaubsJahr()
+  - Krankheitstage weiter nach Kalenderjahr
+  - UeberstundenViewModel + VacationPlannerViewModel angepasst
+- **Beispiel:**
+  - Urlaub am 2.1.2026 mit urlaubsJahr=2025
+  - Wird vom Kontingent 2025 abgezogen, nicht 2026!
+- **Dateien:** TimeEntry.kt, DatabaseMigrations.kt, AppDatabase.kt, EditEntryDialog.kt, CalendarScreen.kt, CalendarViewModel.kt, UeberstundenViewModel.kt, VacationPlannerViewModel.kt
+
 #### KI-Vorschlag Vollständig Anzeigbar
 - **Fix:** KI-Antwort im Urlaubsplaner wurde abgeschnitten
 - **Problem:** Text hatte kein Scrolling, lange Antworten nicht sichtbar
@@ -357,6 +377,6 @@ Bei Problemen oder Fragen:
 
 ---
 
-**Zuletzt aktualisiert:** 26. Dezember 2025
+**Zuletzt aktualisiert:** 28. Dezember 2025
 **Projekt-Version:** v1.2 (versionCode 3)
-**DB-Version:** 22
+**DB-Version:** 23
