@@ -396,13 +396,18 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                         state.urlaubsanspruchTage
                     )
 
-                    // 3. Template speichern falls vorhanden
-                    if (state.hasTemplate && state.templateUri != null) {
-                        val templateManager = com.arbeitszeit.tracker.template.TemplateManager(getApplication())
-                        val saved = templateManager.saveTemplate(currentYear, state.templateUri)
-                        if (saved) {
-                            yearManager.updateExcelTemplateFlag(currentYear)
-                        }
+                    // 3. Template speichern
+                    val templateManager = com.arbeitszeit.tracker.template.TemplateManager(getApplication())
+                    val saved = if (state.hasTemplate && state.templateUri != null) {
+                        // User hat eigene Vorlage hochgeladen
+                        templateManager.saveTemplate(currentYear, state.templateUri)
+                    } else {
+                        // Keine eigene Vorlage -> Standard-Vorlage aus assets nutzen
+                        templateManager.saveDefaultTemplateForYear(currentYear)
+                    }
+
+                    if (saved) {
+                        yearManager.updateExcelTemplateFlag(currentYear)
                     }
 
                     // Erfolg!

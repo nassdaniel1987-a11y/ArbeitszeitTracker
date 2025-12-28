@@ -102,4 +102,29 @@ class TemplateManager(private val context: Context) {
     fun getTemplateFileName(year: Int): String {
         return "template_$year.xlsx"
     }
+
+    /**
+     * Kopiert die Standard-Vorlage aus assets als Template für ein Jahr
+     *
+     * @param year Das Jahr für diese Vorlage
+     * @return true wenn erfolgreich gespeichert
+     */
+    suspend fun saveDefaultTemplateForYear(year: Int): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val templateFile = File(templatesDir, "template_$year.xlsx")
+
+            // Kopiere Standard-Vorlage aus assets
+            context.assets.open("ANZ_Template.xlsx").use { inputStream ->
+                FileOutputStream(templateFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+
+            android.util.Log.d("TemplateManager", "Standard-Vorlage für Jahr $year gespeichert")
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("TemplateManager", "Fehler beim Speichern der Standard-Vorlage für Jahr $year", e)
+            false
+        }
+    }
 }

@@ -9,7 +9,7 @@ Diese Datei enthält wichtige Regeln und Richtlinien für die Entwicklung der Ap
 
 ### 1. 🗄️ Datenbank-Versionen & Migrationen
 
-**Aktuelle Version: 22** (`AppDatabase.kt`)
+**Aktuelle Version: 23** (`AppDatabase.kt`)
 
 #### ✅ Version MUSS erhöht werden bei:
 - Neue Tabellen hinzufügen
@@ -96,19 +96,30 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### KSP Ambiguous Getter Fix
+- **Fix:** KSP Compilation Error für urlaubsJahr behoben
+- **Problem:** Helper-Methode `getUrlaubsJahr()` konfliktierte mit Kotlins automatischem Property-Getter
+- **Lösung:** Methode umbenannt zu `getEffectiveUrlaubsJahr()`
+- **Semantic Improvement:** Neuer Name verdeutlicht dass das "effektive" Jahr zurückgegeben wird (urlaubsJahr ?? jahr)
+- **Betroffene Dateien:**
+  - TimeEntry.kt: Methode umbenannt
+  - UeberstundenViewModel.kt: Method-Call aktualisiert
+  - VacationPlannerViewModel.kt: Method-Call aktualisiert
+- **Datei:** TimeEntry.kt:66, UeberstundenViewModel.kt:193, VacationPlannerViewModel.kt:99
+
 #### Resturlaub-Unterstützung (DB v23)
 - **Feature:** Urlaubstage können einem anderen Jahr zugeordnet werden
 - **Use Case:** Resturlaub aus 2025 im Januar/Februar 2026 nehmen
 - **Datenbank:**
   - Neues Feld: `TimeEntry.urlaubsJahr` (Integer, nullable)
   - Migration MIGRATION_22_23
-  - Helper: `getUrlaubsJahr()` (gibt urlaubsJahr oder jahr zurück)
+  - Helper: `getEffectiveUrlaubsJahr()` (gibt urlaubsJahr oder jahr zurück)
 - **UI:**
   - EditEntryDialog: Jahr-Auswahl bei Typ "Urlaub"
   - Optionen: "Aktuelles Jahr" oder "Vorjahr (Resturlaub)"
   - Nur sichtbar bei Typ = URLAUB
 - **Logik:**
-  - Urlaubsberechnung nutzt getUrlaubsJahr()
+  - Urlaubsberechnung nutzt getEffectiveUrlaubsJahr()
   - Krankheitstage weiter nach Kalenderjahr
   - UeberstundenViewModel + VacationPlannerViewModel angepasst
 - **Beispiel:**
