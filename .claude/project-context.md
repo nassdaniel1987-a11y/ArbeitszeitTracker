@@ -96,6 +96,19 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### KI-Vorschlag Vollständig Anzeigbar
+- **Fix:** KI-Antwort im Urlaubsplaner wurde abgeschnitten
+- **Problem:** Text hatte kein Scrolling, lange Antworten nicht sichtbar
+- **Lösung:**
+  - AiSuggestionCard mit verticalScroll(rememberScrollState())
+  - heightIn(max = 400.dp) für maximale Höhe
+  - HorizontalDivider zwischen Header und Content
+  - Elevation 2dp + shapes.large (modern)
+  - Padding 20dp, Icon 24dp (konsistent)
+- **Vorher:** Text abgeschnitten
+- **Nachher:** Vollständig lesbar mit Scroll
+- **Datei:** VacationPlannerScreen.kt
+
 #### Screen-Header & Kalender Fixes
 - **Fix:** Überstunden Screen Header kompakter gestaltet
   - TopAppBar: "Überstunden" → "Zeitkonto" (weniger redundant)
