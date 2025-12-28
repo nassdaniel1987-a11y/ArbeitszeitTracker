@@ -96,6 +96,21 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### Standard-Vorlage Auto-Setup
+- **Feature:** Excel-Vorlage wird jetzt automatisch gespeichert
+- **Setup-Wizard:** Wenn User KEINE eigene Vorlage hochlädt, wird Standard-Vorlage aus `assets/ANZ_Template.xlsx` automatisch als Template gespeichert
+- **Neues Jahr:** Beim Anlegen eines neuen Jahres wird automatisch Standard-Vorlage gespeichert (falls noch keine existiert)
+- **Vorteil:**
+  - Export funktioniert konsistent für alle Jahre
+  - User muss sich nicht um Template-Upload kümmern
+  - Standard-Vorlage wird mit Setup-Daten befüllt (Name, Einrichtung, etc.)
+  - Für neue Jahre: Nur erster Montag ändern, Rest wird übernommen
+- **Änderungen:**
+  - `TemplateManager.kt`: Neue Methode `saveDefaultTemplateForYear()` kopiert Standard-Vorlage aus assets
+  - `SetupViewModel.kt`: Speichert Standard-Vorlage wenn keine eigene hochgeladen
+  - `YearManager.kt`: Speichert Standard-Vorlage beim Erstellen neuer Jahre
+- **Dateien:** TemplateManager.kt:112, SetupViewModel.kt:399, YearManager.kt:113
+
 #### KSP Ambiguous Getter Fix
 - **Fix:** KSP Compilation Error für urlaubsJahr behoben
 - **Problem:** Helper-Methode `getUrlaubsJahr()` konfliktierte mit Kotlins automatischem Property-Getter
