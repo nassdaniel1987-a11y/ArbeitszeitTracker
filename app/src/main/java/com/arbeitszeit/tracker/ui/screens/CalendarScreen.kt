@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arbeitszeit.tracker.data.entity.TimeEntry
-import com.arbeitszeit.tracker.ui.components.TimeWheelEntryDialog
+import com.arbeitszeit.tracker.ui.components.EditEntryDialog
 import com.arbeitszeit.tracker.utils.HolidayUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
 import com.arbeitszeit.tracker.viewmodel.CalendarViewModel
@@ -312,11 +312,11 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
             }
         }
 
-        // Edit Dialog mit Time Wheel
+        // Edit Dialog
         if (showEditDialog && selectedDate != null) {
             val entry = entries.find { it.datum == selectedDate }
 
-            TimeWheelEntryDialog(
+            EditEntryDialog(
                 entry = entry,
                 datum = selectedDate!!,
                 onDismiss = {
