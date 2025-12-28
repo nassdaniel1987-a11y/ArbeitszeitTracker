@@ -323,14 +323,15 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     showEditDialog = false
                     selectedDate = null
                 },
-                onSave = { startZeit, endZeit, pauseMinuten, typ, notiz ->
+                onSave = { startZeit, endZeit, pauseMinuten, typ, notiz, urlaubsJahr ->
                     viewModel.updateEntry(
                         date = selectedDate!!,
                         startZeit = startZeit,
                         endZeit = endZeit,
                         pauseMinuten = pauseMinuten,
                         typ = typ,
-                        notiz = notiz
+                        notiz = notiz,
+                        urlaubsJahr = urlaubsJahr
                     )
                     showEditDialog = false
                     selectedDate = null

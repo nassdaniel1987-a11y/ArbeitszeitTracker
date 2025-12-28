@@ -12,7 +12,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - v17: ClosingDay-Tabelle für Schließtage der Einrichtung
  * - v18: SchoolHoliday-Tabelle für Schulferien
  * - v19: YearSettings-Tabelle für Jahres-Management-System
- * - v20+: Future migrations with proper schema preservation
+ * - v20: Auto-Start Reminder Settings (autoStartReminderMinutes, autoStartDefaultPauseMinutes)
+ * - v21: Geofencing-Felder zu WorkLocation (latitude, longitude, radiusMeters, autoStartEnabled)
+ * - v22: Start-Zeiten in SollZeitVorlage für Auto-Start
+ * - v23: Resturlaub-Unterstützung (urlaubsJahr in TimeEntry)
  *
  * WICHTIG: Ab v16 werden ALLE Migrations hier dokumentiert und implementiert!
  */
@@ -332,6 +335,28 @@ object DatabaseMigrations {
     }
 
     /**
+     * Migration v22 -> v23: Resturlaub-Unterstützung
+     *
+     * Fügt das Feld urlaubsJahr zu time_entries hinzu.
+     * Ermöglicht die Zuordnung von Urlaubstagen zu einem anderen Jahr als dem Kalenderjahr.
+     * Wichtig für Resturlaub (z.B. Urlaub aus 2025 genommen in 2026).
+     *
+     * Beispiel: Am 2.1.2026 Urlaub nehmen, der aber noch zum Kontingent 2025 gehört.
+     */
+    val MIGRATION_22_23 = object : Migration(22, 23) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // urlaubsJahr Spalte hinzufügen
+            db.execSQL("""
+                ALTER TABLE time_entries
+                ADD COLUMN urlaubsJahr INTEGER
+            """)
+
+            // Hinweis: NULL bedeutet "nutze das Kalenderjahr (jahr)"
+            // Nur bei Resturlaub wird urlaubsJahr explizit gesetzt
+        }
+    }
+
+    /**
      * Gibt alle verfügbaren Migrations zurück
      *
      * Wenn neue Migrations hinzugefügt werden, hier in der Liste eintragen!
@@ -344,8 +369,9 @@ object DatabaseMigrations {
             MIGRATION_19_20,
             MIGRATION_20_21,
             MIGRATION_21_22,
+            MIGRATION_22_23
             // Zukünftige Migrations hier hinzufügen:
-            // MIGRATION_22_23,
+            // MIGRATION_23_24,
             // etc.
         )
     }

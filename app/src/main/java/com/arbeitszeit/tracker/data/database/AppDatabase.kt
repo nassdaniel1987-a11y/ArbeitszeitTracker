@@ -42,7 +42,7 @@ import java.util.Locale
         SchoolHoliday::class,
         YearSettings::class
     ],
-    version = 22,  // v22: Start-Zeiten in SollZeitVorlage für Auto-Start
+    version = 23,  // v23: Resturlaub - urlaubsJahr Feld in TimeEntry
     exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {

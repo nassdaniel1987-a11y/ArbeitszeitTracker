@@ -185,10 +185,16 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
             entry.jahr == yearSettings.year && !date.isAfter(today)
         }
 
-        // Zähle Urlaubstage (typ == TYP_URLAUB)
-        val urlaubstage = currentYearEntries.count { it.typ == TimeEntry.TYP_URLAUB }
+        // Zähle Urlaubstage die FÜR dieses Jahr zählen (auch Resturlaub aus anderem Kalenderjahr)
+        // Wichtig: Resturlaub aus 2025 genommen in 2026 zählt für 2025!
+        val urlaubstage = entries.count { entry ->
+            val date = LocalDate.parse(entry.datum)
+            entry.typ == TimeEntry.TYP_URLAUB &&
+            entry.getUrlaubsJahr() == yearSettings.year &&
+            !date.isAfter(today)
+        }
 
-        // Zähle Krankheitstage (typ == TYP_KRANK)
+        // Zähle Krankheitstage (nach Kalenderjahr, nicht Urlaubsjahr)
         val krankheitstage = currentYearEntries.count { it.typ == TimeEntry.TYP_KRANK }
 
         // Urlaubsanspruch aus YearSettings (nicht mehr aus UserSettings!)
