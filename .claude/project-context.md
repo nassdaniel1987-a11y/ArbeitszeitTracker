@@ -96,6 +96,52 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 
 ### ✅ Dezember 2025
 
+#### Time Wheel Picker - Moderne Zeit-Eingabe
+- **Feature:** Eleganter Time Wheel Picker mit gebogenem Rad-Design
+- **Inspiration:** Screenshot-basiertes Design (ähnlich wie professionelle Time Tracking Apps)
+- **Integration:** Kalender-Screen beim Bearbeiten von Einträgen
+- **Komponenten:**
+  - **TimeWheelPicker.kt** (590 Zeilen): Canvas-basiertes Rad, Drag & Drop, Touch-Handling
+  - **TimeWheelEntryDialog.kt** (350 Zeilen): Fullscreen Dialog mit modernem UI
+- **Design:**
+  - Gebogenes Rad mit 270° Spanne (04:00 - 24:00 Uhr)
+  - Visuelle Zeitspannen-Darstellung (farbiger Bogen)
+  - Start/End Marker als ziehbare Kreise
+  - Stunden-Markierungen alle 2 Stunden
+  - Automatische Rundung auf 15-Min-Schritte
+- **Features:**
+  - Drag & Drop für Start/End Zeiten
+  - Live-Berechnung der Arbeitszeit
+  - Integrierte Pause-Auswahl (0, 15, 30, 45, 60 Min)
+  - Nur bei Normal-Typ sichtbar (Urlaub/Krank braucht keine Zeiten)
+  - Moderne Typ-Auswahl als große Cards
+- **UX:**
+  - Touch auf Marker → Dragging
+  - Distanz-Erkennung (nearest marker wenn beide existieren)
+  - Visual Feedback beim Dragging (Farbe ändert sich)
+  - Dauer-Anzeige unterhalb des Wheels
+- **Tech:**
+  - Jetpack Compose Canvas API
+  - Trigonometrie (Winkel ↔ Zeit Konvertierung)
+  - detectDragGestures für Touch-Handling
+  - Material3 Design System
+- **Dateien:** TimeWheelPicker.kt (neu), TimeWheelEntryDialog.kt (neu), CalendarScreen.kt (angepasst)
+
+#### Standard-Vorlage Auto-Setup
+- **Feature:** Excel-Vorlage wird jetzt automatisch gespeichert
+- **Setup-Wizard:** Wenn User KEINE eigene Vorlage hochlädt, wird Standard-Vorlage aus `assets/ANZ_Template.xlsx` automatisch als Template gespeichert
+- **Neues Jahr:** Beim Anlegen eines neuen Jahres wird automatisch Standard-Vorlage gespeichert (falls noch keine existiert)
+- **Vorteil:**
+  - Export funktioniert konsistent für alle Jahre
+  - User muss sich nicht um Template-Upload kümmern
+  - Standard-Vorlage wird mit Setup-Daten befüllt (Name, Einrichtung, etc.)
+  - Für neue Jahre: Nur erster Montag ändern, Rest wird übernommen
+- **Änderungen:**
+  - `TemplateManager.kt`: Neue Methode `saveDefaultTemplateForYear()` kopiert Standard-Vorlage aus assets
+  - `SetupViewModel.kt`: Speichert Standard-Vorlage wenn keine eigene hochgeladen
+  - `YearManager.kt`: Speichert Standard-Vorlage beim Erstellen neuer Jahre
+- **Dateien:** TemplateManager.kt:112, SetupViewModel.kt:399, YearManager.kt:113
+
 #### KSP Ambiguous Getter Fix
 - **Fix:** KSP Compilation Error für urlaubsJahr behoben
 - **Problem:** Helper-Methode `getUrlaubsJahr()` konfliktierte mit Kotlins automatischem Property-Getter
