@@ -96,7 +96,7 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
                     // Filtere Urlaubstage die FÜR dieses Jahr zählen (auch wenn Kalenderjahr anders)
                     // Beispiel: Urlaub am 2.1.2026 mit urlaubsJahr=2025 zählt für 2025!
                     allEntries.filter { entry ->
-                        entry.typ == TimeEntry.TYP_URLAUB && entry.getUrlaubsJahr() == year
+                        entry.typ == TimeEntry.TYP_URLAUB && entry.getEffectiveUrlaubsJahr() == year
                     }
                 }
         }

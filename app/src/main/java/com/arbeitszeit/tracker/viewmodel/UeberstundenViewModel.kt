@@ -190,7 +190,7 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         val urlaubstage = entries.count { entry ->
             val date = LocalDate.parse(entry.datum)
             entry.typ == TimeEntry.TYP_URLAUB &&
-            entry.getUrlaubsJahr() == yearSettings.year &&
+            entry.getEffectiveUrlaubsJahr() == yearSettings.year &&
             !date.isAfter(today)
         }
 

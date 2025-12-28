@@ -63,7 +63,7 @@ data class TimeEntry(
      * Gibt das Jahr zurück, für das ein Urlaubstag zählen soll
      * Relevant für Resturlaub (z.B. Urlaub aus 2025 genommen in 2026)
      */
-    fun getUrlaubsJahr(): Int {
+    fun getEffectiveUrlaubsJahr(): Int {
         return urlaubsJahr ?: jahr
     }
 }
