@@ -110,8 +110,11 @@ class YearManager(private val context: Context) {
                 0
             }
 
-            // 7. Prüfe Excel-Vorlage
-            val hasTemplate = templateManager.hasTemplate(year)
+            // 7. Speichere Excel-Vorlage (Standard-Vorlage falls keine eigene existiert)
+            if (!templateManager.hasTemplate(year)) {
+                val saved = templateManager.saveDefaultTemplateForYear(year)
+                android.util.Log.d("YearManager", "Standard-Vorlage für Jahr $year gespeichert: $saved")
+            }
 
             // 8. Erstelle YearSettings
             val newYearSettings = YearSettings(
@@ -119,7 +122,7 @@ class YearManager(private val context: Context) {
                 ersterMontagImJahr = firstMonday,
                 urlaubsanspruchTage = finalUrlaubsanspruch,
                 vorjahresUebertragMinuten = vorjahresUebertrag,
-                hasExcelTemplate = hasTemplate,
+                hasExcelTemplate = true,  // Template existiert jetzt garantiert
                 isActive = false,  // Nicht sofort aktivieren
                 createdAt = System.currentTimeMillis()
             )
