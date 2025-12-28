@@ -89,16 +89,17 @@ class VacationPlannerViewModel(application: Application) : AndroidViewModel(appl
      * Urlaubstage im ausgewählten Jahr
      * Wichtig: Berücksichtigt auch Resturlaub (urlaubsJahr-Feld)
      */
-    val vacationDays: StateFlow<List<TimeEntry>> = combine(
-        selectedYear,
-        timeEntryDao.getAllEntriesFlow()
-    ) { year, allEntries ->
-        // Filtere Urlaubstage die FÜR dieses Jahr zählen (auch wenn Kalenderjahr anders)
-        // Beispiel: Urlaub am 2.1.2026 mit urlaubsJahr=2025 zählt für 2025!
-        allEntries.filter { entry ->
-            entry.typ == TimeEntry.TYP_URLAUB && entry.getUrlaubsJahr() == year
+    val vacationDays: StateFlow<List<TimeEntry>> = selectedYear
+        .flatMapLatest { year ->
+            timeEntryDao.getAllEntriesFlow()
+                .map { allEntries ->
+                    // Filtere Urlaubstage die FÜR dieses Jahr zählen (auch wenn Kalenderjahr anders)
+                    // Beispiel: Urlaub am 2.1.2026 mit urlaubsJahr=2025 zählt für 2025!
+                    allEntries.filter { entry ->
+                        entry.typ == TimeEntry.TYP_URLAUB && entry.getUrlaubsJahr() == year
+                    }
+                }
         }
-    }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     /**
