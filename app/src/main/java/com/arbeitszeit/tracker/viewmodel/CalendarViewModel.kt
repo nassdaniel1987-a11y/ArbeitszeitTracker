@@ -198,18 +198,19 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     
     /**
      * Erstellt fehlende Einträge für einen Monat
-     * Erstellt KEINE Einträge für zukünftige Tage (verhindert falsche Überstunden-Berechnung)
+     * Erstellt Einträge bis zu 3 Monate in die Zukunft (für Planung & Urlaubseintragungen)
      */
     private suspend fun ensureMonthEntriesExist(month: YearMonth) {
         val settings = settingsDao.getSettings()
         val daysInMonth = month.lengthOfMonth()
         val today = LocalDate.now()
+        val futureLimit = today.plusMonths(3)  // Erlaube Einträge bis +3 Monate
 
         for (day in 1..daysInMonth) {
             val date = month.atDay(day)
 
-            // Überspringe zukünftige Tage - sie werden nicht in der DB angelegt
-            if (date.isAfter(today)) {
+            // Überspringe Tage, die mehr als 3 Monate in der Zukunft liegen
+            if (date.isAfter(futureLimit)) {
                 continue
             }
 

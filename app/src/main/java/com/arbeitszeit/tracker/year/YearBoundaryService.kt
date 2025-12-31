@@ -97,9 +97,9 @@ class YearBoundaryService(private val context: Context) {
     /**
      * Prüft ob zu einem bestimmten Monat navigiert werden kann
      *
-     * Regel: Navigation nur innerhalb des aktiven Arbeitsjahres erlaubt
+     * Regel: Navigation innerhalb des aktiven Arbeitsjahres + 6 Monate in die Zukunft
      * - Frühestens: Monat des ersten Montags
-     * - Spätestens: Monat des letzten Freitags
+     * - Spätestens: Monat des letzten Freitags + 6 Monate (für Planung)
      *
      * @param targetMonth Ziel-Monat
      * @return true wenn Navigation erlaubt, false sonst
@@ -109,7 +109,7 @@ class YearBoundaryService(private val context: Context) {
         val (firstMonday, lastFriday) = boundaries
 
         val earliestMonth = YearMonth.from(firstMonday)
-        val latestMonth = YearMonth.from(lastFriday)
+        val latestMonth = YearMonth.from(lastFriday).plusMonths(6)  // +6 Monate für Planung
 
         targetMonth in earliestMonth..latestMonth
     }
@@ -139,7 +139,8 @@ class YearBoundaryService(private val context: Context) {
         val (_, lastFriday) = boundaries
 
         val nextWeekDate = currentWeekDate.plusWeeks(1)
-        nextWeekDate <= lastFriday
+        val futureLimit = lastFriday.plusMonths(6)  // +6 Monate für Planung
+        nextWeekDate <= futureLimit
     }
 
     // ============================================================================
