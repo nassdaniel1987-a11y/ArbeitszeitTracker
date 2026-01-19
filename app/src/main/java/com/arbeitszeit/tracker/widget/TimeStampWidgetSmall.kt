@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
 import com.arbeitszeit.tracker.R
+import com.arbeitszeit.tracker.MainActivity
 import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
@@ -108,13 +109,11 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
                         )
                     }
                     entry.endZeit == null -> {
-                        // Set end time
-                        timeEntryDao.update(entry.copy(
-                            endZeit = currentTime,
-                            updatedAt = System.currentTimeMillis()
-                        ))
-
-                        tracker.stopTracking()
+                        // Statt im Hintergrund zu stoppen, App öffnen mit Dialog
+                        // Da dies hier eine Coroutine ist und handleQuickStamp durch einen Intent aufgerufen wird,
+                        // ist es etwas komplizierter.
+                        // Aber Moment: handleQuickStamp wird durch ACTION_QUICK_STAMP aufgerufen.
+                        // Wir müssen updateAppWidget ändern, damit der Button direkt die App öffnet wenn es läuft.
                     }
                     else -> {
                         // Reset to new start (new session)
@@ -214,14 +213,28 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_duration_small, durationText)
 
             // Set quick stamp button intent
-            val quickStampIntent = Intent(context, TimeStampWidgetSmall::class.java).apply {
-                action = ACTION_QUICK_STAMP
+            if (isRunning) {
+                // Wenn läuft -> App öffnen zum Stoppen
+                val stopIntent = Intent(context, MainActivity::class.java).apply {
+                    action = "com.arbeitszeit.tracker.ACTION_STOP_FROM_WIDGET"
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val stopPendingIntent = PendingIntent.getActivity(
+                    context, 0, stopIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_quick_stamp_button, stopPendingIntent)
+            } else {
+                // Wenn nicht läuft -> Normaler QuickStamp (Start)
+                val quickStampIntent = Intent(context, TimeStampWidgetSmall::class.java).apply {
+                    action = ACTION_QUICK_STAMP
+                }
+                val quickStampPendingIntent = PendingIntent.getBroadcast(
+                    context, 0, quickStampIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_quick_stamp_button, quickStampPendingIntent)
             }
-            val quickStampPendingIntent = PendingIntent.getBroadcast(
-                context, 0, quickStampIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_quick_stamp_button, quickStampPendingIntent)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         } catch (e: Exception) {

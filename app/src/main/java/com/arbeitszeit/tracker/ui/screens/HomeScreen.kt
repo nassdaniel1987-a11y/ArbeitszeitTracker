@@ -53,6 +53,7 @@ fun HomeScreen(
     val vorlagen by viewModel.vorlagen.collectAsState()
     val defaultVorlage by viewModel.defaultVorlage.collectAsState()
     val runningTimeState by viewModel.runningTimeState.collectAsState()
+    val showStopDialogState by viewModel.showStopDialog.collectAsState()
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
@@ -81,6 +82,14 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         delay(50)
         itemsVisible = true
+    }
+
+    // Handle externen Stop-Request (z.B. vom Widget)
+    LaunchedEffect(showStopDialogState) {
+        if (showStopDialogState) {
+            showEndWorkDialog = true
+            viewModel.resetStopDialog()
+        }
     }
 
     // Zeige Snackbar wenn Eintrag gelöscht wurde
