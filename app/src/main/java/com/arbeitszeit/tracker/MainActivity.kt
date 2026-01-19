@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import android.content.Intent
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -32,6 +33,7 @@ import com.arbeitszeit.tracker.ui.navigation.Screen
 import com.arbeitszeit.tracker.ui.theme.ArbeitszeitTrackerTheme
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.NotificationHelper
+import com.arbeitszeit.tracker.viewmodel.HomeViewModel
 import com.arbeitszeit.tracker.viewmodel.YearViewModel
 import com.arbeitszeit.tracker.worker.ReminderWorker
 import kotlinx.coroutines.CoroutineScope
@@ -55,6 +57,9 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Handle Intent if started from Widget (e.g. Stop Action)
+        handleIntent(intent)
 
         // Notification Channels erstellen
         NotificationHelper.createNotificationChannels(this)
@@ -478,6 +483,18 @@ class MainActivity : ComponentActivity() {
                 val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(this@MainActivity)
                 scheduler.scheduleAutoStarts()
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.action == "com.arbeitszeit.tracker.ACTION_STOP_FROM_WIDGET") {
+            val homeViewModel = ViewModelProvider(this)[HomeViewModel::class.java]
+            homeViewModel.handleStopRequest()
         }
     }
 }

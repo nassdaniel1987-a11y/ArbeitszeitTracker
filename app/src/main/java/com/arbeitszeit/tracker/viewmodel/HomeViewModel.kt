@@ -55,6 +55,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _deletedEntry = MutableStateFlow<TimeEntry?>(null)
     val deletedEntry: StateFlow<TimeEntry?> = _deletedEntry.asStateFlow()
 
+    // Trigger für End-Work-Dialog (aus Widget oder App)
+    private val _showStopDialog = MutableStateFlow(false)
+    val showStopDialog: StateFlow<Boolean> = _showStopDialog.asStateFlow()
+
     // Settings
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
@@ -555,6 +559,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun discardRunningTimeTracking() {
         runningTimeTracker.stopTracking()
+    }
+
+    /**
+     * Wird aufgerufen wenn Stop aus dem Widget angefordert wird
+     */
+    fun handleStopRequest() {
+        _showStopDialog.value = true
+    }
+
+    /**
+     * Setzt den Dialog-Trigger zurück
+     */
+    fun resetStopDialog() {
+        _showStopDialog.value = false
     }
 }
 

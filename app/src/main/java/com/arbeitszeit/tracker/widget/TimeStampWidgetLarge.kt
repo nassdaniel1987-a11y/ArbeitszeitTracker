@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
 import com.arbeitszeit.tracker.R
+import com.arbeitszeit.tracker.MainActivity
 import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
@@ -116,27 +117,8 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
     }
 
     private fun handleEndStamp(context: Context) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val database = AppDatabase.getDatabase(context)
-            val timeEntryDao = database.timeEntryDao()
-
-            val today = DateUtils.today()
-            val entry = timeEntryDao.getEntryByDate(today)
-            val currentTime = TimeUtils.currentTimeInMinutes()
-
-            if (entry != null) {
-                timeEntryDao.update(entry.copy(
-                    endZeit = currentTime,
-                    updatedAt = System.currentTimeMillis()
-                ))
-
-                // RunningTimeTracker stoppen
-                val tracker = RunningTimeTracker(context)
-                tracker.stopTracking()
-            }
-
-            refreshWidget(context)
-        }
+        // Nicht mehr im Hintergrund stoppen, sondern App öffnen mit Dialog
+        // Die Logik wird jetzt durch den PendingIntent auf dem Button gesteuert
     }
 
     private fun handlePauseStamp(context: Context) {
@@ -309,14 +291,27 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_pause_button_large, pausePendingIntent)
 
-            val endIntent = Intent(context, TimeStampWidgetLarge::class.java).apply {
-                action = ACTION_END
+            // Ende-Button Logik:
+            if (isRunning) {
+                val stopIntent = Intent(context, MainActivity::class.java).apply {
+                    action = "com.arbeitszeit.tracker.ACTION_STOP_FROM_WIDGET"
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val stopPendingIntent = PendingIntent.getActivity(
+                    context, 1, stopIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_end_button_large, stopPendingIntent)
+            } else {
+                val endIntent = Intent(context, TimeStampWidgetLarge::class.java).apply {
+                    action = ACTION_END
+                }
+                val endPendingIntent = PendingIntent.getBroadcast(
+                    context, 1, endIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_end_button_large, endPendingIntent)
             }
-            val endPendingIntent = PendingIntent.getBroadcast(
-                context, 1, endIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_end_button_large, endPendingIntent)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         } catch (e: Exception) {
