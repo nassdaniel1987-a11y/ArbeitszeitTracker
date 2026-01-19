@@ -27,6 +27,9 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
 
     companion object {
         const val ACTION_QUICK_STAMP = "com.arbeitszeit.tracker.ACTION_QUICK_STAMP_SMALL"
+        const val ACTION_START = "com.arbeitszeit.tracker.ACTION_START_SMALL"
+        const val ACTION_PAUSE = "com.arbeitszeit.tracker.ACTION_PAUSE_SMALL"
+        const val ACTION_REFRESH = "com.arbeitszeit.tracker.ACTION_REFRESH_SMALL" // Replaces Midnight Reset as generic refresh
         const val ACTION_MIDNIGHT_RESET = "com.arbeitszeit.tracker.ACTION_MIDNIGHT_RESET_SMALL"
         private const val MIDNIGHT_ALARM_REQUEST_CODE = 1002
     }
@@ -67,26 +70,28 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
 
         when (intent.action) {
             ACTION_QUICK_STAMP -> {
-                handleQuickStamp(context)
+                // Deprecated single button logic, keeping for potential fallback
+                handleStart(context)
             }
-            ACTION_MIDNIGHT_RESET -> {
+            ACTION_START -> {
+                handleStart(context)
+            }
+            ACTION_PAUSE -> {
+                handlePause(context)
+            }
+            ACTION_REFRESH, ACTION_MIDNIGHT_RESET -> {
                 refreshWidget(context)
-                scheduleMidnightReset(context)
+                if (intent.action == ACTION_MIDNIGHT_RESET) {
+                    scheduleMidnightReset(context)
+                }
             }
         }
     }
 
-    /**
-     * Quick Stamp Logic:
-     * - Wenn keine Start-Zeit: Setze Start-Zeit
-     * - Wenn Start-Zeit aber keine End-Zeit: Setze End-Zeit
-     * - Wenn beides gesetzt: Setze neue Start-Zeit (neuer Tag)
-     */
-    private fun handleQuickStamp(context: Context) {
+    private fun handleStart(context: Context) {
         CoroutineScope(Dispatchers.IO).launch {
             val database = AppDatabase.getDatabase(context)
             val timeEntryDao = database.timeEntryDao()
-
             val today = DateUtils.today()
             val entry = timeEntryDao.getEntryByDate(today)
             val currentTime = TimeUtils.currentTimeInMinutes()
@@ -94,44 +99,40 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
             val tracker = RunningTimeTracker(context)
 
             if (entry != null) {
-                when {
-                    entry.startZeit == null -> {
-                        // Set start time
-                        timeEntryDao.update(entry.copy(
-                            startZeit = currentTime,
-                            updatedAt = System.currentTimeMillis()
-                        ))
+                // Wenn noch kein Start -> Start setzen
+                // Wenn Ende schon gesetzt -> Neuer Start (Reset)
+                // Wenn Start aber kein Ende -> Nichts tun (läuft schon)
+                if (entry.startZeit == null || (entry.startZeit != null && entry.endZeit != null)) {
+                     timeEntryDao.update(entry.copy(
+                        startZeit = currentTime,
+                        endZeit = null, // Reset End if exists
+                        updatedAt = System.currentTimeMillis()
+                    ))
 
-                        tracker.startTracking(
-                            startTime = currentLocalTime,
-                            isAutoStart = false,
-                            date = today
-                        )
-                    }
-                    entry.endZeit == null -> {
-                        // Statt im Hintergrund zu stoppen, App öffnen mit Dialog
-                        // Da dies hier eine Coroutine ist und handleQuickStamp durch einen Intent aufgerufen wird,
-                        // ist es etwas komplizierter.
-                        // Aber Moment: handleQuickStamp wird durch ACTION_QUICK_STAMP aufgerufen.
-                        // Wir müssen updateAppWidget ändern, damit der Button direkt die App öffnet wenn es läuft.
-                    }
-                    else -> {
-                        // Reset to new start (new session)
-                        timeEntryDao.update(entry.copy(
-                            startZeit = currentTime,
-                            endZeit = null,
-                            updatedAt = System.currentTimeMillis()
-                        ))
-
-                        tracker.startTracking(
-                            startTime = currentLocalTime,
-                            isAutoStart = false,
-                            date = today
-                        )
-                    }
+                    tracker.startTracking(
+                        startTime = currentLocalTime,
+                        isAutoStart = false,
+                        date = today
+                    )
                 }
             }
+            refreshWidget(context)
+        }
+    }
 
+    private fun handlePause(context: Context) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val database = AppDatabase.getDatabase(context)
+            val today = DateUtils.today()
+            val entry = database.timeEntryDao().getEntryByDate(today)
+
+            if (entry != null) {
+                val currentPause = entry.pauseMinuten
+                database.timeEntryDao().update(entry.copy(
+                    pauseMinuten = currentPause + 30,
+                    updatedAt = System.currentTimeMillis()
+                ))
+            }
             refreshWidget(context)
         }
     }
@@ -172,68 +173,56 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
             // Determine if work is running
             val isRunning = entry?.startZeit != null && entry.endZeit == null
 
+            // 1. Status Indicator
             if (isRunning) {
-                // Versuche exakten Start-Zeitpunkt aus SharedPreferences zu holen
+                views.setInt(R.id.widget_status_indicator, "setBackgroundResource", R.drawable.widget_status_active)
+            } else {
+                views.setInt(R.id.widget_status_indicator, "setBackgroundResource", R.drawable.widget_status_inactive)
+            }
+
+            // 2. Chronometer vs Static Text
+            if (isRunning) {
                 val prefs = context.getSharedPreferences("running_time_tracker", Context.MODE_PRIVATE)
                 val startedAt = prefs.getLong("startedAt", 0L)
-
-                if (startedAt > 0) {
-                    views.setChronometer(
-                        R.id.widget_chronometer_small,
-                        SystemClock.elapsedRealtime() - (System.currentTimeMillis() - startedAt),
-                        null,
-                        true
-                    )
-                } else {
-                    // Fallback auf DB
-                    val startMinutes = entry?.startZeit ?: 0
-                    val calendar = Calendar.getInstance().apply {
-                        set(Calendar.HOUR_OF_DAY, startMinutes / 60)
-                        set(Calendar.MINUTE, startMinutes % 60)
-                        set(Calendar.SECOND, 0)
-                    }
-                    val startTimeMillis = calendar.timeInMillis
-
-                    views.setChronometer(
-                        R.id.widget_chronometer_small,
-                        SystemClock.elapsedRealtime() - (System.currentTimeMillis() - startTimeMillis),
-                        null,
-                        true
-                    )
-                }
+                val baseTime = if (startedAt > 0) SystemClock.elapsedRealtime() - (System.currentTimeMillis() - startedAt) else SystemClock.elapsedRealtime()
 
                 views.setViewVisibility(R.id.widget_chronometer_small, View.VISIBLE)
                 views.setViewVisibility(R.id.widget_duration_small, View.GONE)
+                views.setChronometer(R.id.widget_chronometer_small, baseTime, null, true)
             } else {
                 views.setViewVisibility(R.id.widget_chronometer_small, View.GONE)
                 views.setViewVisibility(R.id.widget_duration_small, View.VISIBLE)
+                views.setTextViewText(R.id.widget_duration_small, durationText)
             }
 
-            // Set duration text
-            views.setTextViewText(R.id.widget_duration_small, durationText)
+            // 3. Button Intents
+            // Start
+            val startIntent = Intent(context, TimeStampWidgetSmall::class.java).apply { action = ACTION_START }
+            views.setOnClickPendingIntent(R.id.widget_btn_start, PendingIntent.getBroadcast(
+                context, 0, startIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ))
 
-            // Set quick stamp button intent
+            // Pause
+            val pauseIntent = Intent(context, TimeStampWidgetSmall::class.java).apply { action = ACTION_PAUSE }
+            views.setOnClickPendingIntent(R.id.widget_btn_pause, PendingIntent.getBroadcast(
+                context, 1, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ))
+
+            // Stop (Open App Dialog)
             if (isRunning) {
-                // Wenn läuft -> App öffnen zum Stoppen
                 val stopIntent = Intent(context, MainActivity::class.java).apply {
                     action = "com.arbeitszeit.tracker.ACTION_STOP_FROM_WIDGET"
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
-                val stopPendingIntent = PendingIntent.getActivity(
-                    context, 0, stopIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_quick_stamp_button, stopPendingIntent)
+                views.setOnClickPendingIntent(R.id.widget_btn_stop, PendingIntent.getActivity(
+                    context, 2, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                ))
             } else {
-                // Wenn nicht läuft -> Normaler QuickStamp (Start)
-                val quickStampIntent = Intent(context, TimeStampWidgetSmall::class.java).apply {
-                    action = ACTION_QUICK_STAMP
-                }
-                val quickStampPendingIntent = PendingIntent.getBroadcast(
-                    context, 0, quickStampIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_quick_stamp_button, quickStampPendingIntent)
+                // If not running, stop button just opens app normally
+                val openIntent = Intent(context, MainActivity::class.java)
+                views.setOnClickPendingIntent(R.id.widget_btn_stop, PendingIntent.getActivity(
+                    context, 3, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                ))
             }
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
