@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
 import com.arbeitszeit.tracker.R
+import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
@@ -99,12 +100,21 @@ class TimeStampWidget : AppWidgetProvider() {
             val today = DateUtils.today()
             val entry = timeEntryDao.getEntryByDate(today)
             val currentTime = TimeUtils.currentTimeInMinutes()
+            val currentLocalTime = java.time.LocalTime.now()
 
             if (entry != null) {
                 timeEntryDao.update(entry.copy(
                     startZeit = currentTime,
                     updatedAt = System.currentTimeMillis()
                 ))
+
+                // RunningTimeTracker aktualisieren
+                val tracker = RunningTimeTracker(context)
+                tracker.startTracking(
+                    startTime = currentLocalTime,
+                    isAutoStart = false,
+                    date = today
+                )
             }
 
             refreshWidget(context)
@@ -125,6 +135,10 @@ class TimeStampWidget : AppWidgetProvider() {
                     endZeit = currentTime,
                     updatedAt = System.currentTimeMillis()
                 ))
+
+                // RunningTimeTracker stoppen
+                val tracker = RunningTimeTracker(context)
+                tracker.stopTracking()
             }
 
             refreshWidget(context)
