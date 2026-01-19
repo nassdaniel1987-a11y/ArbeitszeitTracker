@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
@@ -52,6 +53,14 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         updatedAt = System.currentTimeMillis()
                     ))
 
+                    // Running Tracker starten
+                    val tracker = RunningTimeTracker(context)
+                    tracker.startTracking(
+                        startTime = java.time.LocalTime.now(),
+                        isAutoStart = false,
+                        date = today
+                    )
+
                     // Show success toast on main thread
                     CoroutineScope(Dispatchers.Main).launch {
                         val timeString = TimeUtils.minutesToTimeString(currentTime)
@@ -90,6 +99,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         endZeit = currentTime,
                         updatedAt = System.currentTimeMillis()
                     ))
+
+                    // Running Tracker stoppen
+                    val tracker = RunningTimeTracker(context)
+                    tracker.stopTracking()
 
                     // Calculate and show worked time
                     val workedMinutes = entry.getIstMinuten()

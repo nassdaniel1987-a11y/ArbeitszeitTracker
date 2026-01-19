@@ -13,9 +13,9 @@ import androidx.core.app.NotificationCompat
 import com.arbeitszeit.tracker.MainActivity
 import com.arbeitszeit.tracker.R
 import com.arbeitszeit.tracker.data.database.AppDatabase
+import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
-import com.arbeitszeit.tracker.widget.TimeStampWidget
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import kotlinx.coroutines.CoroutineScope
@@ -209,15 +209,8 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
     }
 
     private fun refreshWidget(context: Context) {
-        val intent = Intent(context, TimeStampWidget::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-        }
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(
-            ComponentName(context, TimeStampWidget::class.java)
-        )
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
-        context.sendBroadcast(intent)
+        val tracker = RunningTimeTracker(context)
+        tracker.updateWidgets()
     }
 
     private fun showSuccessNotification(
