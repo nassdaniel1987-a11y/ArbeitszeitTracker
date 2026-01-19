@@ -551,6 +551,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     isManualEntry = false
                 ))
             }
+
+            // Widgets aktualisieren, damit sie merken dass Ende gesetzt wurde
+            runningTimeTracker.updateWidgets()
         }
     }
 
@@ -559,6 +562,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun discardRunningTimeTracking() {
         runningTimeTracker.stopTracking()
+        // Widgets aktualisieren
+        runningTimeTracker.updateWidgets()
     }
 
     /**

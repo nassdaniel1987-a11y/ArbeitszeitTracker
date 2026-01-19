@@ -18,8 +18,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center"
-        android:background="@drawable/widget_background_modern"
-        android:elevation="4dp">
+        android:background="@drawable/widget_background_modern">
 
         <!-- Kompakte Zeit-Anzeige -->
         <TextView
