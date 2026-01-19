@@ -253,7 +253,7 @@ class TimeStampWidget : AppWidgetProvider() {
             } else {
                 context.getColor(R.color.widget_status_inactive)
             }
-            views.setInt(R.id.widget_status_indicator, "setBackgroundColor", statusColor)
+            views.setInt(R.id.widget_status_indicator, "setColorFilter", statusColor)
 
             // Set button intents
             val startIntent = Intent(context, TimeStampWidget::class.java).apply {

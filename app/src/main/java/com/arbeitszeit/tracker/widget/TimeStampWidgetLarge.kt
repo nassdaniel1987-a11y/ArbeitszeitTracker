@@ -231,7 +231,7 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
             } else {
                 context.getColor(R.color.widget_status_inactive)
             }
-            views.setInt(R.id.widget_status_indicator_large, "setBackgroundColor", statusColor)
+            views.setInt(R.id.widget_status_indicator_large, "setColorFilter", statusColor)
 
             // === WEEK DATA ===
             val currentDate = LocalDate.parse(today)
