@@ -15,6 +15,7 @@ import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -227,9 +228,9 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
             views.setProgressBar(R.id.widget_progress_bar_large, 100, progress, false)
 
             if (isRunning) {
-                views.setImageViewResource(R.id.widget_status_indicator_large, R.drawable.widget_status_active)
+                views.setInt(R.id.widget_status_indicator_large, "setBackgroundResource", R.drawable.widget_status_active)
             } else {
-                views.setImageViewResource(R.id.widget_status_indicator_large, R.drawable.widget_status_inactive)
+                views.setInt(R.id.widget_status_indicator_large, "setBackgroundResource", R.drawable.widget_status_inactive)
             }
 
             // === WEEK DATA ===

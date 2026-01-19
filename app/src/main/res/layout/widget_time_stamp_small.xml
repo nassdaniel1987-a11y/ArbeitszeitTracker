@@ -48,7 +48,6 @@
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
-        android:background="@drawable/widget_button_primary"
-        android:stateListAnimator="@null" />
+        android:background="@drawable/widget_button_primary" />
 
 </LinearLayout>
