@@ -18,13 +18,12 @@
         android:paddingBottom="12dp">
 
         <!-- Status Indikator -->
-        <ImageView
+        <View
             android:id="@+id/widget_status_indicator_large"
             android:layout_width="12dp"
             android:layout_height="12dp"
-            android:src="@drawable/widget_status_indicator"
-            android:layout_marginEnd="12dp"
-            android:contentDescription="Status" />
+            android:background="@drawable/widget_status_inactive"
+            android:layout_marginEnd="12dp" />
 
         <TextView
             android:id="@+id/widget_title_large"
@@ -96,9 +95,9 @@
             android:textStyle="bold"
             android:textColor="#1C1B1F" />
 
-        <Space
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_weight="1" />
 
         <TextView
@@ -214,8 +213,7 @@
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:background="@drawable/widget_button_success"
-            android:layout_marginEnd="6dp"
-            android:stateListAnimator="@null" />
+            android:layout_marginEnd="6dp" />
 
         <Button
             android:id="@+id/widget_pause_button_large"
@@ -227,8 +225,7 @@
             android:textStyle="bold"
             android:textColor="#6750A4"
             android:background="@drawable/widget_button_secondary"
-            android:layout_marginEnd="6dp"
-            android:stateListAnimator="@null" />
+            android:layout_marginEnd="6dp" />
 
         <Button
             android:id="@+id/widget_end_button_large"
@@ -239,8 +236,7 @@
             android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:background="@drawable/widget_button_primary"
-            android:stateListAnimator="@null" />
+            android:background="@drawable/widget_button_primary" />
     </LinearLayout>
 
 </LinearLayout>

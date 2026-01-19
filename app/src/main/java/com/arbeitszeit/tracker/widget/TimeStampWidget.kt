@@ -15,6 +15,7 @@ import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,6 +40,7 @@ class TimeStampWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        Log.d("TimeStampWidget", "onUpdate called for ${appWidgetIds.size} widgets")
         // Schedule midnight reset (in case it wasn't set up or got cancelled)
         scheduleMidnightReset(context)
 
@@ -70,6 +72,7 @@ class TimeStampWidget : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
+        Log.d("TimeStampWidget", "onReceive: ${intent.action}")
 
         when (intent.action) {
             ACTION_START -> {
@@ -249,9 +252,9 @@ class TimeStampWidget : AppWidgetProvider() {
 
             // Set status indicator image
             if (isRunning) {
-                views.setImageViewResource(R.id.widget_status_indicator, R.drawable.widget_status_active)
+                views.setInt(R.id.widget_status_indicator, "setBackgroundResource", R.drawable.widget_status_active)
             } else {
-                views.setImageViewResource(R.id.widget_status_indicator, R.drawable.widget_status_inactive)
+                views.setInt(R.id.widget_status_indicator, "setBackgroundResource", R.drawable.widget_status_inactive)
             }
 
             // Set button intents
