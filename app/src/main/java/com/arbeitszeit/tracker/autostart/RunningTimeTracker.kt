@@ -1,7 +1,13 @@
 package com.arbeitszeit.tracker.autostart
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import com.arbeitszeit.tracker.widget.TimeStampWidget
+import com.arbeitszeit.tracker.widget.TimeStampWidgetLarge
+import com.arbeitszeit.tracker.widget.TimeStampWidgetSmall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +23,7 @@ import java.time.format.DateTimeFormatter
  * - Auto-Start vs. Manuell-Start Tracking
  * - StateFlow für UI-Updates
  */
-class RunningTimeTracker(context: Context) {
+class RunningTimeTracker(private val context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(
         "running_time_tracker",
@@ -27,7 +33,27 @@ class RunningTimeTracker(context: Context) {
     private val _runningState = MutableStateFlow<RunningTimeState?>(null)
     val runningState: StateFlow<RunningTimeState?> = _runningState.asStateFlow()
 
+    private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "startedAt" || key == "startTime" || key == "date") {
+            // Wenn sich Daten in SharedPreferences ändern (z.B. durch Widget),
+            // lade den State neu
+            val currentState = _runningState.value
+            val startedAt = prefs.getLong("startedAt", 0L)
+
+            if (startedAt == 0L && currentState != null) {
+                // Tracking wurde gestoppt (extern)
+                _runningState.value = null
+            } else if (startedAt > 0 && (currentState == null || currentState.startedAt != startedAt)) {
+                // Tracking wurde gestartet oder geändert (extern)
+                loadState()
+            }
+        }
+    }
+
     init {
+        // Listener registrieren
+        prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
+
         // Lade gespeicherten State beim Start
         loadState()
     }
@@ -50,6 +76,9 @@ class RunningTimeTracker(context: Context) {
         // Speichern
         saveState(state)
         _runningState.value = state
+
+        // Widgets aktualisieren
+        updateWidgets()
     }
 
     /**
@@ -58,6 +87,10 @@ class RunningTimeTracker(context: Context) {
     fun stopTracking(): RunningTimeState? {
         val currentState = _runningState.value
         clearState()
+
+        // Widgets aktualisieren
+        updateWidgets()
+
         return currentState
     }
 
@@ -116,6 +149,44 @@ class RunningTimeTracker(context: Context) {
     private fun clearState() {
         prefs.edit().clear().apply()
         _runningState.value = null
+    }
+
+    /**
+     * Sendet Update-Broadcast an alle Widgets
+     */
+    private fun updateWidgets() {
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+
+            // 1. Update Normal Widget
+            val normalIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidget::class.java))
+            if (normalIds.isNotEmpty()) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, normalIds)
+                intent.component = ComponentName(context, TimeStampWidget::class.java)
+                context.sendBroadcast(intent)
+            }
+
+            // 2. Update Large Widget
+            val largeIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidgetLarge::class.java))
+            if (largeIds.isNotEmpty()) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, largeIds)
+                intent.component = ComponentName(context, TimeStampWidgetLarge::class.java)
+                context.sendBroadcast(intent)
+            }
+
+            // 3. Update Small Widget
+            val smallIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidgetSmall::class.java))
+            if (smallIds.isNotEmpty()) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, smallIds)
+                intent.component = ComponentName(context, TimeStampWidgetSmall::class.java)
+                context.sendBroadcast(intent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
 

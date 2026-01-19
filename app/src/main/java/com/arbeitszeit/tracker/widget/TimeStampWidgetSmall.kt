@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
 import com.arbeitszeit.tracker.R
+import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
@@ -88,6 +89,8 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
             val today = DateUtils.today()
             val entry = timeEntryDao.getEntryByDate(today)
             val currentTime = TimeUtils.currentTimeInMinutes()
+            val currentLocalTime = java.time.LocalTime.now()
+            val tracker = RunningTimeTracker(context)
 
             if (entry != null) {
                 when {
@@ -97,6 +100,12 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
                             startZeit = currentTime,
                             updatedAt = System.currentTimeMillis()
                         ))
+
+                        tracker.startTracking(
+                            startTime = currentLocalTime,
+                            isAutoStart = false,
+                            date = today
+                        )
                     }
                     entry.endZeit == null -> {
                         // Set end time
@@ -104,6 +113,8 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
                             endZeit = currentTime,
                             updatedAt = System.currentTimeMillis()
                         ))
+
+                        tracker.stopTracking()
                     }
                     else -> {
                         // Reset to new start (new session)
@@ -112,6 +123,12 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
                             endZeit = null,
                             updatedAt = System.currentTimeMillis()
                         ))
+
+                        tracker.startTracking(
+                            startTime = currentLocalTime,
+                            isAutoStart = false,
+                            date = today
+                        )
                     }
                 }
             }
