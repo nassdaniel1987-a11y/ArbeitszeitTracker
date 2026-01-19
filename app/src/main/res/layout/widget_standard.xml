@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Modernisiertes Widget mit Material 3 Design
-    - Card Look mit leichtem Schatten (simuliert durch Hintergrund)
-    - Klare Typografie
-    - Bessere Abstände
+    Robustes Standard Widget Layout (4x2)
+    Nutzt nur LinearLayout für maximale Kompatibilität.
+    Keine Elevation im Root-Element.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -12,15 +11,15 @@
     android:background="@drawable/widget_background_modern"
     android:padding="16dp">
 
-    <!-- Header mit Status -->
+    <!-- Header: Status + Titel -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingBottom="12dp">
+        android:paddingBottom="8dp">
 
-        <!-- Status Indicator -->
+        <!-- Status Punkt -->
         <View
             android:id="@+id/widget_status_indicator"
             android:layout_width="12dp"
@@ -29,76 +28,68 @@
             android:layout_marginEnd="12dp" />
 
         <TextView
-            android:id="@+id/widget_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Arbeitszeit"
             android:textSize="14sp"
             android:textColor="#49454F"
-            android:fontFamily="sans-serif-medium" />
+            android:textStyle="normal" />
+    </LinearLayout>
 
-        <!-- Aktuelle Dauer -->
+    <!-- Hauptanzeige: Dauer -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingBottom="16dp">
+
+        <!-- Statische Dauer (wenn gestoppt) -->
         <TextView
-            android:id="@+id/widget_duration"
+            android:id="@+id/widget_duration_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0:00h"
-            android:textSize="24sp"
+            android:textSize="32sp"
             android:textStyle="bold"
             android:textColor="#6750A4"
-            android:fontFamily="sans-serif-medium" />
+            android:visibility="visible" />
 
-        <!-- Chronometer -->
+        <!-- Chronometer (wenn läuft) -->
         <Chronometer
             android:id="@+id/widget_chronometer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="24sp"
+            android:textSize="32sp"
             android:textStyle="bold"
             android:textColor="#6750A4"
-            android:fontFamily="sans-serif-medium"
             android:visibility="gone" />
     </LinearLayout>
 
-    <!-- Fortschrittsbalken -->
-    <ProgressBar
-        android:id="@+id/widget_progress_bar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginBottom="16dp"
-        android:progress="0"
-        android:max="100"
-        android:progressTint="#6750A4"
-        android:progressBackgroundTint="#E8DEF8"
-        android:indeterminate="false" />
-
-    <!-- Zeit Info -->
+    <!-- Info Zeile: Start / Ende -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:paddingBottom="16dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start:"
-            android:textSize="14sp"
+            android:text="Start: "
             android:textColor="#79747E"
-            android:paddingEnd="4dp" />
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/widget_start_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="--:--"
-            android:textSize="14sp"
+            android:textColor="#1C1B1F"
             android:textStyle="bold"
-            android:textColor="#1C1B1F" />
+            android:textSize="14sp" />
 
+        <!-- Spacer -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="0dp"
@@ -107,62 +98,57 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ende:"
-            android:textSize="14sp"
+            android:text="Ende: "
             android:textColor="#79747E"
-            android:paddingEnd="4dp" />
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/widget_end_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="--:--"
-            android:textSize="14sp"
+            android:textColor="#1C1B1F"
             android:textStyle="bold"
-            android:textColor="#1C1B1F" />
+            android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- Button Row -->
+    <!-- Button Leiste -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="horizontal"
-        android:gravity="center"
-        android:baselineAligned="false">
+        android:gravity="bottom">
 
         <Button
-            android:id="@+id/widget_start_button"
+            android:id="@+id/widget_btn_start"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:text="START"
-            android:textSize="13sp"
-            android:textStyle="bold"
+            android:textSize="12sp"
             android:textColor="#FFFFFF"
             android:background="@drawable/widget_button_success"
             android:layout_marginEnd="8dp" />
 
         <Button
-            android:id="@+id/widget_pause_button"
+            android:id="@+id/widget_btn_pause"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:text="PAUSE"
-            android:textSize="13sp"
-            android:textStyle="bold"
+            android:textSize="12sp"
             android:textColor="#6750A4"
             android:background="@drawable/widget_button_secondary"
             android:layout_marginEnd="8dp" />
 
         <Button
-            android:id="@+id/widget_end_button"
+            android:id="@+id/widget_btn_stop"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="ENDE"
-            android:textSize="13sp"
-            android:textStyle="bold"
+            android:text="STOP"
+            android:textSize="12sp"
             android:textColor="#FFFFFF"
             android:background="@drawable/widget_button_primary" />
     </LinearLayout>

@@ -5,8 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import com.arbeitszeit.tracker.widget.TimeStampWidget
-import com.arbeitszeit.tracker.widget.TimeStampWidgetLarge
+import com.arbeitszeit.tracker.widget.StandardWidget
 import com.arbeitszeit.tracker.widget.TimeStampWidgetSmall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -158,25 +157,16 @@ class RunningTimeTracker(private val context: Context) {
         try {
             val appWidgetManager = AppWidgetManager.getInstance(context)
 
-            // 1. Update Normal Widget
-            val normalIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidget::class.java))
-            if (normalIds.isNotEmpty()) {
-                val intent = Intent(context, TimeStampWidget::class.java)
-                intent.action = TimeStampWidget.ACTION_REFRESH
-                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, normalIds)
+            // Update Standard Widget
+            val standardIds = appWidgetManager.getAppWidgetIds(ComponentName(context, StandardWidget::class.java))
+            if (standardIds.isNotEmpty()) {
+                val intent = Intent(context, StandardWidget::class.java)
+                intent.action = StandardWidget.ACTION_REFRESH
+                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, standardIds)
                 context.sendBroadcast(intent)
             }
 
-            // 2. Update Large Widget
-            val largeIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidgetLarge::class.java))
-            if (largeIds.isNotEmpty()) {
-                val intent = Intent(context, TimeStampWidgetLarge::class.java)
-                intent.action = TimeStampWidgetLarge.ACTION_MIDNIGHT_RESET // Large nutzt diesen als Refresh
-                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, largeIds)
-                context.sendBroadcast(intent)
-            }
-
-            // 3. Update Small Widget
+            // Update Small Widget
             val smallIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidgetSmall::class.java))
             if (smallIds.isNotEmpty()) {
                 val intent = Intent(context, TimeStampWidgetSmall::class.java)

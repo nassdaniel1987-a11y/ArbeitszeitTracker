@@ -38,20 +38,19 @@
             </intent-filter>
         </activity>
 
-        <!-- Zeit-Stempel Widget (Mittel 4x1) -->
+        <!-- Standard Widget (4x2) -->
         <receiver
-            android:name="com.arbeitszeit.tracker.widget.TimeStampWidget"
+            android:name="com.arbeitszeit.tracker.widget.StandardWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_START" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_END" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_PAUSE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_STANDARD" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_START_STANDARD" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_PAUSE_STANDARD" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_time_stamp_info" />
+                android:resource="@xml/widget_standard_info" />
         </receiver>
 
         <!-- Zeit-Stempel Widget Klein (2x1) -->
@@ -67,60 +66,6 @@
                 android:resource="@xml/widget_time_stamp_small_info" />
         </receiver>
 
-        <!-- Zeit-Stempel Widget Groß (4x2) -->
-        <receiver
-            android:name="com.arbeitszeit.tracker.widget.TimeStampWidgetLarge"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_START_LARGE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_END_LARGE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_PAUSE_LARGE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_time_stamp_large_info" />
-        </receiver>
-
-        <!-- Statistik Widget (3x2) -->
-        <receiver
-            android:name="com.arbeitszeit.tracker.widget.StatistikWidget"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_STATS" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_statistik_info" />
-        </receiver>
-
-        <!-- Live Activity Widget (Laufende Zeit) -->
-        <receiver
-            android:name="com.arbeitszeit.tracker.widget.LiveActivityWidget"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_STOP_WORK" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_LIVE" />
-            </intent-filter>
-            <meta-data
-                android:name="android:appwidget.provider"
-                android:resource="@xml/widget_live_activity_info" />
-        </receiver>
-
-        <!-- Lock Screen Glance Widget (Android 14+) -->
-        <receiver
-            android:name="com.arbeitszeit.tracker.widget.LockScreenGlanceWidget"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_LOCKSCREEN" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_lockscreen_glance_info" />
-        </receiver>
 
         <!-- Geofencing Receiver -->
         <receiver
