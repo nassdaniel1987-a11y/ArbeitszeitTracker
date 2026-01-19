@@ -6,6 +6,8 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
+import android.view.View
 import android.widget.RemoteViews
 import com.arbeitszeit.tracker.R
 import com.arbeitszeit.tracker.data.database.AppDatabase
@@ -197,6 +199,51 @@ class TimeStampWidget : AppWidgetProvider() {
 
             // Determine if work is running
             val isRunning = entry?.startZeit != null && entry.endZeit == null
+
+            // LIVE Anzeige Logik
+            if (isRunning) {
+                // Versuche exakten Start-Zeitpunkt aus SharedPreferences zu holen
+                val prefs = context.getSharedPreferences("running_time_tracker", Context.MODE_PRIVATE)
+                val startedAt = prefs.getLong("startedAt", 0L)
+
+                if (startedAt > 0) {
+                    // Verwende Chronometer für exakte Live-Anzeige
+                    // Base ist die Zeit, bei der der Timer auf 0 wäre
+                    views.setChronometer(
+                        R.id.widget_chronometer,
+                        SystemClock.elapsedRealtime() - (System.currentTimeMillis() - startedAt),
+                        null,
+                        true
+                    )
+                } else {
+                    // Fallback auf Datenbank-Zeit (Minuten-genau)
+                    val startMinutes = entry?.startZeit ?: 0
+                    // Berechne Millisekunden für heute Startzeit
+                    // Achtung: Das ist ungenau, da Sekunden fehlen
+                    // Aber besser als nichts
+                    val calendar = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, startMinutes / 60)
+                        set(Calendar.MINUTE, startMinutes % 60)
+                        set(Calendar.SECOND, 0)
+                    }
+                    val startTimeMillis = calendar.timeInMillis
+
+                    views.setChronometer(
+                        R.id.widget_chronometer,
+                        SystemClock.elapsedRealtime() - (System.currentTimeMillis() - startTimeMillis),
+                        null,
+                        true
+                    )
+                }
+
+                // UI umschalten: Chronometer AN, Statischer Text AUS
+                views.setViewVisibility(R.id.widget_chronometer, View.VISIBLE)
+                views.setViewVisibility(R.id.widget_duration, View.GONE)
+            } else {
+                // UI umschalten: Chronometer AUS, Statischer Text AN
+                views.setViewVisibility(R.id.widget_chronometer, View.GONE)
+                views.setViewVisibility(R.id.widget_duration, View.VISIBLE)
+            }
 
             // Set views
             views.setTextViewText(R.id.widget_start_time, startText)

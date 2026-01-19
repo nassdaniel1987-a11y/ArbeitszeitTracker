@@ -63,6 +63,18 @@ fun HomeScreen(
     var entryToDelete by remember { mutableStateOf<TimeEntry?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Live-Update State für Sekundenanzeige
+    var currentTick by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(runningTimeState) {
+        if (runningTimeState != null) {
+            while (true) {
+                currentTick = System.currentTimeMillis()
+                delay(1000)
+            }
+        }
+    }
+
     // Animation state for staggered fade-in
     var itemsVisible by remember { mutableStateOf(false) }
 
@@ -269,7 +281,7 @@ fun HomeScreen(
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                     )
                                     Text(
-                                        runningState.getDurationFormatted(),
+                                        runningState.getDurationFormatted(currentTick),
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary

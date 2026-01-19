@@ -6,6 +6,8 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
+import android.view.View
 import android.widget.RemoteViews
 import com.arbeitszeit.tracker.R
 import com.arbeitszeit.tracker.data.database.AppDatabase
@@ -185,6 +187,43 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
             } else 0
 
             val isRunning = entry?.startZeit != null && entry.endZeit == null
+
+            if (isRunning) {
+                // Versuche exakten Start-Zeitpunkt aus SharedPreferences zu holen
+                val prefs = context.getSharedPreferences("running_time_tracker", Context.MODE_PRIVATE)
+                val startedAt = prefs.getLong("startedAt", 0L)
+
+                if (startedAt > 0) {
+                    views.setChronometer(
+                        R.id.widget_chronometer_large,
+                        SystemClock.elapsedRealtime() - (System.currentTimeMillis() - startedAt),
+                        null,
+                        true
+                    )
+                } else {
+                    // Fallback auf DB
+                    val startMinutes = entry?.startZeit ?: 0
+                    val calendar = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, startMinutes / 60)
+                        set(Calendar.MINUTE, startMinutes % 60)
+                        set(Calendar.SECOND, 0)
+                    }
+                    val startTimeMillis = calendar.timeInMillis
+
+                    views.setChronometer(
+                        R.id.widget_chronometer_large,
+                        SystemClock.elapsedRealtime() - (System.currentTimeMillis() - startTimeMillis),
+                        null,
+                        true
+                    )
+                }
+
+                views.setViewVisibility(R.id.widget_chronometer_large, View.VISIBLE)
+                views.setViewVisibility(R.id.widget_duration_large, View.GONE)
+            } else {
+                views.setViewVisibility(R.id.widget_chronometer_large, View.GONE)
+                views.setViewVisibility(R.id.widget_duration_large, View.VISIBLE)
+            }
 
             views.setTextViewText(R.id.widget_start_time_large, startText)
             views.setTextViewText(R.id.widget_end_time_large, endText)

@@ -153,10 +153,17 @@ data class RunningTimeState(
     /**
      * Formatiert die Dauer für Anzeige (z.B. "8h 45min")
      */
-    fun getDurationFormatted(): String {
-        val totalMinutes = calculateDurationMinutes()
-        val hours = totalMinutes / 60
-        val minutes = totalMinutes % 60
-        return "${hours}h ${minutes.toString().padStart(2, '0')}min"
+    fun getDurationFormatted(currentTimeMillis: Long = System.currentTimeMillis()): String {
+        val elapsedMillis = currentTimeMillis - startedAt
+        val totalSeconds = elapsedMillis / 1000
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+
+        return if (hours > 0) {
+            "%dh %02dmin %02ds".format(hours, minutes, seconds)
+        } else {
+            "%02dmin %02ds".format(minutes, seconds)
+        }
     }
 }
