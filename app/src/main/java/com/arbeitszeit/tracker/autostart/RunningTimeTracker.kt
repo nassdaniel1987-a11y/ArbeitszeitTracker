@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import com.arbeitszeit.tracker.widget.StandardWidget
 import com.arbeitszeit.tracker.widget.TimeStampWidgetSmall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -156,15 +155,6 @@ class RunningTimeTracker(private val context: Context) {
     fun updateWidgets() {
         try {
             val appWidgetManager = AppWidgetManager.getInstance(context)
-
-            // Update Standard Widget
-            val standardIds = appWidgetManager.getAppWidgetIds(ComponentName(context, StandardWidget::class.java))
-            if (standardIds.isNotEmpty()) {
-                val intent = Intent(context, StandardWidget::class.java)
-                intent.action = StandardWidget.ACTION_REFRESH
-                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, standardIds)
-                context.sendBroadcast(intent)
-            }
 
             // Update Small Widget
             val smallIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidgetSmall::class.java))

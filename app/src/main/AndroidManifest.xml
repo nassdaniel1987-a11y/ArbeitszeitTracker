@@ -38,21 +38,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Standard Widget (4x2) -->
-        <receiver
-            android:name="com.arbeitszeit.tracker.widget.StandardWidget"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_STANDARD" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_START_STANDARD" />
-                <action android:name="com.arbeitszeit.tracker.ACTION_PAUSE_STANDARD" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_standard_info" />
-        </receiver>
-
         <!-- Zeit-Stempel Widget Klein (2x1) -->
         <receiver
             android:name="com.arbeitszeit.tracker.widget.TimeStampWidgetSmall"
