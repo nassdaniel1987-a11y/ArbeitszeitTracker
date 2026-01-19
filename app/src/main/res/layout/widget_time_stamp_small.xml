@@ -33,6 +33,18 @@
             android:fontFamily="sans-serif-medium"
             android:paddingBottom="8dp" />
 
+        <!-- Chronometer für Live-Anzeige -->
+        <Chronometer
+            android:id="@+id/widget_chronometer_small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#6750A4"
+            android:fontFamily="sans-serif-medium"
+            android:paddingBottom="8dp"
+            android:visibility="gone" />
+
         <!-- Single Quick-Stempel Button -->
         <Button
             android:id="@+id/widget_quick_stamp_button"

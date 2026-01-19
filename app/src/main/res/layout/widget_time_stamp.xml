@@ -58,6 +58,17 @@
                 android:textStyle="bold"
                 android:textColor="#6750A4"
                 android:fontFamily="sans-serif-medium" />
+
+            <!-- Chronometer für Live-Anzeige (versteckt per Default) -->
+            <Chronometer
+                android:id="@+id/widget_chronometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#6750A4"
+                android:fontFamily="sans-serif-medium"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Fortschrittsbalken (moderner) -->

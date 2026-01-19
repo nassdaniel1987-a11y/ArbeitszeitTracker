@@ -41,6 +41,16 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/widget_primary" />
+
+        <!-- Chronometer für Live-Anzeige -->
+        <Chronometer
+            android:id="@+id/widget_chronometer_large"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_primary"
+            android:visibility="gone" />
     </LinearLayout>
 
     <!-- Fortschrittsbalken -->
