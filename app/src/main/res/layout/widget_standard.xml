@@ -127,6 +127,7 @@
             android:layout_weight="1"
             android:text="START"
             android:textSize="12sp"
+            android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:background="@drawable/widget_button_success"
             android:layout_marginEnd="8dp" />
@@ -138,6 +139,7 @@
             android:layout_weight="1"
             android:text="PAUSE"
             android:textSize="12sp"
+            android:textStyle="bold"
             android:textColor="#6750A4"
             android:background="@drawable/widget_button_secondary"
             android:layout_marginEnd="8dp" />
@@ -149,6 +151,7 @@
             android:layout_weight="1"
             android:text="STOP"
             android:textSize="12sp"
+            android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:background="@drawable/widget_button_primary" />
     </LinearLayout>
