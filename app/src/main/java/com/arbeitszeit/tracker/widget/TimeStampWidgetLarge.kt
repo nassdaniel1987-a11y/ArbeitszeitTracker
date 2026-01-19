@@ -226,12 +226,11 @@ class TimeStampWidgetLarge : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_duration_large, durationText)
             views.setProgressBar(R.id.widget_progress_bar_large, 100, progress, false)
 
-            val statusColor = if (isRunning) {
-                context.getColor(R.color.widget_status_active)
+            if (isRunning) {
+                views.setImageViewResource(R.id.widget_status_indicator_large, R.drawable.widget_status_active)
             } else {
-                context.getColor(R.color.widget_status_inactive)
+                views.setImageViewResource(R.id.widget_status_indicator_large, R.drawable.widget_status_inactive)
             }
-            views.setInt(R.id.widget_status_indicator_large, "setColorFilter", statusColor)
 
             // === WEEK DATA ===
             val currentDate = LocalDate.parse(today)
