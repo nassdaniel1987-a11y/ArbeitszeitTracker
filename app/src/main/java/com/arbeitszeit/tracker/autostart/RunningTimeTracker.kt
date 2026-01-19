@@ -154,34 +154,34 @@ class RunningTimeTracker(private val context: Context) {
     /**
      * Sendet Update-Broadcast an alle Widgets
      */
-    private fun updateWidgets() {
+    fun updateWidgets() {
         try {
             val appWidgetManager = AppWidgetManager.getInstance(context)
 
             // 1. Update Normal Widget
             val normalIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidget::class.java))
             if (normalIds.isNotEmpty()) {
-                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                val intent = Intent(context, TimeStampWidget::class.java)
+                intent.action = TimeStampWidget.ACTION_REFRESH
                 intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, normalIds)
-                intent.component = ComponentName(context, TimeStampWidget::class.java)
                 context.sendBroadcast(intent)
             }
 
             // 2. Update Large Widget
             val largeIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidgetLarge::class.java))
             if (largeIds.isNotEmpty()) {
-                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                val intent = Intent(context, TimeStampWidgetLarge::class.java)
+                intent.action = TimeStampWidgetLarge.ACTION_MIDNIGHT_RESET // Large nutzt diesen als Refresh
                 intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, largeIds)
-                intent.component = ComponentName(context, TimeStampWidgetLarge::class.java)
                 context.sendBroadcast(intent)
             }
 
             // 3. Update Small Widget
             val smallIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidgetSmall::class.java))
             if (smallIds.isNotEmpty()) {
-                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                val intent = Intent(context, TimeStampWidgetSmall::class.java)
+                intent.action = TimeStampWidgetSmall.ACTION_MIDNIGHT_RESET // Small nutzt diesen als Refresh
                 intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, smallIds)
-                intent.component = ComponentName(context, TimeStampWidgetSmall::class.java)
                 context.sendBroadcast(intent)
             }
         } catch (e: Exception) {
