@@ -48,9 +48,14 @@ class ExcelExportManager(private val context: Context) {
         val workbook = WorkbookFactory.create(templateStream)
 
         try {
-            // 2. Lese wichtige Werte aus der Vorlage BEVOR wir überschreiben
-            val ueberstundenVorjahr = readUeberstundenVorjahr(workbook)
-            val letzterUebertrag = readLetzterUebertrag(workbook)
+            // 2. Verwende Überstunden aus UserSettings, falls vorhanden
+            // Sonst: Lese Werte aus der Vorlage als Fallback
+            val ueberstundenVorjahr = userSettings.ueberstundenVorjahrMinuten
+            val letzterUebertrag = if (userSettings.letzterUebertragMinuten != 0) {
+                userSettings.letzterUebertragMinuten
+            } else {
+                readLetzterUebertrag(workbook)
+            }
 
             // 3. Fülle Stammangaben (überschreibt mit App-Settings)
             fillStammangaben(workbook, userSettings, ueberstundenVorjahr, letzterUebertrag)
@@ -174,8 +179,8 @@ class ExcelExportManager(private val context: Context) {
      *
      * @param workbook Die Excel-Arbeitsmappe
      * @param settings Benutzereinstellungen aus der App (nur für leere Felder)
-     * @param ueberstundenVorjahr Überstunden aus der Vorlage (werden beibehalten!)
-     * @param letzterUebertrag Übertrag aus der Vorlage (wird beibehalten!)
+     * @param ueberstundenVorjahr Überstunden aus UserSettings (oder Vorlage als Fallback)
+     * @param letzterUebertrag Übertrag aus UserSettings (oder Vorlage als Fallback)
      */
     private fun fillStammangaben(
         workbook: Workbook,
@@ -227,13 +232,13 @@ class ExcelExportManager(private val context: Context) {
         }
 
         // Überstunden Vorjahr in C10 als Excel-Zeitwert
-        // WICHTIG: Wir verwenden die Werte aus der VORLAGE, nicht aus App-Settings!
-        // Grund: Beim Jahreswechsel enthält die neue Vorlage die korrekten Überstunden
+        // WICHTIG: Wir verwenden die Werte aus den UserSettings!
+        // Diese können vom Benutzer in den Einstellungen (Name & Einrichtung) eingegeben werden
         val ueberstundenDecimal = TimeUtils.minutesToExcelTime(ueberstundenVorjahr)
         sheet.getRow(9)?.getCell(2)?.setCellValue(ueberstundenDecimal)
 
         // Übertrag letztes Blatt in C11
-        // WICHTIG: Wir verwenden die Werte aus der VORLAGE, nicht aus App-Settings!
+        // Wert aus UserSettings (oder Vorlage als Fallback)
         val letzterUebertragDecimal = TimeUtils.minutesToExcelTime(letzterUebertrag)
         sheet.getRow(10)?.getCell(2)?.setCellValue(letzterUebertragDecimal)
 
@@ -478,9 +483,14 @@ class ExcelExportManager(private val context: Context) {
             val workbook = WorkbookFactory.create(templateStream)
 
             try {
-                // 2. Lese wichtige Werte aus der Vorlage
-                val ueberstundenVorjahr = readUeberstundenVorjahr(workbook)
-                val letzterUebertrag = readLetzterUebertrag(workbook)
+                // 2. Verwende Überstunden aus UserSettings, falls vorhanden
+                // Sonst: Lese Werte aus der Vorlage als Fallback
+                val ueberstundenVorjahr = userSettings.ueberstundenVorjahrMinuten
+                val letzterUebertrag = if (userSettings.letzterUebertragMinuten != 0) {
+                    userSettings.letzterUebertragMinuten
+                } else {
+                    readLetzterUebertrag(workbook)
+                }
 
                 // 3. Fülle Stammangaben
                 fillStammangaben(workbook, userSettings, ueberstundenVorjahr, letzterUebertrag)
