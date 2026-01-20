@@ -152,6 +152,9 @@ class AutoStartManager(private val context: Context) {
                 date = today
             )
 
+            // Widgets explizit aktualisieren
+            runningTimeTracker.updateWidgets()
+
             Log.i(TAG, "Auto-Start erfolgreich: $startTime")
             return@withContext true
 
