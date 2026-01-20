@@ -224,8 +224,8 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     .weight(1f)
             ) { page ->
                 val pageMonth = referenceMonth.plusMonths((page - initialPage).toLong())
-                val pageEntries = remember(pageMonth) {
-                    if (pageMonth == month) entries else emptyList()
+                val pageEntries by produceState(initialValue = emptyList(), pageMonth) {
+                    value = viewModel.getEntriesForMonth(pageMonth)
                 }
 
                 LazyVerticalGrid(
