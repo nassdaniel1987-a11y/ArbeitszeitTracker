@@ -236,12 +236,21 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     val offset = firstDayOfMonth.dayOfWeek.value - 1
 
                     // Leere Zellen
-                    items(offset) {
+                    items(
+                        count = offset,
+                        key = { index -> "offset_${pageMonth.year}_${pageMonth.monthValue}_$index" }
+                    ) {
                         Box(modifier = Modifier.aspectRatio(1f))
                     }
 
                     // Tage des Monats
-                    items(pageMonth.lengthOfMonth()) { day ->
+                    items(
+                        count = pageMonth.lengthOfMonth(),
+                        key = { day ->
+                            val date = pageMonth.atDay(day + 1)
+                            date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        }
+                    ) { day ->
                         val date = pageMonth.atDay(day + 1)
                         val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
                         val entry = entries.find { it.datum == dateString }
