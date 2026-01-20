@@ -244,15 +244,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val dateString = DateUtils.dateToString(date)
             val existing = timeEntryDao.getEntryByDate(dateString)
 
-            if (existing == null) {
-                val dayOfWeek = date.dayOfWeek.value
+            val dayOfWeek = date.dayOfWeek.value
 
-                // Berechne Sollminuten
-                val sollMinuten = if (defaultVorlage != null) {
-                    defaultVorlage.getSollMinutenForDay(dayOfWeek)
-                } else {
-                    calculateSollMinuten(date, settings)
-                }
+            // Berechne Sollminuten
+            val sollMinuten = if (defaultVorlage != null) {
+                defaultVorlage.getSollMinutenForDay(dayOfWeek)
+            } else {
+                calculateSollMinuten(date, settings)
+            }
+
+            if (existing == null) {
 
                 // Sichere Berechnung von Wochennummer und Jahr
                 val weekNumber = try {
@@ -285,6 +286,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
                 timeEntryDao.insert(entry)
+            } else if (existing.sollMinuten == 0 && sollMinuten > 0) {
+                // Aktualisiere Einträge, die keine Sollzeit haben
+                timeEntryDao.update(existing.copy(
+                    sollMinuten = sollMinuten,
+                    sollZeitVorlageName = defaultVorlage?.name,
+                    updatedAt = System.currentTimeMillis()
+                ))
             }
         }
     }
