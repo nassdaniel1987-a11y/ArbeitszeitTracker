@@ -215,6 +215,10 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
             // GROßER Kalender mit Swipe
             HorizontalPager(
                 state = pagerState,
+                key = { page ->
+                    val pageMonth = referenceMonth.plusMonths((page - initialPage).toLong())
+                    "${pageMonth.year}-${pageMonth.monthValue}"
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)
@@ -253,7 +257,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     ) { day ->
                         val date = pageMonth.atDay(day + 1)
                         val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                        val entry = entries.find { it.datum == dateString }
+                        val entry = pageEntries.find { it.datum == dateString }
                         val status = viewModel.getEntryStatus(entry)
                         val isToday = date == today
 
