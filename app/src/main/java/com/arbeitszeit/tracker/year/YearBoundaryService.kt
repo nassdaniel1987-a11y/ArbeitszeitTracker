@@ -37,16 +37,13 @@ class YearBoundaryService(private val context: Context) {
 
     /**
      * Findet den ersten Montag eines Jahres
+     * Delegiert an DateUtils um Logik zentral zu halten
      *
      * @param year Kalenderjahr (z.B. 2026)
      * @return Erster Montag des Jahres
      */
     fun findFirstMonday(year: Int): LocalDate {
-        var date = LocalDate.of(year, 1, 1)
-        while (date.dayOfWeek != java.time.DayOfWeek.MONDAY) {
-            date = date.plusDays(1)
-        }
-        return date
+        return DateUtils.findFirstMonday(year)
     }
 
     /**
@@ -121,11 +118,9 @@ class YearBoundaryService(private val context: Context) {
      * @return true wenn Navigation erlaubt
      */
     suspend fun canNavigateToPreviousWeek(currentWeekDate: LocalDate): Boolean = withContext(Dispatchers.IO) {
-        val boundaries = getActiveYearBoundaries() ?: return@withContext true
-        val (firstMonday, _) = boundaries
-
-        val previousWeekDate = currentWeekDate.minusWeeks(1)
-        previousWeekDate >= firstMonday
+        // Navigation ist immer erlaubt, auch in vergangene Jahre
+        // DateUtils behandelt die KW-Berechnung rekursiv korrekt
+        return@withContext true
     }
 
     /**
