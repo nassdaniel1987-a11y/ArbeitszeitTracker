@@ -175,9 +175,9 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
 
             // 1. Status Indicator
             if (isRunning) {
-                views.setInt(R.id.widget_status_indicator, "setBackgroundResource", R.drawable.widget_status_active)
+                views.setImageViewResource(R.id.widget_status_indicator, R.drawable.widget_status_active)
             } else {
-                views.setInt(R.id.widget_status_indicator, "setBackgroundResource", R.drawable.widget_status_inactive)
+                views.setImageViewResource(R.id.widget_status_indicator, R.drawable.widget_status_inactive)
             }
 
             // 2. Chronometer vs Static Text
