@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.data.entity.WeekTemplate
 import com.arbeitszeit.tracker.ui.components.EmptyStates
+import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.viewmodel.DayTimeEntry
 import com.arbeitszeit.tracker.viewmodel.WeekTemplatesViewModel
 import java.time.LocalDate
