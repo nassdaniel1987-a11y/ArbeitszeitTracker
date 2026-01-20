@@ -18,6 +18,8 @@ import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 
@@ -59,6 +61,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _showStopDialog = MutableStateFlow(false)
     val showStopDialog: StateFlow<Boolean> = _showStopDialog.asStateFlow()
 
+    // Mutex um doppelte Aufrufe von ensureWeekEntriesExist zu verhindern
+    private val weekEntriesMutex = Mutex()
+
     // Settings
     val userSettings: StateFlow<UserSettings?> = settingsDao.getSettingsFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
@@ -97,7 +102,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
         .combine(userSettings) { entries, settings ->
             // Filtere nur Arbeitstage
-            if (settings != null) {
+            val filtered = if (settings != null) {
                 entries.filter { entry ->
                     val date = LocalDate.parse(entry.datum)
                     val dayOfWeek = date.dayOfWeek.value // 1=Mo, 7=So
@@ -106,6 +111,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             } else {
                 entries
             }
+            // WICHTIG: Entferne Duplikate basierend auf datum (verhindert duplicate key crash)
+            filtered.distinctBy { it.datum }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
@@ -224,8 +231,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Stellt sicher, dass für eine gesamte Woche Einträge existieren
+     * Verwendet Mutex um Race Conditions zu vermeiden
      */
-    private suspend fun ensureWeekEntriesExist(weekStartDate: LocalDate) {
+    private suspend fun ensureWeekEntriesExist(weekStartDate: LocalDate) = weekEntriesMutex.withLock {
         val settings = settingsDao.getSettings()
         val yearSettings = yearSettingsDao.getActiveYear()
         val defaultVorlage = sollZeitVorlageDao.getDefaultVorlage()
