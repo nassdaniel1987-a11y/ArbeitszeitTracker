@@ -55,6 +55,30 @@ object TimeUtils {
         val sign = if (minutes < 0) "-" else ""
         return String.format("%s%d:%02d", sign, hours, mins)
     }
+
+    /**
+     * Konvertiert Stunden:Minuten String zu Minuten (mit Support für negative Werte)
+     * Beispiele: "5:30" -> 330, "-2:15" -> -135, "0:00" -> 0
+     */
+    fun hoursMinutesToMinutes(timeString: String): Int {
+        val trimmed = timeString.trim()
+        if (trimmed.isEmpty()) return 0
+
+        val isNegative = trimmed.startsWith("-")
+        val cleanString = if (isNegative) trimmed.substring(1) else trimmed
+
+        val parts = cleanString.split(":")
+        if (parts.size != 2) return 0
+
+        return try {
+            val hours = parts[0].toInt()
+            val minutes = parts[1].toInt()
+            val totalMinutes = hours * 60 + minutes
+            if (isNegative) -totalMinutes else totalMinutes
+        } catch (e: Exception) {
+            0
+        }
+    }
     
     /**
      * Konvertiert Minuten zu Excel-Dezimalwert (Bruchteil eines Tages)

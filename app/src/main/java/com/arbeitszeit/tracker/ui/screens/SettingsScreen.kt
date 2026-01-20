@@ -405,12 +405,16 @@ private fun PersonalDataSection(
 ) {
     var name by remember { mutableStateOf(settings?.name ?: "") }
     var einrichtung by remember { mutableStateOf(settings?.einrichtung ?: "") }
+    var ueberstundenVorjahr by remember {
+        mutableStateOf(com.arbeitszeit.tracker.utils.TimeUtils.minutesToHoursMinutes(settings?.ueberstundenVorjahrMinuten ?: 0))
+    }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(settings) {
         settings?.let {
             name = it.name
             einrichtung = it.einrichtung
+            ueberstundenVorjahr = com.arbeitszeit.tracker.utils.TimeUtils.minutesToHoursMinutes(it.ueberstundenVorjahrMinuten)
         }
     }
 
@@ -435,11 +439,26 @@ private fun PersonalDataSection(
             modifier = Modifier.fillMaxWidth()
         )
 
+        OutlinedTextField(
+            value = ueberstundenVorjahr,
+            onValueChange = { ueberstundenVorjahr = it },
+            label = { Text("Überstunden vom Vorjahr") },
+            supportingText = { Text("Format: Stunden:Minuten (z.B. 5:30 oder -2:15)") },
+            placeholder = { Text("0:00") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            modifier = Modifier.fillMaxWidth()
+        )
+
         Spacer(Modifier.weight(1f))
 
         Button(
             onClick = {
-                viewModel.updateStammdaten(name = name, einrichtung = einrichtung)
+                val ueberstundenMinuten = com.arbeitszeit.tracker.utils.TimeUtils.hoursMinutesToMinutes(ueberstundenVorjahr)
+                viewModel.updateStammdaten(
+                    name = name,
+                    einrichtung = einrichtung,
+                    ueberstundenVorjahrMinuten = ueberstundenMinuten
+                )
                 scope.launch {
                     snackbarHostState.showSnackbar("Gespeichert")
                 }

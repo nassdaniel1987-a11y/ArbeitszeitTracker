@@ -195,7 +195,17 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     fun clearDeletedEntry() {
         _deletedEntry.value = null
     }
-    
+
+    /**
+     * Lädt Einträge für einen spezifischen Monat
+     * Wird vom HorizontalPager verwendet, um Einträge für alle sichtbaren Monate zu laden
+     */
+    suspend fun getEntriesForMonth(month: YearMonth): List<TimeEntry> {
+        val startDate = DateUtils.dateToString(month.atDay(1))
+        val endDate = DateUtils.dateToString(month.atEndOfMonth())
+        return timeEntryDao.getEntriesByDateRange(startDate, endDate)
+    }
+
     /**
      * Erstellt fehlende Einträge für einen Monat
      * Erstellt Einträge bis zu 3 Monate in die Zukunft (für Planung & Urlaubseintragungen)

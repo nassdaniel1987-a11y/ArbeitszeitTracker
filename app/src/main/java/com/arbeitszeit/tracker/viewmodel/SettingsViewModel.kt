@@ -72,12 +72,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * Aktualisiert nur Stammdaten (Name, Einrichtung)
+     * Aktualisiert nur Stammdaten (Name, Einrichtung, Überstunden vom Vorjahr)
      * Alle anderen Felder werden beibehalten
      */
     fun updateStammdaten(
         name: String,
-        einrichtung: String
+        einrichtung: String,
+        ueberstundenVorjahrMinuten: Int? = null
     ) {
         viewModelScope.launch {
             val existing = settingsDao.getSettings() ?: return@launch
@@ -85,6 +86,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             settingsDao.insertOrUpdate(existing.copy(
                 name = name,
                 einrichtung = einrichtung,
+                ueberstundenVorjahrMinuten = ueberstundenVorjahrMinuten ?: existing.ueberstundenVorjahrMinuten,
                 updatedAt = System.currentTimeMillis()
             ))
         }
