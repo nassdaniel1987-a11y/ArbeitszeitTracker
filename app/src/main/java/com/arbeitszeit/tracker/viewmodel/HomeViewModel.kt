@@ -83,6 +83,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     // Einträge der ausgewählten Woche - nur Arbeitstage
     val weekEntries: StateFlow<List<TimeEntry>> = _selectedWeekDate
         .flatMapLatest { weekDate ->
+            // Stelle sicher, dass Einträge für die Woche existieren
+            viewModelScope.launch {
+                ensureWeekEntriesExist(weekDate)
+            }
+
             val weekDays = DateUtils.getDaysOfWeek(weekDate)
             val startDate = DateUtils.dateToString(weekDays.first())
             val endDate = DateUtils.dateToString(weekDays.last())
@@ -216,7 +221,66 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             timeEntryDao.insert(entry)
         }
     }
-    
+
+    /**
+     * Stellt sicher, dass für eine gesamte Woche Einträge existieren
+     */
+    private suspend fun ensureWeekEntriesExist(weekStartDate: LocalDate) {
+        val settings = settingsDao.getSettings()
+        val yearSettings = yearSettingsDao.getActiveYear()
+        val defaultVorlage = sollZeitVorlageDao.getDefaultVorlage()
+
+        val weekDays = DateUtils.getDaysOfWeek(weekStartDate)
+
+        weekDays.forEach { date ->
+            val dateString = DateUtils.dateToString(date)
+            val existing = timeEntryDao.getEntryByDate(dateString)
+
+            if (existing == null) {
+                val dayOfWeek = date.dayOfWeek.value
+
+                // Berechne Sollminuten
+                val sollMinuten = if (defaultVorlage != null) {
+                    defaultVorlage.getSollMinutenForDay(dayOfWeek)
+                } else {
+                    calculateSollMinuten(date, settings)
+                }
+
+                // Sichere Berechnung von Wochennummer und Jahr
+                val weekNumber = try {
+                    DateUtils.getCustomWeekOfYear(date, yearSettings?.ersterMontagImJahr)
+                } catch (e: Exception) {
+                    DateUtils.getWeekOfYear(date)
+                }
+
+                val year = try {
+                    if (yearSettings?.ersterMontagImJahr != null) {
+                        DateUtils.getCustomWeekBasedYear(date, yearSettings.ersterMontagImJahr)
+                    } else {
+                        DateUtils.getWeekBasedYear(date)
+                    }
+                } catch (e: Exception) {
+                    date.year
+                }
+
+                val entry = TimeEntry(
+                    datum = dateString,
+                    wochentag = DateUtils.getWeekdayShort(date),
+                    kalenderwoche = weekNumber,
+                    jahr = year,
+                    startZeit = null,
+                    endZeit = null,
+                    pauseMinuten = 0,
+                    sollMinuten = sollMinuten,
+                    sollZeitVorlageName = defaultVorlage?.name,
+                    typ = TimeEntry.TYP_NORMAL
+                )
+
+                timeEntryDao.insert(entry)
+            }
+        }
+    }
+
     /**
      * Berechnet Soll-Minuten für einen Tag basierend auf Settings
      * Verwendet die Standardberechnung (Wochenstunden / Arbeitstage)
