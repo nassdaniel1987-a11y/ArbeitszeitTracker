@@ -242,7 +242,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     // Leere Zellen
                     items(
                         count = offset,
-                        key = { index -> "offset_${pageMonth.year}_${pageMonth.monthValue}_$index" }
+                        key = { index -> "page_${page}_offset_$index" }
                     ) {
                         Box(modifier = Modifier.aspectRatio(1f))
                     }
@@ -251,8 +251,7 @@ fun CalendarScreen(viewModel: CalendarViewModel) {
                     items(
                         count = pageMonth.lengthOfMonth(),
                         key = { day ->
-                            val date = pageMonth.atDay(day + 1)
-                            date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                            "page_${page}_day_${day + 1}"
                         }
                     ) { day ->
                         val date = pageMonth.atDay(day + 1)
