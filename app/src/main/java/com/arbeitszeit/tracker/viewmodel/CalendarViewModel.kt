@@ -218,11 +218,28 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
             val existing = timeEntryDao.getEntryByDate(dateString)
 
             if (existing == null) {
+                // Sichere Berechnung von Wochennummer und Jahr mit Fallback
+                val weekNumber = try {
+                    DateUtils.getCustomWeekOfYear(date, settings?.ersterMontagImJahr)
+                } catch (e: Exception) {
+                    DateUtils.getWeekOfYear(date)
+                }
+
+                val year = try {
+                    if (settings?.ersterMontagImJahr != null) {
+                        DateUtils.getCustomWeekBasedYear(date, settings.ersterMontagImJahr)
+                    } else {
+                        DateUtils.getWeekBasedYear(date)
+                    }
+                } catch (e: Exception) {
+                    date.year
+                }
+
                 val entry = TimeEntry(
                     datum = dateString,
                     wochentag = DateUtils.getWeekdayShort(date),
-                    kalenderwoche = DateUtils.getCustomWeekOfYear(date, settings?.ersterMontagImJahr),
-                    jahr = DateUtils.getCustomWeekBasedYear(date, settings?.ersterMontagImJahr),
+                    kalenderwoche = weekNumber,
+                    jahr = year,
                     startZeit = null,
                     endZeit = null,
                     pauseMinuten = 0,

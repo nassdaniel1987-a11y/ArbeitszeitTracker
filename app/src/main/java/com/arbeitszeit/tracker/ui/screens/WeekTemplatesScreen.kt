@@ -757,10 +757,17 @@ private fun ApplyTemplateDialog(
     onDismiss: () -> Unit,
     onConfirm: (weekStartDate: LocalDate) -> Unit
 ) {
-    val currentWeekStart = remember {
-        val today = LocalDate.now()
-        today.minusDays((today.dayOfWeek.value - 1).toLong())
+    // State für die ausgewählte Woche
+    var selectedWeekStart by remember {
+        mutableStateOf(
+            LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value - 1).toLong())
+        )
     }
+
+    // Berechne die Wochenenden
+    val weekEnd = selectedWeekStart.plusDays(6)
+    val weekNumber = DateUtils.getWeekOfYear(selectedWeekStart)
+    val isCurrentWeek = selectedWeekStart == LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value - 1).toLong())
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -769,18 +776,99 @@ private fun ApplyTemplateDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Die Vorlage \"${template.name}\" wird auf die aktuelle Woche angewendet.",
+                    "Wähle die Woche, auf die du die Vorlage \"${template.name}\" anwenden möchtest:",
                     style = MaterialTheme.typography.bodyMedium
                 )
+
+                // Wochenauswahl
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Navigation Buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    selectedWeekStart = selectedWeekStart.minusWeeks(1)
+                                }
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Vorherige Woche"
+                                )
+                            }
+
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    "KW $weekNumber",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "${DateUtils.formatForDisplay(selectedWeekStart)} - ${DateUtils.formatForDisplay(weekEnd)}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                if (isCurrentWeek) {
+                                    Text(
+                                        "Aktuelle Woche",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    selectedWeekStart = selectedWeekStart.plusWeeks(1)
+                                }
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = "Nächste Woche"
+                                )
+                            }
+                        }
+
+                        // Button "Aktuelle Woche"
+                        if (!isCurrentWeek) {
+                            OutlinedButton(
+                                onClick = {
+                                    selectedWeekStart = LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value - 1).toLong())
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Today, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Zur aktuellen Woche")
+                            }
+                        }
+                    }
+                }
+
                 Text(
                     "Bestehende Einträge werden überschrieben!",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold
                 )
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(currentWeekStart) }) {
+            Button(onClick = { onConfirm(selectedWeekStart) }) {
                 Text("Anwenden")
             }
         },

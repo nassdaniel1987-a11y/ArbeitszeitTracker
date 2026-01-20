@@ -136,8 +136,27 @@ class WeekTemplatesViewModel(application: Application) : AndroidViewModel(applic
                     } else {
                         // Erstelle neuen Eintrag aus Vorlage
                         val dayOfWeek = targetDate.dayOfWeek.value
-                        val weekNumber = DateUtils.getCustomWeekOfYear(targetDate, settings?.ersterMontagImJahr)
-                        val year = targetDate.year
+
+                        // Sichere Berechnung von Wochennummer und Jahr
+                        // Falls keine Settings vorhanden, verwende ISO-8601
+                        val weekNumber = try {
+                            DateUtils.getCustomWeekOfYear(targetDate, settings?.ersterMontagImJahr)
+                        } catch (e: Exception) {
+                            // Fallback auf ISO-8601 bei Fehler
+                            DateUtils.getWeekOfYear(targetDate)
+                        }
+
+                        val year = try {
+                            if (settings?.ersterMontagImJahr != null) {
+                                DateUtils.getCustomWeekBasedYear(targetDate, settings.ersterMontagImJahr)
+                            } else {
+                                DateUtils.getWeekBasedYear(targetDate)
+                            }
+                        } catch (e: Exception) {
+                            // Fallback auf normales Kalenderjahr bei Fehler
+                            targetDate.year
+                        }
+
                         // Berechne Sollminuten: Prüfe ob Arbeitstag
                         val sollMinuten = if (settings?.isWorkingDay(dayOfWeek) == true) {
                             settings.wochenStundenMinuten / settings.arbeitsTageProWoche

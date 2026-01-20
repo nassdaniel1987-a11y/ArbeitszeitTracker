@@ -183,11 +183,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 calculateSollMinuten(today, settings)
             }
 
+            // Sichere Berechnung von Wochennummer und Jahr mit Fallback
+            val weekNumber = try {
+                DateUtils.getCustomWeekOfYear(today, yearSettings?.ersterMontagImJahr)
+            } catch (e: Exception) {
+                DateUtils.getWeekOfYear(today)
+            }
+
+            val year = try {
+                if (yearSettings?.ersterMontagImJahr != null) {
+                    DateUtils.getCustomWeekBasedYear(today, yearSettings.ersterMontagImJahr)
+                } else {
+                    DateUtils.getWeekBasedYear(today)
+                }
+            } catch (e: Exception) {
+                today.year
+            }
+
             val entry = TimeEntry(
                 datum = todayDate,
                 wochentag = DateUtils.getWeekdayShort(today),
-                kalenderwoche = DateUtils.getCustomWeekOfYear(today, yearSettings?.ersterMontagImJahr),
-                jahr = DateUtils.getCustomWeekBasedYear(today, yearSettings?.ersterMontagImJahr),
+                kalenderwoche = weekNumber,
+                jahr = year,
                 startZeit = null,
                 endZeit = null,
                 pauseMinuten = 0,
@@ -448,10 +465,38 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val yearSettings = activeYear.value
         val firstMonday = yearSettings?.ersterMontagImJahr
 
-        val selectedWeek = DateUtils.getCustomWeekOfYear(_selectedWeekDate.value, firstMonday)
-        val selectedYear = DateUtils.getCustomWeekBasedYear(_selectedWeekDate.value, firstMonday)
-        val currentWeek = DateUtils.getCustomWeekOfYear(LocalDate.now(), firstMonday)
-        val currentYear = DateUtils.getCustomWeekBasedYear(LocalDate.now(), firstMonday)
+        // Sichere Berechnung mit Fallback auf ISO-8601
+        val selectedWeek = try {
+            DateUtils.getCustomWeekOfYear(_selectedWeekDate.value, firstMonday)
+        } catch (e: Exception) {
+            DateUtils.getWeekOfYear(_selectedWeekDate.value)
+        }
+
+        val selectedYear = try {
+            if (firstMonday != null) {
+                DateUtils.getCustomWeekBasedYear(_selectedWeekDate.value, firstMonday)
+            } else {
+                DateUtils.getWeekBasedYear(_selectedWeekDate.value)
+            }
+        } catch (e: Exception) {
+            _selectedWeekDate.value.year
+        }
+
+        val currentWeek = try {
+            DateUtils.getCustomWeekOfYear(LocalDate.now(), firstMonday)
+        } catch (e: Exception) {
+            DateUtils.getWeekOfYear(LocalDate.now())
+        }
+
+        val currentYear = try {
+            if (firstMonday != null) {
+                DateUtils.getCustomWeekBasedYear(LocalDate.now(), firstMonday)
+            } else {
+                DateUtils.getWeekBasedYear(LocalDate.now())
+            }
+        } catch (e: Exception) {
+            LocalDate.now().year
+        }
 
         return selectedWeek == currentWeek && selectedYear == currentYear
     }
@@ -537,11 +582,30 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 ))
             } else {
                 // Create new entry
+                val now = LocalDate.now()
+
+                // Sichere Berechnung von Wochennummer und Jahr mit Fallback
+                val weekNumber = try {
+                    DateUtils.getCustomWeekOfYear(now, settings?.ersterMontagImJahr)
+                } catch (e: Exception) {
+                    DateUtils.getWeekOfYear(now)
+                }
+
+                val year = try {
+                    if (settings?.ersterMontagImJahr != null) {
+                        DateUtils.getCustomWeekBasedYear(now, settings.ersterMontagImJahr)
+                    } else {
+                        DateUtils.getWeekBasedYear(now)
+                    }
+                } catch (e: Exception) {
+                    now.year
+                }
+
                 timeEntryDao.insert(TimeEntry(
                     datum = today,
-                    wochentag = DateUtils.getWeekdayShort(LocalDate.now()),
-                    kalenderwoche = DateUtils.getCustomWeekOfYear(LocalDate.now(), settings?.ersterMontagImJahr),
-                    jahr = LocalDate.now().year,
+                    wochentag = DateUtils.getWeekdayShort(now),
+                    kalenderwoche = weekNumber,
+                    jahr = year,
                     startZeit = runningState.startTime.hour * 60 + runningState.startTime.minute,
                     endZeit = endMinutes,
                     pauseMinuten = pauseMinutes,
