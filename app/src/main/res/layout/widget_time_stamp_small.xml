@@ -20,11 +20,11 @@
         android:paddingBottom="4dp">
 
         <!-- Status Dot -->
-        <ImageView
+        <View
             android:id="@+id/widget_status_indicator"
             android:layout_width="8dp"
             android:layout_height="8dp"
-            android:src="@drawable/widget_status_inactive"
+            android:background="@drawable/widget_status_inactive"
             android:layout_marginEnd="8dp" />
 
         <!-- Statische Zeit -->
@@ -57,7 +57,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <TextView
+        <Button
             android:id="@+id/widget_btn_start"
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -65,11 +65,10 @@
             android:text="▶"
             android:textSize="14sp"
             android:textColor="#FFFFFF"
-            android:gravity="center"
             android:background="@drawable/widget_button_success"
             android:layout_marginEnd="4dp" />
 
-        <TextView
+        <Button
             android:id="@+id/widget_btn_pause"
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -77,11 +76,10 @@
             android:text="II"
             android:textSize="12sp"
             android:textColor="#6750A4"
-            android:gravity="center"
             android:background="@drawable/widget_button_secondary"
             android:layout_marginEnd="4dp" />
 
-        <TextView
+        <Button
             android:id="@+id/widget_btn_stop"
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -89,7 +87,6 @@
             android:text="■"
             android:textSize="12sp"
             android:textColor="#FFFFFF"
-            android:gravity="center"
             android:background="@drawable/widget_button_primary" />
     </LinearLayout>
 
