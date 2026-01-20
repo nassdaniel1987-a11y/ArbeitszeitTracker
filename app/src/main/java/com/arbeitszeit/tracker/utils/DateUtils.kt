@@ -67,6 +67,17 @@ object DateUtils {
     }
 
     /**
+     * Findet den ersten Montag eines Jahres
+     */
+    fun findFirstMonday(year: Int): LocalDate {
+        var date = LocalDate.of(year, 1, 1)
+        while (date.dayOfWeek != java.time.DayOfWeek.MONDAY) {
+            date = date.plusDays(1)
+        }
+        return date
+    }
+
+    /**
      * Berechnet Kalenderwoche basierend auf einem benutzerdefinierten ersten Montag
      * @param date Das zu prüfende Datum
      * @param firstMondayString Der erste Montag des Jahres (yyyy-MM-dd), null = ISO 8601
@@ -82,8 +93,9 @@ object DateUtils {
 
         // Wenn das Datum vor dem ersten Montag liegt, gehört es zum vorherigen Jahr
         if (date.isBefore(firstMonday)) {
-            // Finde den ersten Montag des Vorjahres
-            val previousYearFirstMonday = firstMonday.minusYears(1)
+            // Rekursiv das vorherige Jahr prüfen
+            // WICHTIG: Wir müssen den echten ersten Montag des Vorjahres finden!
+            val previousYearFirstMonday = findFirstMonday(firstMondayYear - 1)
             return getCustomWeekOfYear(date, dateToString(previousYearFirstMonday))
         }
 
@@ -105,10 +117,19 @@ object DateUtils {
         val firstMonday = stringToDate(firstMondayString)
 
         // Wenn das Datum vor dem ersten Montag liegt, gehört es zum vorherigen Jahr
-        return if (date.isBefore(firstMonday)) {
-            firstMonday.year - 1
+        // ABER: Es muss rekursiv geprüft werden, ob es nicht sogar noch ein Jahr davor ist (theoretisch)
+        // Vereinfachung: Wenn vor erstem Montag -> Vorjahr (Rekursion via getCustomWeekOfYear handled das implizit für die KW, aber hier fürs Jahr brauchen wir es explizit)
+
+        if (date.isBefore(firstMonday)) {
+            // Prüfe rekursiv gegen Vorjahr
+            val previousYearFirstMonday = findFirstMonday(firstMonday.year - 1)
+            return getCustomWeekBasedYear(date, dateToString(previousYearFirstMonday))
         } else {
-            firstMonday.year
+            // Prüfe ob es schon zum nächsten Jahr gehört (wenn das Jahr schon Settings hat?)
+            // Hier gehen wir davon aus, dass firstMondayString das "aktuelle" Jahr definiert.
+            // Alles danach gehört dazu, bis zum nächsten definierten Jahr.
+            // Da wir hier stateless sind, geben wir einfach das Jahr des firstMonday zurück.
+            return firstMonday.year
         }
     }
     
