@@ -18,6 +18,7 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     private val timeEntryDao = database.timeEntryDao()
     private val settingsDao = database.userSettingsDao()
     private val yearSettingsDao = database.yearSettingsDao()
+    private val sollZeitVorlageDao = database.sollZeitVorlageDao()
 
     // YearBoundaryService für Jahr-Berechnungen
     private val yearBoundaryService = com.arbeitszeit.tracker.year.YearBoundaryService(application)
@@ -197,13 +198,14 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * Lädt Einträge für einen spezifischen Monat
+     * Gibt einen Flow für Einträge eines spezifischen Monats zurück
      * Wird vom HorizontalPager verwendet, um Einträge für alle sichtbaren Monate zu laden
+     * Aktualisiert sich automatisch bei Datenänderungen
      */
-    suspend fun getEntriesForMonth(month: YearMonth): List<TimeEntry> {
+    fun getEntriesForMonthFlow(month: YearMonth): Flow<List<TimeEntry>> {
         val startDate = DateUtils.dateToString(month.atDay(1))
         val endDate = DateUtils.dateToString(month.atEndOfMonth())
-        return timeEntryDao.getEntriesByDateRange(startDate, endDate)
+        return timeEntryDao.getEntriesByDateRangeFlow(startDate, endDate)
     }
 
     /**
@@ -212,6 +214,7 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
      */
     private suspend fun ensureMonthEntriesExist(month: YearMonth) {
         val settings = settingsDao.getSettings()
+        val defaultVorlage = sollZeitVorlageDao.getDefaultVorlage()
         val daysInMonth = month.lengthOfMonth()
         val today = LocalDate.now()
         val futureLimit = today.plusMonths(3)  // Erlaube Einträge bis +3 Monate
@@ -226,6 +229,15 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
 
             val dateString = DateUtils.dateToString(date)
             val existing = timeEntryDao.getEntryByDate(dateString)
+
+            val dayOfWeek = date.dayOfWeek.value
+
+            // Berechne Sollminuten
+            val sollMinuten = if (defaultVorlage != null) {
+                defaultVorlage.getSollMinutenForDay(dayOfWeek)
+            } else {
+                calculateSollMinuten(date, settings)
+            }
 
             if (existing == null) {
                 // Sichere Berechnung von Wochennummer und Jahr mit Fallback
@@ -253,11 +265,26 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
                     startZeit = null,
                     endZeit = null,
                     pauseMinuten = 0,
-                    sollMinuten = calculateSollMinuten(date, settings),
+                    sollMinuten = sollMinuten,
+                    sollZeitVorlageName = defaultVorlage?.name,
                     typ = TimeEntry.TYP_NORMAL
                 )
 
                 timeEntryDao.insert(entry)
+            } else if (existing.sollMinuten == 0 && sollMinuten > 0) {
+                // Aktualisiere Einträge, die keine Sollzeit haben
+                timeEntryDao.update(existing.copy(
+                    sollMinuten = sollMinuten,
+                    sollZeitVorlageName = defaultVorlage?.name,
+                    updatedAt = System.currentTimeMillis()
+                ))
+            } else if (existing.sollZeitVorlageName == null && defaultVorlage != null) {
+                // Wende Standard-Vorlage auf Einträge ohne Vorlage an
+                timeEntryDao.update(existing.copy(
+                    sollMinuten = sollMinuten,
+                    sollZeitVorlageName = defaultVorlage.name,
+                    updatedAt = System.currentTimeMillis()
+                ))
             }
         }
 
