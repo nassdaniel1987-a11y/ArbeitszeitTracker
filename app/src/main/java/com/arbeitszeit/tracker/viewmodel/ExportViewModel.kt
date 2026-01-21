@@ -132,7 +132,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                 )
 
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("ExportViewModel", "Export/Import Fehler", e)
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
                     error = "Export fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"
@@ -189,7 +189,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                 )
 
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("ExportViewModel", "Export/Import Fehler", e)
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
                     error = "Export fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"
@@ -484,7 +484,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                 )
 
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("ExportViewModel", "Export/Import Fehler", e)
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
                     error = "Share fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"
@@ -560,7 +560,7 @@ class ExportViewModel(application: Application) : AndroidViewModel(application) 
                 }
 
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("ExportViewModel", "Export/Import Fehler", e)
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
                     error = "Cloud-Export fehlgeschlagen: ${e.message ?: e.javaClass.simpleName}"

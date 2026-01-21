@@ -72,7 +72,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("NotificationActionReceiver", "Fehler beim Einstempeln", e)
                 CoroutineScope(Dispatchers.Main).launch {
                     Toast.makeText(
                         context,
@@ -118,7 +118,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("NotificationActionReceiver", "Fehler beim Ausstempeln", e)
                 CoroutineScope(Dispatchers.Main).launch {
                     Toast.makeText(
                         context,

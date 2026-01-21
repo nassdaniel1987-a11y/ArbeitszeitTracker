@@ -165,7 +165,7 @@ class RunningTimeTracker(private val context: Context) {
                 context.sendBroadcast(intent)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("RunningTimeTracker", "Fehler beim Aktualisieren der Widgets", e)
         }
     }
 }
