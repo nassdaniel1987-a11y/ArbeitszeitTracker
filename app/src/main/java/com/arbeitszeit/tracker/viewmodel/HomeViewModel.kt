@@ -293,6 +293,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     sollZeitVorlageName = defaultVorlage?.name,
                     updatedAt = System.currentTimeMillis()
                 ))
+            } else if (existing.sollZeitVorlageName == null && defaultVorlage != null) {
+                // Wende Standard-Vorlage auf Einträge ohne Vorlage an
+                timeEntryDao.update(existing.copy(
+                    sollMinuten = sollMinuten,
+                    sollZeitVorlageName = defaultVorlage.name,
+                    updatedAt = System.currentTimeMillis()
+                ))
             }
         }
     }
