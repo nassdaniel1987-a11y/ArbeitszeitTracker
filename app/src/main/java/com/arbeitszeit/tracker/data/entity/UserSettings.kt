@@ -47,6 +47,16 @@ data class UserSettings(
     val autoStartReminderMinutes: Int = 5,           // Vor-Erinnerung X Minuten vor Auto-Start
     val autoStartDefaultPauseMinutes: Int = 30,      // Standard-Pausenzeit beim Beenden
 
+    // Auto-Start Zeiten pro Wochentag (in Minuten seit Mitternacht, z.B. 480 = 08:00)
+    // null = kein Auto-Start an diesem Tag
+    val autoStartMontagZeit: Int? = null,
+    val autoStartDienstagZeit: Int? = null,
+    val autoStartMittwochZeit: Int? = null,
+    val autoStartDonnerstagZeit: Int? = null,
+    val autoStartFreitagZeit: Int? = null,
+    val autoStartSamstagZeit: Int? = null,
+    val autoStartSonntagZeit: Int? = null,
+
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
@@ -74,5 +84,23 @@ data class UserSettings(
         if (!geofencingEnabled) return false
         if (hourOfDay < geofencingStartHour || hourOfDay >= geofencingEndHour) return false
         return geofencingActiveDays.contains(dayOfWeek.toString())
+    }
+
+    /**
+     * Gibt die Auto-Start Zeit für einen bestimmten Wochentag zurück
+     * @param dayOfWeek 1=Montag, 2=Dienstag, ..., 7=Sonntag
+     * @return Minuten seit Mitternacht oder null wenn kein Auto-Start an diesem Tag
+     */
+    fun getAutoStartZeitForDay(dayOfWeek: Int): Int? {
+        return when (dayOfWeek) {
+            1 -> autoStartMontagZeit
+            2 -> autoStartDienstagZeit
+            3 -> autoStartMittwochZeit
+            4 -> autoStartDonnerstagZeit
+            5 -> autoStartFreitagZeit
+            6 -> autoStartSamstagZeit
+            7 -> autoStartSonntagZeit
+            else -> null
+        }
     }
 }

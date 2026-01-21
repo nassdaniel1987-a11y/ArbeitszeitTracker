@@ -1781,6 +1781,7 @@ private fun AutomatisierungTab(
 /**
  * Auto-Start Section
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AutoStartSection(
     viewModel: SettingsViewModel,
@@ -1792,6 +1793,18 @@ private fun AutoStartSection(
     var reminderMinutes by remember { mutableStateOf((settings?.autoStartReminderMinutes ?: 5).toString()) }
     var defaultPauseMinutes by remember { mutableStateOf((settings?.autoStartDefaultPauseMinutes ?: 30).toString()) }
 
+    // Start-Zeiten pro Wochentag (in Minuten seit Mitternacht)
+    var montagZeit by remember { mutableStateOf(settings?.autoStartMontagZeit) }
+    var dienstagZeit by remember { mutableStateOf(settings?.autoStartDienstagZeit) }
+    var mittwochZeit by remember { mutableStateOf(settings?.autoStartMittwochZeit) }
+    var donnerstagZeit by remember { mutableStateOf(settings?.autoStartDonnerstagZeit) }
+    var freitagZeit by remember { mutableStateOf(settings?.autoStartFreitagZeit) }
+    var samstagZeit by remember { mutableStateOf(settings?.autoStartSamstagZeit) }
+    var sonntagZeit by remember { mutableStateOf(settings?.autoStartSonntagZeit) }
+
+    // TimePicker Dialog State
+    var showTimePicker by remember { mutableStateOf<Int?>(null) }  // Tag 1-7 oder null
+
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(settings) {
@@ -1800,6 +1813,13 @@ private fun AutoStartSection(
             autoStartRequiresGeofencing = it.autoStartRequiresGeofencing
             reminderMinutes = it.autoStartReminderMinutes.toString()
             defaultPauseMinutes = it.autoStartDefaultPauseMinutes.toString()
+            montagZeit = it.autoStartMontagZeit
+            dienstagZeit = it.autoStartDienstagZeit
+            mittwochZeit = it.autoStartMittwochZeit
+            donnerstagZeit = it.autoStartDonnerstagZeit
+            freitagZeit = it.autoStartFreitagZeit
+            samstagZeit = it.autoStartSamstagZeit
+            sonntagZeit = it.autoStartSonntagZeit
         }
     }
 
@@ -1833,7 +1853,7 @@ private fun AutoStartSection(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Die Arbeitszeit startet automatisch zur konfigurierten Zeit aus deinen Wochenvorlagen.",
+                        "Die Arbeitszeit startet automatisch zur konfigurierten Zeit. Konfiguriere die Start-Zeiten pro Wochentag.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -1859,6 +1879,37 @@ private fun AutoStartSection(
         }
 
         if (autoStartEnabled) {
+            // Start-Zeiten pro Wochentag
+            Card {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "Start-Zeiten pro Wochentag",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Tippe auf einen Tag um die Start-Zeit festzulegen. Ohne Zeit kein Auto-Start an diesem Tag.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    // Wochentage
+                    AutoStartDayRow("Montag", montagZeit, { showTimePicker = 1 }, { montagZeit = null })
+                    AutoStartDayRow("Dienstag", dienstagZeit, { showTimePicker = 2 }, { dienstagZeit = null })
+                    AutoStartDayRow("Mittwoch", mittwochZeit, { showTimePicker = 3 }, { mittwochZeit = null })
+                    AutoStartDayRow("Donnerstag", donnerstagZeit, { showTimePicker = 4 }, { donnerstagZeit = null })
+                    AutoStartDayRow("Freitag", freitagZeit, { showTimePicker = 5 }, { freitagZeit = null })
+                    AutoStartDayRow("Samstag", samstagZeit, { showTimePicker = 6 }, { samstagZeit = null })
+                    AutoStartDayRow("Sonntag", sonntagZeit, { showTimePicker = 7 }, { sonntagZeit = null })
+                }
+            }
+
             Card {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -1896,11 +1947,21 @@ private fun AutoStartSection(
 
         Button(
             onClick = {
+                val autoStartZeiten = mutableMapOf<Int, Int?>()
+                autoStartZeiten[1] = montagZeit
+                autoStartZeiten[2] = dienstagZeit
+                autoStartZeiten[3] = mittwochZeit
+                autoStartZeiten[4] = donnerstagZeit
+                autoStartZeiten[5] = freitagZeit
+                autoStartZeiten[6] = samstagZeit
+                autoStartZeiten[7] = sonntagZeit
+
                 viewModel.updateAutoStartSettings(
                     autoStartEnabled,
                     autoStartRequiresGeofencing,
                     reminderMinutes.toIntOrNull() ?: 5,
-                    defaultPauseMinutes.toIntOrNull() ?: 30
+                    defaultPauseMinutes.toIntOrNull() ?: 30,
+                    autoStartZeiten
                 )
                 scope.launch { snackbarHostState.showSnackbar("Gespeichert") }
             },
@@ -1909,6 +1970,130 @@ private fun AutoStartSection(
             Icon(Icons.Default.Save, null)
             Spacer(Modifier.width(8.dp))
             Text("Speichern")
+        }
+    }
+
+    // TimePicker Dialog
+    showTimePicker?.let { dayOfWeek ->
+        val currentTime = when (dayOfWeek) {
+            1 -> montagZeit
+            2 -> dienstagZeit
+            3 -> mittwochZeit
+            4 -> donnerstagZeit
+            5 -> freitagZeit
+            6 -> samstagZeit
+            7 -> sonntagZeit
+            else -> null
+        }
+        val initialHour = currentTime?.let { it / 60 } ?: 8
+        val initialMinute = currentTime?.let { it % 60 } ?: 0
+
+        val timePickerState = rememberTimePickerState(
+            initialHour = initialHour,
+            initialMinute = initialMinute,
+            is24Hour = true
+        )
+
+        val dayName = when (dayOfWeek) {
+            1 -> "Montag"
+            2 -> "Dienstag"
+            3 -> "Mittwoch"
+            4 -> "Donnerstag"
+            5 -> "Freitag"
+            6 -> "Samstag"
+            7 -> "Sonntag"
+            else -> ""
+        }
+
+        AlertDialog(
+            onDismissRequest = { showTimePicker = null },
+            title = { Text("Start-Zeit $dayName") },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val minutes = timePickerState.hour * 60 + timePickerState.minute
+                        when (dayOfWeek) {
+                            1 -> montagZeit = minutes
+                            2 -> dienstagZeit = minutes
+                            3 -> mittwochZeit = minutes
+                            4 -> donnerstagZeit = minutes
+                            5 -> freitagZeit = minutes
+                            6 -> samstagZeit = minutes
+                            7 -> sonntagZeit = minutes
+                        }
+                        showTimePicker = null
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = null }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
+}
+
+/**
+ * Zeile für einen Wochentag mit Auto-Start Zeit
+ */
+@Composable
+private fun AutoStartDayRow(
+    dayName: String,
+    timeMinutes: Int?,
+    onSetTime: () -> Unit,
+    onClearTime: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSetTime() }
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = dayName,
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (timeMinutes != null) {
+                val hours = timeMinutes / 60
+                val minutes = timeMinutes % 60
+                Text(
+                    text = "${String.format("%02d", hours)}:${String.format("%02d", minutes)}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onClearTime) {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = "Zeit entfernen",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            } else {
+                Text(
+                    text = "Nicht aktiv",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

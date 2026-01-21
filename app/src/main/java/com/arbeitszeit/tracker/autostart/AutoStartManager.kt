@@ -3,7 +3,6 @@ package com.arbeitszeit.tracker.autostart
 import android.content.Context
 import android.util.Log
 import com.arbeitszeit.tracker.data.database.AppDatabase
-import com.arbeitszeit.tracker.data.entity.SollZeitVorlage
 import com.arbeitszeit.tracker.geofencing.GeofencingManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,12 +18,12 @@ import java.time.format.DateTimeFormatter
  * - Startet Zeiterfassung automatisch
  * - Berücksichtigt Geofencing
  * - Verhindert Duplikate
+ * - Start-Zeiten werden aus UserSettings geladen
  */
 class AutoStartManager(private val context: Context) {
 
     private val database = AppDatabase.getDatabase(context)
     private val settingsDao = database.userSettingsDao()
-    private val sollZeitVorlageDao = database.sollZeitVorlageDao()
     private val timeEntryDao = database.timeEntryDao()
     private val runningTimeTracker = RunningTimeTracker(context)
     private val geofencingManager = GeofencingManager(context)
@@ -40,7 +39,7 @@ class AutoStartManager(private val context: Context) {
      * - Auto-Start aktiviert in Settings
      * - Noch kein Eintrag für heute
      * - Zeiterfassung läuft noch nicht
-     * - Wochenvorlage existiert mit Start-Zeit
+     * - Start-Zeit für heute in Settings konfiguriert
      * - Geofencing erfüllt (wenn aktiviert)
      *
      * @return true wenn Auto-Start möglich
@@ -72,12 +71,11 @@ class AutoStartManager(private val context: Context) {
                 return@withContext false
             }
 
-            // SollZeitVorlage mit Start-Zeit vorhanden?
+            // Start-Zeit für heute in Settings konfiguriert?
             val dayOfWeek = LocalDate.now().dayOfWeek.value
-            val vorlage = getActiveVorlage()
-            val startZeit = vorlage?.getStartZeitForDay(dayOfWeek)
+            val startZeit = settings.getAutoStartZeitForDay(dayOfWeek)
             if (startZeit == null) {
-                Log.d(TAG, "Keine Start-Zeit für heute in der Vorlage konfiguriert")
+                Log.d(TAG, "Keine Start-Zeit für heute (Tag $dayOfWeek) in den Einstellungen konfiguriert")
                 return@withContext false
             }
 
@@ -113,20 +111,19 @@ class AutoStartManager(private val context: Context) {
                 return@withContext false
             }
 
+            val settings = settingsDao.getSettings() ?: run {
+                Log.e(TAG, "Keine Settings vorhanden")
+                return@withContext false
+            }
+
             val dayOfWeek = LocalDate.now().dayOfWeek.value
             Log.d(TAG, "Heute ist Tag: $dayOfWeek")
 
-            val vorlage = getActiveVorlage() ?: run {
-                Log.e(TAG, "Keine Vorlage gefunden")
+            val startZeit = settings.getAutoStartZeitForDay(dayOfWeek) ?: run {
+                Log.e(TAG, "Keine Start-Zeit für heute (Tag $dayOfWeek) in den Einstellungen")
                 return@withContext false
             }
-            Log.d(TAG, "Vorlage gefunden: ${vorlage.name}")
-
-            val startZeit = vorlage.getStartZeitForDay(dayOfWeek) ?: run {
-                Log.e(TAG, "Keine Start-Zeit für heute (Tag $dayOfWeek) gefunden")
-                return@withContext false
-            }
-            Log.d(TAG, "Start-Zeit gefunden: $startZeit Minuten")
+            Log.d(TAG, "Start-Zeit aus Einstellungen: $startZeit Minuten")
 
             val startTime = minutesToLocalTime(startZeit)
             val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
@@ -163,37 +160,21 @@ class AutoStartManager(private val context: Context) {
 
     /**
      * Gibt die Start-Zeit für heute zurück (falls vorhanden)
+     * Lädt die Start-Zeit aus den UserSettings
      */
     suspend fun getStartTimeForToday(): LocalTime? = withContext(Dispatchers.IO) {
+        val settings = settingsDao.getSettings() ?: return@withContext null
         val dayOfWeek = LocalDate.now().dayOfWeek.value
-        val vorlage = getActiveVorlage()
-        val startZeit = vorlage?.getStartZeitForDay(dayOfWeek)
+        val startZeit = settings.getAutoStartZeitForDay(dayOfWeek)
         return@withContext startZeit?.let { minutesToLocalTime(it) }
-    }
-
-    /**
-     * Lädt die aktive SollZeitVorlage
-     *
-     * Verwendet die Standard-Vorlage (isDefault = true).
-     * Falls keine Standard-Vorlage existiert, wird die erste Vorlage verwendet.
-     */
-    private suspend fun getActiveVorlage(): SollZeitVorlage? {
-        // Lade alle Vorlagen
-        val vorlagen = sollZeitVorlageDao.getAllVorlagen()
-        if (vorlagen.isEmpty()) {
-            return null
-        }
-
-        // Nimm die Standard-Vorlage, oder die erste Vorlage
-        return vorlagen.firstOrNull { it.isDefault } ?: vorlagen.firstOrNull()
     }
 
     /**
      * Konvertiert Minuten seit Mitternacht zu LocalTime
      */
     private fun minutesToLocalTime(minutes: Int): LocalTime {
-        val hours = minutes / 60
-        val mins = minutes % 60
+        val hours = (minutes / 60).coerceIn(0, 23)
+        val mins = (minutes % 60).coerceIn(0, 59)
         return LocalTime.of(hours, mins)
     }
 }
