@@ -81,11 +81,13 @@ class AutoStartManager(private val context: Context) {
 
             // Geofencing-Prüfung (wenn erforderlich)
             if (settings.autoStartRequiresGeofencing) {
-                val isAtWorkLocation = geofencingManager.isCurrentlyAtWorkLocation()
+                // Aktive Standortprüfung statt statischer SharedPreferences-Wert
+                val isAtWorkLocation = geofencingManager.checkActiveLocationAtWork()
                 if (!isAtWorkLocation) {
-                    Log.d(TAG, "Nicht am Arbeitsort (Geofencing)")
+                    Log.d(TAG, "Nicht am Arbeitsort (aktive Geofencing-Prüfung)")
                     return@withContext false
                 }
+                Log.d(TAG, "Am Arbeitsort bestätigt (aktive Geofencing-Prüfung)")
             }
 
             Log.d(TAG, "Auto-Start möglich!")
