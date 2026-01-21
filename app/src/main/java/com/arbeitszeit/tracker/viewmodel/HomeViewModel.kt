@@ -80,6 +80,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val defaultVorlage = sollZeitVorlageDao.getDefaultVorlageFlow()
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
+    // Speichert die zuletzt bekannte Standard-Vorlage um Änderungen zu erkennen
+    private var lastKnownDefaultVorlage: com.arbeitszeit.tracker.data.entity.SollZeitVorlage? = null
+
     // Heutiger Eintrag
     private val todayDate = DateUtils.today()
     val todayEntry: StateFlow<TimeEntry?> = timeEntryDao.getEntryByDateFlow(todayDate)
@@ -121,6 +124,23 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             ensureTodayEntryExists()
             checkLocationStatus()
+        }
+
+        // Observer für Standard-Vorlage: Aktualisiere Wocheneinträge wenn sich die Standard-Vorlage ändert
+        viewModelScope.launch {
+            defaultVorlage.collect { newDefaultVorlage ->
+                val oldVorlage = lastKnownDefaultVorlage
+                lastKnownDefaultVorlage = newDefaultVorlage
+
+                // Nur reagieren wenn sich die Vorlage tatsächlich geändert hat
+                if (newDefaultVorlage != null && (oldVorlage == null ||
+                    newDefaultVorlage.id != oldVorlage.id ||
+                    newDefaultVorlage.updatedAt != oldVorlage.updatedAt)) {
+
+                    // Aktualisiere alle Einträge der aktuellen Woche die die Standard-Vorlage verwenden
+                    updateWeekEntriesWithDefaultVorlage(newDefaultVorlage, oldVorlage?.name)
+                }
+            }
         }
     }
 
@@ -178,23 +198,24 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     
     /**
      * Stellt sicher dass für heute ein Eintrag existiert
+     * Aktualisiert auch bestehende Einträge wenn sie die Standard-Vorlage verwenden
      */
     private suspend fun ensureTodayEntryExists() {
         val existing = timeEntryDao.getEntryByDate(todayDate)
+        val today = LocalDate.now()
+        val settings = settingsDao.getSettings()
+        val yearSettings = yearSettingsDao.getActiveYear()
+        val defaultVorlage = sollZeitVorlageDao.getDefaultVorlage()
+
+        // Berechne Sollminuten: Entweder aus Default-Vorlage oder aus Settings
+        val dayOfWeek = today.dayOfWeek.value
+        val sollMinuten = if (defaultVorlage != null) {
+            defaultVorlage.getSollMinutenForDay(dayOfWeek)
+        } else {
+            calculateSollMinuten(today, settings)
+        }
+
         if (existing == null) {
-            val today = LocalDate.now()
-            val settings = settingsDao.getSettings()
-            val yearSettings = yearSettingsDao.getActiveYear()
-            val defaultVorlage = sollZeitVorlageDao.getDefaultVorlage()
-
-            // Berechne Sollminuten: Entweder aus Default-Vorlage oder aus Settings
-            val dayOfWeek = today.dayOfWeek.value
-            val sollMinuten = if (defaultVorlage != null) {
-                defaultVorlage.getSollMinutenForDay(dayOfWeek)
-            } else {
-                calculateSollMinuten(today, settings)
-            }
-
             // Sichere Berechnung von Wochennummer und Jahr mit Fallback
             val weekNumber = try {
                 DateUtils.getCustomWeekOfYear(today, yearSettings?.ersterMontagImJahr)
@@ -226,6 +247,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             )
 
             timeEntryDao.insert(entry)
+        } else {
+            // Prüfe ob dieser Eintrag die Standard-Vorlage verwendet oder keine Vorlage hat
+            val usesDefaultVorlage = existing.sollZeitVorlageName == null ||
+                    existing.sollZeitVorlageName == defaultVorlage?.name
+
+            if (usesDefaultVorlage && defaultVorlage != null) {
+                // Aktualisiere wenn sich Sollminuten oder Vorlage-Name geändert haben
+                if (existing.sollMinuten != sollMinuten || existing.sollZeitVorlageName != defaultVorlage.name) {
+                    timeEntryDao.update(existing.copy(
+                        sollMinuten = sollMinuten,
+                        sollZeitVorlageName = defaultVorlage.name,
+                        updatedAt = System.currentTimeMillis()
+                    ))
+                }
+            }
         }
     }
 
@@ -286,20 +322,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
                 timeEntryDao.insert(entry)
-            } else if (existing.sollMinuten == 0 && sollMinuten > 0) {
-                // Aktualisiere Einträge, die keine Sollzeit haben
-                timeEntryDao.update(existing.copy(
-                    sollMinuten = sollMinuten,
-                    sollZeitVorlageName = defaultVorlage?.name,
-                    updatedAt = System.currentTimeMillis()
-                ))
-            } else if (existing.sollZeitVorlageName == null && defaultVorlage != null) {
-                // Wende Standard-Vorlage auf Einträge ohne Vorlage an
-                timeEntryDao.update(existing.copy(
-                    sollMinuten = sollMinuten,
-                    sollZeitVorlageName = defaultVorlage.name,
-                    updatedAt = System.currentTimeMillis()
-                ))
+            } else {
+                // Prüfe ob dieser Eintrag die Standard-Vorlage verwendet oder keine Vorlage hat
+                val usesDefaultVorlage = existing.sollZeitVorlageName == null ||
+                        existing.sollZeitVorlageName == defaultVorlage?.name
+
+                if (usesDefaultVorlage && defaultVorlage != null) {
+                    // Aktualisiere wenn sich Sollminuten oder Vorlage-Name geändert haben
+                    if (existing.sollMinuten != sollMinuten || existing.sollZeitVorlageName != defaultVorlage.name) {
+                        timeEntryDao.update(existing.copy(
+                            sollMinuten = sollMinuten,
+                            sollZeitVorlageName = defaultVorlage.name,
+                            updatedAt = System.currentTimeMillis()
+                        ))
+                    }
+                }
             }
         }
     }
@@ -586,6 +623,41 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         return selectedWeek == currentWeek && selectedYear == currentYear
+    }
+
+    /**
+     * Aktualisiert alle Wocheneinträge die die Standard-Vorlage verwenden (oder keine Vorlage haben)
+     * Wird aufgerufen wenn sich die Standard-Vorlage ändert
+     */
+    private suspend fun updateWeekEntriesWithDefaultVorlage(
+        newVorlage: com.arbeitszeit.tracker.data.entity.SollZeitVorlage,
+        oldVorlageName: String?
+    ) {
+        val weekDays = DateUtils.getDaysOfWeek(_selectedWeekDate.value)
+
+        for (day in weekDays) {
+            val datum = DateUtils.dateToString(day)
+            val entry = timeEntryDao.getEntryByDate(datum) ?: continue
+
+            val dayOfWeek = day.dayOfWeek.value
+            val newSollMinuten = newVorlage.getSollMinutenForDay(dayOfWeek)
+
+            // Prüfe ob dieser Eintrag die Standard-Vorlage verwendet
+            val usesDefaultVorlage = entry.sollZeitVorlageName == null ||
+                    entry.sollZeitVorlageName == oldVorlageName ||
+                    entry.sollZeitVorlageName == newVorlage.name
+
+            if (usesDefaultVorlage) {
+                // Aktualisiere nur wenn sich etwas geändert hat
+                if (entry.sollMinuten != newSollMinuten || entry.sollZeitVorlageName != newVorlage.name) {
+                    timeEntryDao.update(entry.copy(
+                        sollMinuten = newSollMinuten,
+                        sollZeitVorlageName = newVorlage.name,
+                        updatedAt = System.currentTimeMillis()
+                    ))
+                }
+            }
+        }
     }
 
     /**
