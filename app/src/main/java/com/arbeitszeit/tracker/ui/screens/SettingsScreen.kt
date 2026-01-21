@@ -313,14 +313,35 @@ private fun SettingsMenuItem(
  */
 @Composable
 private fun SettingsMenuSection(title: String) {
-    Text(
-        text = title.uppercase(),
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 0.5.sp
-    )
+    Column(
+        modifier = Modifier.padding(top = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            HorizontalDivider(
+                modifier = Modifier.weight(0.1f),
+                thickness = 2.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
+            HorizontalDivider(
+                modifier = Modifier.weight(1f),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+    }
 }
 
 /**

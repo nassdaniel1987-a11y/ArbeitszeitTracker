@@ -4,8 +4,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Coffee
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,6 +56,13 @@ fun EditEntryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "Bearbeiten",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
         title = {
             Text("Eintrag bearbeiten")
         },
@@ -59,12 +71,45 @@ fun EditEntryDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Datum: $datum", style = MaterialTheme.typography.bodyMedium)
+                // Datum-Anzeige als Chip
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CalendarToday,
+                            contentDescription = "Kalender",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            datum,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
 
                 HorizontalDivider()
 
                 // Typ-Auswahl
-                Text("Typ:", style = MaterialTheme.typography.labelMedium)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Category,
+                        contentDescription = "Typ",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text("Typ:", style = MaterialTheme.typography.labelMedium)
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -128,7 +173,18 @@ fun EditEntryDialog(
                 HorizontalDivider()
 
                 // Start-Zeit mit TimePicker
-                Text("Startzeit:", style = MaterialTheme.typography.labelMedium)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = "Start",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text("Startzeit:", style = MaterialTheme.typography.labelMedium)
+                }
                 TimePickerButton(
                     label = "Start",
                     timeMinutes = startZeitMinuten,
@@ -137,7 +193,18 @@ fun EditEntryDialog(
                 )
 
                 // End-Zeit mit TimePicker
-                Text("Endzeit:", style = MaterialTheme.typography.labelMedium)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Stop,
+                        contentDescription = "Ende",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Text("Endzeit:", style = MaterialTheme.typography.labelMedium)
+                }
                 TimePickerButton(
                     label = "Ende",
                     timeMinutes = endZeitMinuten,
@@ -146,7 +213,18 @@ fun EditEntryDialog(
                 )
 
                 // Pause mit Slider
-                Text("Pause:", style = MaterialTheme.typography.labelMedium)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Coffee,
+                        contentDescription = "Pause",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Text("Pause:", style = MaterialTheme.typography.labelMedium)
+                }
                 OutlinedButton(
                     onClick = { showPauseSlider = true },
                     modifier = Modifier.fillMaxWidth()
