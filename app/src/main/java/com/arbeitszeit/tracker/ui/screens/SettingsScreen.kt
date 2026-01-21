@@ -268,7 +268,7 @@ private fun SettingsMenuItem(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = title,
                     modifier = Modifier
                         .padding(10.dp)
                         .size(24.dp),
@@ -300,7 +300,7 @@ private fun SettingsMenuItem(
 
             Icon(
                 imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
+                contentDescription = "Öffnen",
                 modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -580,7 +580,7 @@ private fun HolidaysSection(
                     enabled = urlaubsanspruch.toIntOrNull() != null && (urlaubsanspruch.toIntOrNull() ?: 0) >= 0,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Icon(Icons.Default.Save, contentDescription = null)
+                    Icon(Icons.Default.Save, contentDescription = "Speichern")
                     Spacer(Modifier.width(8.dp))
                     Text("Speichern")
                 }
@@ -627,7 +627,7 @@ private fun HolidaysSection(
                         if (selectedBundesland == null) {
                             Icon(
                                 Icons.Default.CheckCircle,
-                                contentDescription = null,
+                                contentDescription = "Ausgewählt",
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Spacer(Modifier.width(12.dp))
@@ -668,7 +668,7 @@ private fun HolidaysSection(
                         if (selectedBundesland == bundesland) {
                             Icon(
                                 Icons.Default.CheckCircle,
-                                contentDescription = null,
+                                contentDescription = "Ausgewählt",
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Spacer(Modifier.width(12.dp))
@@ -786,7 +786,7 @@ private fun GeofencingSection(
                 ) {
                     Icon(
                         Icons.Default.LocationOn,
-                        contentDescription = null,
+                        contentDescription = "Standort",
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -812,7 +812,7 @@ private fun GeofencingSection(
                     onClick = onNavigateToGeofencing,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Icon(Icons.Default.Settings, contentDescription = "Einstellungen")
                     Spacer(Modifier.width(8.dp))
                     Text("Orte konfigurieren")
                 }
@@ -835,7 +835,7 @@ private fun GeofencingSection(
                 ) {
                     Icon(
                         Icons.Default.Info,
-                        contentDescription = null,
+                        contentDescription = "Information",
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
@@ -900,7 +900,7 @@ private fun YearManagementSection(
                 ) {
                     Icon(
                         Icons.Default.CalendarMonth,
-                        contentDescription = null,
+                        contentDescription = "Kalender",
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -983,7 +983,7 @@ private fun YearManagementSection(
                 ) {
                     Icon(
                         Icons.Default.Info,
-                        contentDescription = null,
+                        contentDescription = "Information",
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
@@ -1037,7 +1037,7 @@ private fun ExcelTemplatesSection(
                 ) {
                     Icon(
                         Icons.Default.Description,
-                        contentDescription = null,
+                        contentDescription = "Dokument",
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -1076,7 +1076,7 @@ private fun ExcelTemplatesSection(
                     onClick = onNavigateToTemplateManagement,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Icon(Icons.Default.Settings, contentDescription = "Einstellungen")
                     Spacer(Modifier.width(8.dp))
                     Text("Vorlagen hochladen & verwalten")
                 }
@@ -1099,7 +1099,7 @@ private fun ExcelTemplatesSection(
                 ) {
                     Icon(
                         Icons.Default.Info,
-                        contentDescription = null,
+                        contentDescription = "Information",
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
@@ -1148,7 +1148,7 @@ private fun DeleteDataSection(
             ) {
                 Icon(
                     Icons.Default.Warning,
-                    contentDescription = null,
+                    contentDescription = "Warnung",
                     modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.error
                 )
@@ -1177,7 +1177,7 @@ private fun DeleteDataSection(
                 contentColor = MaterialTheme.colorScheme.onError
             )
         ) {
-            Icon(Icons.Default.Delete, contentDescription = null)
+            Icon(Icons.Default.Delete, contentDescription = "Löschen")
             Spacer(Modifier.width(8.dp))
             Text("Alle Daten löschen")
         }
@@ -1186,7 +1186,7 @@ private fun DeleteDataSection(
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            icon = { Icon(Icons.Default.Warning, contentDescription = null) },
+            icon = { Icon(Icons.Default.Warning, contentDescription = "Warnung") },
             title = { Text("Wirklich löschen?") },
             text = { Text("Alle Zeiteinträge werden unwiderruflich gelöscht!") },
             confirmButton = {
@@ -1319,7 +1319,7 @@ private fun AllgemeinTab(
                 ) {
                     Icon(
                         Icons.Default.Description,
-                        contentDescription = null,
+                        contentDescription = "Dokument",
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -1339,7 +1339,7 @@ private fun AllgemeinTab(
                     onClick = onNavigateToTemplateManagement,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Icon(Icons.Default.Settings, contentDescription = "Einstellungen")
                     Spacer(Modifier.width(8.dp))
                     Text("Vorlagen verwalten")
                 }
@@ -1722,7 +1722,7 @@ private fun AutomatisierungTab(
                 ) {
                     Icon(
                         Icons.Default.LocationOn,
-                        contentDescription = null,
+                        contentDescription = "Standort",
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -1742,7 +1742,7 @@ private fun AutomatisierungTab(
                     onClick = onNavigateToGeofencing,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Icon(Icons.Default.Settings, contentDescription = "Einstellungen")
                     Spacer(Modifier.width(8.dp))
                     Text("Orte konfigurieren")
                 }
@@ -1842,7 +1842,7 @@ private fun AutoStartSection(
             ) {
                 Icon(
                     Icons.Default.Info,
-                    contentDescription = null,
+                    contentDescription = "Information",
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Column {
@@ -2090,7 +2090,7 @@ private fun AutoStartDayRow(
                 )
                 Icon(
                     Icons.Default.ChevronRight,
-                    contentDescription = null,
+                    contentDescription = "Bearbeiten",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

@@ -88,11 +88,11 @@ class GeofencingManager(private val context: Context) {
                 }
                 addOnFailureListener { exception ->
                     // Fehler beim Aktivieren
-                    exception.printStackTrace()
+                    Log.e(TAG, "Fehler beim Aktivieren von Geofencing", exception)
                 }
             }
         } catch (securityException: SecurityException) {
-            securityException.printStackTrace()
+            Log.e(TAG, "SecurityException beim Aktivieren von Geofencing", securityException)
         }
     }
 
@@ -105,7 +105,7 @@ class GeofencingManager(private val context: Context) {
                 // Geofencing erfolgreich deaktiviert
             }
             addOnFailureListener { exception ->
-                exception.printStackTrace()
+                Log.e(TAG, "Fehler beim Deaktivieren von Geofencing", exception)
             }
         }
     }

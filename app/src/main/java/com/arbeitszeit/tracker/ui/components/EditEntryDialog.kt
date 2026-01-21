@@ -351,7 +351,7 @@ private fun TimePickerDialog(
                         leadingIcon = {
                             Icon(
                                 Icons.Default.AccessTime,
-                                contentDescription = null,
+                                contentDescription = "Icon",
                                 modifier = Modifier.size(16.dp)
                             )
                         },
