@@ -22,8 +22,7 @@ data class MonthSummary(
 data class UeberstundenSummary(
     val gesamtUeberstunden: Int,          // Aktuelle Gesamtüberstunden inkl. Vorjahr
     val laufendesJahr: Int,                // Überstunden nur für laufendes Jahr
-    val vorjahrUebertrag: Int,             // Übertrag aus Vorjahr
-    val letzterUebertrag: Int,             // Letzter 4-Wochen-Übertrag
+    val vorjahrUebertrag: Int,             // Übertrag aus Vorjahr (aus Einstellungen)
     val monatsSummen: List<MonthSummary>   // Aufschlüsselung nach Monaten
 )
 
@@ -67,7 +66,7 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
     }.stateIn(
         viewModelScope,
         SharingStarted.Lazily,
-        UeberstundenSummary(0, 0, 0, 0, emptyList())
+        UeberstundenSummary(0, 0, 0, emptyList())
     )
 
     val urlaubsSummary: StateFlow<UrlaubsSummary> = combine(
@@ -117,7 +116,7 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         yearSettings: com.arbeitszeit.tracker.data.entity.YearSettings?
     ): UeberstundenSummary {
         if (settings == null || yearSettings == null) {
-            return UeberstundenSummary(0, 0, 0, 0, emptyList())
+            return UeberstundenSummary(0, 0, 0, emptyList())
         }
 
         // Filtere Einträge für das aktive Jahr (basierend auf Custom-Jahr)
@@ -155,14 +154,16 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         // Berechne Gesamtüberstunden für aktives Jahr (Custom-Jahr)
         val laufendesJahrUeberstunden = activeYearEntries.sumOf { it.getDifferenzMinuten() }
 
-        // Gesamtüberstunden = laufendes Jahr + Vorjahresübertrag (aus YearSettings!)
-        val gesamtUeberstunden = laufendesJahrUeberstunden + yearSettings.vorjahresUebertragMinuten
+        // Vorjahresübertrag aus UserSettings (Persönliche Daten in Einstellungen)
+        val vorjahrUebertrag = settings.ueberstundenVorjahrMinuten
+
+        // Gesamtüberstunden = laufendes Jahr + Vorjahresübertrag
+        val gesamtUeberstunden = laufendesJahrUeberstunden + vorjahrUebertrag
 
         return UeberstundenSummary(
             gesamtUeberstunden = gesamtUeberstunden,
             laufendesJahr = laufendesJahrUeberstunden,
-            vorjahrUebertrag = yearSettings.vorjahresUebertragMinuten,
-            letzterUebertrag = settings.letzterUebertragMinuten,
+            vorjahrUebertrag = vorjahrUebertrag,
             monatsSummen = monatsSummen
         )
     }
