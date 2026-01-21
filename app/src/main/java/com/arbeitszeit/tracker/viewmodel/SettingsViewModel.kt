@@ -321,7 +321,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         autoStartEnabled: Boolean,
         autoStartRequiresGeofencing: Boolean,
         autoStartReminderMinutes: Int,
-        autoStartDefaultPauseMinutes: Int
+        autoStartDefaultPauseMinutes: Int,
+        autoStartZeiten: Map<Int, Int?> = emptyMap()  // Tag (1-7) -> Minuten oder null zum Löschen
     ) {
         viewModelScope.launch {
             val existing = settingsDao.getSettings()
@@ -331,6 +332,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                     autoStartRequiresGeofencing = autoStartRequiresGeofencing,
                     autoStartReminderMinutes = autoStartReminderMinutes,
                     autoStartDefaultPauseMinutes = autoStartDefaultPauseMinutes,
+                    autoStartMontagZeit = if (autoStartZeiten.containsKey(1)) autoStartZeiten[1] else existing.autoStartMontagZeit,
+                    autoStartDienstagZeit = if (autoStartZeiten.containsKey(2)) autoStartZeiten[2] else existing.autoStartDienstagZeit,
+                    autoStartMittwochZeit = if (autoStartZeiten.containsKey(3)) autoStartZeiten[3] else existing.autoStartMittwochZeit,
+                    autoStartDonnerstagZeit = if (autoStartZeiten.containsKey(4)) autoStartZeiten[4] else existing.autoStartDonnerstagZeit,
+                    autoStartFreitagZeit = if (autoStartZeiten.containsKey(5)) autoStartZeiten[5] else existing.autoStartFreitagZeit,
+                    autoStartSamstagZeit = if (autoStartZeiten.containsKey(6)) autoStartZeiten[6] else existing.autoStartSamstagZeit,
+                    autoStartSonntagZeit = if (autoStartZeiten.containsKey(7)) autoStartZeiten[7] else existing.autoStartSonntagZeit,
                     updatedAt = System.currentTimeMillis()
                 )
                 settingsDao.insertOrUpdate(updated)

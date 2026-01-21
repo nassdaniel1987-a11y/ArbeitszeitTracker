@@ -402,29 +402,6 @@ private fun VorlageEditDialog(
         mutableStateOf(formatMinutesToTimeString(vorlage?.sonntagSollMinuten ?: 0))
     }
 
-    // Start-Zeiten (optional)
-    var montagStartText by remember {
-        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.montagStartZeit))
-    }
-    var dienstagStartText by remember {
-        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.dienstagStartZeit))
-    }
-    var mittwochStartText by remember {
-        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.mittwochStartZeit))
-    }
-    var donnerstagStartText by remember {
-        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.donnerstagStartZeit))
-    }
-    var freitagStartText by remember {
-        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.freitagStartZeit))
-    }
-    var samstagStartText by remember {
-        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.samstagStartZeit))
-    }
-    var sonntagStartText by remember {
-        mutableStateOf(formatMinutesToOptionalTimeString(vorlage?.sonntagStartZeit))
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (vorlage == null) "Neues Profil" else "Profil bearbeiten") },
@@ -446,80 +423,39 @@ private fun VorlageEditDialog(
 
                 HorizontalDivider()
 
-                // Soll-Zeiten und Start-Zeiten pro Tag
+                // Soll-Zeiten pro Tag
                 Text(
-                    "Arbeitszeiten pro Tag",
+                    "Soll-Arbeitszeit pro Tag",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    "Soll-Arbeitszeit (z.B. 8:00) und optionale Start-Zeit für Auto-Start (z.B. 08:00)",
+                    "Gib die tägliche Soll-Arbeitszeit ein (z.B. 8:00 für 8 Stunden)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                // Info-Box für Auto-Start
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            "Die Start-Zeit wird für den automatischen Beginn der Zeiterfassung verwendet.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                }
-
                 // Montag
-                DayTimeInputWithStart("Montag", montagText, montagStartText,
-                    onSollChange = { montagText = it },
-                    onStartChange = { montagStartText = it })
+                DayTimeInput("Montag", montagText) { montagText = it }
 
                 // Dienstag
-                DayTimeInputWithStart("Dienstag", dienstagText, dienstagStartText,
-                    onSollChange = { dienstagText = it },
-                    onStartChange = { dienstagStartText = it })
+                DayTimeInput("Dienstag", dienstagText) { dienstagText = it }
 
                 // Mittwoch
-                DayTimeInputWithStart("Mittwoch", mittwochText, mittwochStartText,
-                    onSollChange = { mittwochText = it },
-                    onStartChange = { mittwochStartText = it })
+                DayTimeInput("Mittwoch", mittwochText) { mittwochText = it }
 
                 // Donnerstag
-                DayTimeInputWithStart("Donnerstag", donnerstagText, donnerstagStartText,
-                    onSollChange = { donnerstagText = it },
-                    onStartChange = { donnerstagStartText = it })
+                DayTimeInput("Donnerstag", donnerstagText) { donnerstagText = it }
 
                 // Freitag
-                DayTimeInputWithStart("Freitag", freitagText, freitagStartText,
-                    onSollChange = { freitagText = it },
-                    onStartChange = { freitagStartText = it })
+                DayTimeInput("Freitag", freitagText) { freitagText = it }
 
                 // Samstag
-                DayTimeInputWithStart("Samstag", samstagText, samstagStartText,
-                    onSollChange = { samstagText = it },
-                    onStartChange = { samstagStartText = it })
+                DayTimeInput("Samstag", samstagText) { samstagText = it }
 
                 // Sonntag
-                DayTimeInputWithStart("Sonntag", sonntagText, sonntagStartText,
-                    onSollChange = { sonntagText = it },
-                    onStartChange = { sonntagStartText = it })
+                DayTimeInput("Sonntag", sonntagText) { sonntagText = it }
             }
         },
         confirmButton = {
@@ -535,13 +471,14 @@ private fun VorlageEditDialog(
                         freitagSollMinuten = parseTimeStringToMinutes(freitagText),
                         samstagSollMinuten = parseTimeStringToMinutes(samstagText),
                         sonntagSollMinuten = parseTimeStringToMinutes(sonntagText),
-                        montagStartZeit = parseOptionalTimeStringToMinutes(montagStartText),
-                        dienstagStartZeit = parseOptionalTimeStringToMinutes(dienstagStartText),
-                        mittwochStartZeit = parseOptionalTimeStringToMinutes(mittwochStartText),
-                        donnerstagStartZeit = parseOptionalTimeStringToMinutes(donnerstagStartText),
-                        freitagStartZeit = parseOptionalTimeStringToMinutes(freitagStartText),
-                        samstagStartZeit = parseOptionalTimeStringToMinutes(samstagStartText),
-                        sonntagStartZeit = parseOptionalTimeStringToMinutes(sonntagStartText),
+                        // Start-Zeiten sind jetzt in den Einstellungen, nicht mehr in der Vorlage
+                        montagStartZeit = vorlage?.montagStartZeit,
+                        dienstagStartZeit = vorlage?.dienstagStartZeit,
+                        mittwochStartZeit = vorlage?.mittwochStartZeit,
+                        donnerstagStartZeit = vorlage?.donnerstagStartZeit,
+                        freitagStartZeit = vorlage?.freitagStartZeit,
+                        samstagStartZeit = vorlage?.samstagStartZeit,
+                        sonntagStartZeit = vorlage?.sonntagStartZeit,
                         isDefault = vorlage?.isDefault ?: false
                     )
                     onSave(newVorlage)

@@ -16,6 +16,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - v21: Geofencing-Felder zu WorkLocation (latitude, longitude, radiusMeters, autoStartEnabled)
  * - v22: Start-Zeiten in SollZeitVorlage für Auto-Start
  * - v23: Resturlaub-Unterstützung (urlaubsJahr in TimeEntry)
+ * - v24: Auto-Start Zeiten in UserSettings (statt SollZeitVorlage)
  *
  * WICHTIG: Ab v16 werden ALLE Migrations hier dokumentiert und implementiert!
  */
@@ -357,6 +358,63 @@ object DatabaseMigrations {
     }
 
     /**
+     * Migration v23 -> v24: Auto-Start Zeiten in UserSettings
+     *
+     * Verschiebt die Auto-Start Zeiten von SollZeitVorlage nach UserSettings.
+     * Die Start-Zeiten sind jetzt zentral in den Einstellungen konfigurierbar,
+     * statt in jeder einzelnen Vorlage.
+     *
+     * Neue Felder in user_settings:
+     * - autoStartMontagZeit, autoStartDienstagZeit, etc. (jeweils nullable Integer)
+     *
+     * Migration kopiert die Start-Zeiten aus der Default-Vorlage in UserSettings.
+     */
+    val MIGRATION_23_24 = object : Migration(23, 24) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Auto-Start Zeiten für jeden Wochentag zu UserSettings hinzufügen
+            db.execSQL("ALTER TABLE user_settings ADD COLUMN autoStartMontagZeit INTEGER")
+            db.execSQL("ALTER TABLE user_settings ADD COLUMN autoStartDienstagZeit INTEGER")
+            db.execSQL("ALTER TABLE user_settings ADD COLUMN autoStartMittwochZeit INTEGER")
+            db.execSQL("ALTER TABLE user_settings ADD COLUMN autoStartDonnerstagZeit INTEGER")
+            db.execSQL("ALTER TABLE user_settings ADD COLUMN autoStartFreitagZeit INTEGER")
+            db.execSQL("ALTER TABLE user_settings ADD COLUMN autoStartSamstagZeit INTEGER")
+            db.execSQL("ALTER TABLE user_settings ADD COLUMN autoStartSonntagZeit INTEGER")
+
+            // Kopiere Start-Zeiten aus der Default-Vorlage (isDefault = 1)
+            val cursor = db.query("""
+                SELECT montagStartZeit, dienstagStartZeit, mittwochStartZeit,
+                       donnerstagStartZeit, freitagStartZeit, samstagStartZeit, sonntagStartZeit
+                FROM soll_zeit_vorlagen
+                WHERE isDefault = 1
+                LIMIT 1
+            """)
+
+            if (cursor.moveToFirst()) {
+                val mo = if (cursor.isNull(0)) null else cursor.getInt(0)
+                val di = if (cursor.isNull(1)) null else cursor.getInt(1)
+                val mi = if (cursor.isNull(2)) null else cursor.getInt(2)
+                val don = if (cursor.isNull(3)) null else cursor.getInt(3)
+                val fr = if (cursor.isNull(4)) null else cursor.getInt(4)
+                val sa = if (cursor.isNull(5)) null else cursor.getInt(5)
+                val so = if (cursor.isNull(6)) null else cursor.getInt(6)
+
+                // Update UserSettings mit den Start-Zeiten aus der Vorlage
+                db.execSQL("""
+                    UPDATE user_settings SET
+                        autoStartMontagZeit = ?,
+                        autoStartDienstagZeit = ?,
+                        autoStartMittwochZeit = ?,
+                        autoStartDonnerstagZeit = ?,
+                        autoStartFreitagZeit = ?,
+                        autoStartSamstagZeit = ?,
+                        autoStartSonntagZeit = ?
+                """, arrayOf<Any?>(mo, di, mi, don, fr, sa, so))
+            }
+            cursor.close()
+        }
+    }
+
+    /**
      * Gibt alle verfügbaren Migrations zurück
      *
      * Wenn neue Migrations hinzugefügt werden, hier in der Liste eintragen!
@@ -369,9 +427,10 @@ object DatabaseMigrations {
             MIGRATION_19_20,
             MIGRATION_20_21,
             MIGRATION_21_22,
-            MIGRATION_22_23
+            MIGRATION_22_23,
+            MIGRATION_23_24
             // Zukünftige Migrations hier hinzufügen:
-            // MIGRATION_23_24,
+            // MIGRATION_24_25,
             // etc.
         )
     }

@@ -26,6 +26,7 @@ import java.util.Calendar
  * - Scheduled AlarmManager für präzises Timing
  * - Vor-Erinnerung (z.B. 5 Min vor Start)
  * - Auto-Start zum konfigurierten Zeitpunkt
+ * - Start-Zeiten werden aus UserSettings geladen
  */
 class AutoStartScheduler(private val context: Context) {
 
@@ -47,7 +48,7 @@ class AutoStartScheduler(private val context: Context) {
      * Ruft diese Methode auf:
      * - Beim App-Start
      * - Nach Änderung der Einstellungen
-     * - Nach Änderung der Wochenvorlagen
+     * - Nach Änderung der Auto-Start Zeiten
      */
     suspend fun scheduleAutoStarts() {
         try {
@@ -80,19 +81,15 @@ class AutoStartScheduler(private val context: Context) {
         val todayDayOfWeek = today.dayOfWeek.value
         val now = LocalTime.now()
 
-        // Lade SollZeitVorlage für heute
-        val vorlagen = database.sollZeitVorlageDao().getAllVorlagen()
-        if (vorlagen.isEmpty()) {
-            Log.d(TAG, "Keine SollZeitVorlagen vorhanden")
+        // Lade Start-Zeit aus UserSettings
+        val settings = database.userSettingsDao().getSettings() ?: run {
+            Log.d(TAG, "Keine Settings vorhanden")
             return
         }
 
-        // Nimm die Standard-Vorlage, oder die erste Vorlage
-        val activeVorlage = vorlagen.firstOrNull { it.isDefault } ?: vorlagen.firstOrNull() ?: return
-        val startZeit = activeVorlage.getStartZeitForDay(todayDayOfWeek)
-
+        val startZeit = settings.getAutoStartZeitForDay(todayDayOfWeek)
         if (startZeit == null) {
-            Log.d(TAG, "Keine Start-Zeit für heute konfiguriert")
+            Log.d(TAG, "Keine Start-Zeit für heute (Tag $todayDayOfWeek) in den Einstellungen konfiguriert")
             return
         }
 
@@ -124,23 +121,18 @@ class AutoStartScheduler(private val context: Context) {
      * Scheduled Auto-Start für morgen
      */
     private suspend fun scheduleTomorrow(reminderMinutes: Int) {
-        val autoStartManager = AutoStartManager(context)
         val tomorrow = LocalDate.now().plusDays(1)
         val tomorrowDayOfWeek = tomorrow.dayOfWeek.value
 
-        // Lade SollZeitVorlage für morgen
-        val vorlagen = database.sollZeitVorlageDao().getAllVorlagen()
-        if (vorlagen.isEmpty()) {
-            Log.d(TAG, "Keine SollZeitVorlagen vorhanden")
+        // Lade Start-Zeit aus UserSettings
+        val settings = database.userSettingsDao().getSettings() ?: run {
+            Log.d(TAG, "Keine Settings vorhanden")
             return
         }
 
-        // Nimm die Standard-Vorlage, oder die erste Vorlage
-        val activeVorlage = vorlagen.firstOrNull { it.isDefault } ?: vorlagen.firstOrNull() ?: return
-        val startZeit = activeVorlage.getStartZeitForDay(tomorrowDayOfWeek)
-
+        val startZeit = settings.getAutoStartZeitForDay(tomorrowDayOfWeek)
         if (startZeit == null) {
-            Log.d(TAG, "Keine Start-Zeit für morgen konfiguriert")
+            Log.d(TAG, "Keine Start-Zeit für morgen (Tag $tomorrowDayOfWeek) in den Einstellungen konfiguriert")
             return
         }
 
@@ -187,7 +179,7 @@ class AutoStartScheduler(private val context: Context) {
             pendingIntent
         )
 
-        Log.d(TAG, "Alarm geplant: $action um ${time.hour}:${time.minute}")
+        Log.d(TAG, "Alarm geplant: $action um ${time.hour}:${String.format("%02d", time.minute)}")
     }
 
     /**
@@ -217,8 +209,8 @@ class AutoStartScheduler(private val context: Context) {
      * Konvertiert Minuten seit Mitternacht zu LocalTime
      */
     private fun minutesToLocalTime(minutes: Int): LocalTime {
-        val hours = minutes / 60
-        val mins = minutes % 60
+        val hours = (minutes / 60).coerceIn(0, 23)
+        val mins = (minutes % 60).coerceIn(0, 59)
         return LocalTime.of(hours, mins)
     }
 }
