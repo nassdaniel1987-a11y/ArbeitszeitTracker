@@ -242,14 +242,26 @@ class AutoStartReceiver : BroadcastReceiver() {
 
     /**
      * Zeigt Vor-Erinnerung an
+     *
+     * Prüft vorher ob Auto-Start überhaupt möglich ist (inkl. Geofencing).
+     * Falls nicht am Arbeitsort, wird keine Erinnerung angezeigt.
      */
     private fun handleReminder(context: Context) {
-        CoroutineScope(Dispatchers.Main).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             val autoStartManager = AutoStartManager(context)
-            val startTime = autoStartManager.getStartTimeForToday()
 
+            // Prüfe ob Auto-Start überhaupt möglich wäre
+            val shouldStart = autoStartManager.shouldAutoStart()
+            if (!shouldStart) {
+                Log.d(TAG, "Reminder nicht angezeigt - Auto-Start Bedingungen nicht erfüllt")
+                return@launch
+            }
+
+            val startTime = autoStartManager.getStartTimeForToday()
             if (startTime != null) {
-                showReminderNotification(context, startTime)
+                CoroutineScope(Dispatchers.Main).launch {
+                    showReminderNotification(context, startTime)
+                }
             }
         }
     }
@@ -294,23 +306,38 @@ class AutoStartReceiver : BroadcastReceiver() {
      * Zeigt Vor-Erinnerungs-Benachrichtigung
      */
     private fun showReminderNotification(context: Context, startTime: LocalTime) {
+        if (!hasNotificationPermission(context)) {
+            Log.w(TAG, "Keine Benachrichtigungs-Berechtigung für Reminder")
+            return
+        }
+
         createNotificationChannel(context)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Auto-Start in Kürze")
             .setContentText("Arbeitszeit startet automatisch um ${startTime.hour}:${String.format("%02d", startTime.minute)} Uhr")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
 
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_REMINDER, notification)
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_REMINDER, notification)
+            Log.d(TAG, "Reminder-Notification angezeigt für ${startTime.hour}:${String.format("%02d", startTime.minute)}")
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SecurityException beim Anzeigen der Reminder-Notification", e)
+        }
     }
 
     /**
      * Zeigt persistente Benachrichtigung für laufende Zeiterfassung
      */
     private fun showRunningNotification(context: Context) {
+        if (!hasNotificationPermission(context)) {
+            Log.w(TAG, "Keine Benachrichtigungs-Berechtigung für Running-Notification")
+            return
+        }
+
         createNotificationChannel(context)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -321,7 +348,25 @@ class AutoStartReceiver : BroadcastReceiver() {
             .setOngoing(true)  // Persistent
             .build()
 
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_RUNNING, notification)
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_RUNNING, notification)
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SecurityException beim Anzeigen der Running-Notification", e)
+        }
+    }
+
+    /**
+     * Prüft ob die Benachrichtigungs-Berechtigung vorhanden ist (Android 13+)
+     */
+    private fun hasNotificationPermission(context: Context): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Vor Android 13 ist keine Berechtigung erforderlich
+        }
     }
 
     /**
