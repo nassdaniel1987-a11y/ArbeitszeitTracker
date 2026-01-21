@@ -47,7 +47,7 @@ fun EndWorkDialog(
         icon = {
             Icon(
                 if (runningState.isAutoStart) Icons.Default.PlayArrow else Icons.Default.Stop,
-                contentDescription = "Icon"
+                contentDescription = if (runningState.isAutoStart) "Auto-Start" else "Arbeitszeit beenden"
             )
         },
         title = {
@@ -72,7 +72,7 @@ fun EndWorkDialog(
                         ) {
                             Icon(
                                 Icons.Default.AutoMode,
-                                contentDescription = "Icon",
+                                contentDescription = "Automatischer Start",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
@@ -190,7 +190,7 @@ fun EndWorkDialog(
             Button(
                 onClick = { onSave(pauseMin) }
             ) {
-                Icon(Icons.Default.Save, contentDescription = "Icon")
+                Icon(Icons.Default.Save, contentDescription = "Speichern")
                 Spacer(Modifier.width(8.dp))
                 Text("Speichern")
             }
@@ -203,7 +203,7 @@ fun EndWorkDialog(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Icon")
+                    Icon(Icons.Default.Delete, contentDescription = "Verwerfen")
                     Spacer(Modifier.width(4.dp))
                     Text("Nicht eintragen")
                 }
@@ -237,7 +237,7 @@ private fun TimeRow(
         ) {
             Icon(
                 icon,
-                contentDescription = "Icon",
+                contentDescription = label,
                 modifier = Modifier.size(20.dp)
             )
             Text(
