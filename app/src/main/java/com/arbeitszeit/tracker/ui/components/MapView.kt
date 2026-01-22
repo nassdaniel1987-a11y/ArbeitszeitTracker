@@ -147,7 +147,21 @@ private fun createMapView(context: Context): MapView {
     )
     Configuration.getInstance().userAgentValue = context.packageName
 
-    return MapView(context).apply {
+    return object : MapView(context) {
+        override fun dispatchTouchEvent(ev: android.view.MotionEvent?): Boolean {
+            // Verhindere, dass der Parent (LazyColumn) Touch-Events abfängt
+            when (ev?.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    parent?.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            return super.dispatchTouchEvent(ev)
+        }
+    }.apply {
         setTileSource(TileSourceFactory.MAPNIK)
         setMultiTouchControls(true)
 
