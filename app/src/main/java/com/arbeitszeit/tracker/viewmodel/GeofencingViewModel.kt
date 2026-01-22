@@ -228,6 +228,21 @@ class GeofencingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
+     * Aktualisiert alle Geofencing-Einstellungen (Zeitfenster + aktive Tage)
+     */
+    fun updateGeofencingSettings(startHour: Int, endHour: Int, activeDays: String) {
+        viewModelScope.launch {
+            val currentSettings = settingsDao.getSettings() ?: return@launch
+            settingsDao.insertOrUpdate(currentSettings.copy(
+                geofencingStartHour = startHour,
+                geofencingEndHour = endHour,
+                geofencingActiveDays = activeDays,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
+
+    /**
      * Aktualisiert alle Geofences basierend auf aktuellen Einstellungen
      */
     private suspend fun updateGeofences() {
