@@ -343,14 +343,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 )
                 settingsDao.insertOrUpdate(updated)
 
-                // Schedule Auto-Start Alarme neu wenn aktiviert
+                // WorkManager-basierten Auto-Start Worker starten/stoppen
                 if (autoStartEnabled) {
-                    val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(getApplication())
-                    scheduler.scheduleAutoStarts()
+                    com.arbeitszeit.tracker.worker.AutoStartWorker.schedule(getApplication())
                 } else {
-                    // Deaktiviert: Alle Alarme canceln
-                    val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(getApplication())
-                    scheduler.cancelAllAlarms()
+                    com.arbeitszeit.tracker.worker.AutoStartWorker.cancel(getApplication())
                 }
             }
         }
