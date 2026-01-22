@@ -489,9 +489,17 @@ fun HomeScreen(
                 0
             }
 
+            // Automatische Pausenberechnung basierend auf Arbeitszeit
+            // Berücksichtigt gesetzliche Mindestpause (30 Min ab 6h, 45 Min ab 9h)
+            val workDuration = runningState.calculateDurationMinutes()
+            val recommendedPause = TimeUtils.calculateRecommendedBreak(
+                workMinutes = workDuration,
+                userDefault = settings?.autoStartDefaultPauseMinutes ?: 30
+            )
+
             EndWorkDialog(
                 runningState = runningState,
-                defaultPauseMinutes = settings?.autoStartDefaultPauseMinutes ?: 30,
+                defaultPauseMinutes = recommendedPause,
                 expectedWorkMinutes = expectedWorkMinutes,
                 onSave = { pauseMinutes ->
                     viewModel.stopRunningTimeTracking(pauseMinutes)
