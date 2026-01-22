@@ -35,6 +35,7 @@ import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.NotificationHelper
 import com.arbeitszeit.tracker.viewmodel.HomeViewModel
 import com.arbeitszeit.tracker.viewmodel.YearViewModel
+import com.arbeitszeit.tracker.worker.AutoStartWorker
 import com.arbeitszeit.tracker.worker.ReminderWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -470,18 +471,20 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Initialisiert den Auto-Start Scheduler
-     * Scheduled Alarme für automatischen Start der Arbeitszeit basierend auf Wochenvorlagen
+     * Initialisiert den Auto-Start Worker
+     * Nutzt WorkManager für zuverlässigen Auto-Start (alle 15 Minuten)
      */
     private fun initializeAutoStartScheduler() {
         lifecycleScope.launch {
             val database = AppDatabase.getDatabase(this@MainActivity)
             val settings = database.userSettingsDao().getSettings()
 
-            // Nur wenn Auto-Start aktiviert ist
             if (settings?.autoStartEnabled == true) {
-                val scheduler = com.arbeitszeit.tracker.autostart.AutoStartScheduler(this@MainActivity)
-                scheduler.scheduleAutoStarts()
+                // WorkManager-basierter Worker (zuverlässiger als Geofencing/AlarmManager)
+                AutoStartWorker.schedule(this@MainActivity)
+            } else {
+                // Worker stoppen wenn Auto-Start deaktiviert
+                AutoStartWorker.cancel(this@MainActivity)
             }
         }
     }
