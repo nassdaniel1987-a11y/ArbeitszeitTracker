@@ -149,4 +149,36 @@ object TimeUtils {
     fun formatTimeForDisplay(minutes: Int?): String {
         return if (minutes == null) "--:--" else minutesToTimeString(minutes)
     }
+
+    /**
+     * Berechnet die gesetzliche Mindestpause basierend auf Arbeitszeit
+     *
+     * Gesetzliche Regelung in Deutschland (ArbZG §4):
+     * - Bis 6h Arbeit: keine Pflichtpause
+     * - 6-9h Arbeit: mindestens 30 Min Pause
+     * - Über 9h Arbeit: mindestens 45 Min Pause
+     *
+     * @param workMinutes Arbeitszeit in Minuten (ohne Pause)
+     * @return Mindestpause in Minuten
+     */
+    fun calculateMinimumBreak(workMinutes: Int): Int {
+        return when {
+            workMinutes > 9 * 60 -> 45  // Über 9h: 45 Min
+            workMinutes > 6 * 60 -> 30  // Über 6h: 30 Min
+            else -> 0                    // Unter 6h: keine Pflicht
+        }
+    }
+
+    /**
+     * Berechnet empfohlene Pause basierend auf Arbeitszeit und User-Default
+     * Nimmt das Maximum aus gesetzlicher Mindestpause und User-Einstellung
+     *
+     * @param workMinutes Arbeitszeit in Minuten
+     * @param userDefault User-Einstellung für Standard-Pause
+     * @return Empfohlene Pause in Minuten
+     */
+    fun calculateRecommendedBreak(workMinutes: Int, userDefault: Int): Int {
+        val minimum = calculateMinimumBreak(workMinutes)
+        return maxOf(minimum, userDefault)
+    }
 }
