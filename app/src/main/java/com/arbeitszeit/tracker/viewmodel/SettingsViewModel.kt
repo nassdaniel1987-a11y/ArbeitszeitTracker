@@ -343,11 +343,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 )
                 settingsDao.insertOrUpdate(updated)
 
-                // WorkManager-basierten Auto-Start Worker starten/stoppen
+                // AlarmManager-basierten Auto-Start planen/abbrechen
                 if (autoStartEnabled) {
-                    com.arbeitszeit.tracker.worker.AutoStartWorker.schedule(getApplication())
+                    com.arbeitszeit.tracker.worker.AutoStartAlarmManager.scheduleNextAlarm(getApplication())
                 } else {
-                    com.arbeitszeit.tracker.worker.AutoStartWorker.cancel(getApplication())
+                    com.arbeitszeit.tracker.worker.AutoStartAlarmManager.cancelAlarm(getApplication())
                 }
             }
         }

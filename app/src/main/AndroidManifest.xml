@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
@@ -70,7 +72,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Auto-Start Receiver -->
+        <!-- Auto-Start Receiver (Legacy) -->
         <receiver
             android:name=".autostart.AutoStartReceiver"
             android:enabled="true"
@@ -78,6 +80,26 @@
             <intent-filter>
                 <action android:name="com.arbeitszeit.tracker.AUTO_START_REMINDER" />
                 <action android:name="com.arbeitszeit.tracker.AUTO_START" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Auto-Start Alarm Receiver (Neu - AlarmManager basiert) -->
+        <receiver
+            android:name=".worker.AutoStartAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.arbeitszeit.tracker.AUTO_START_ALARM" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Boot Completed Receiver - Stellt Auto-Start Alarme nach Neustart wieder her -->
+        <receiver
+            android:name=".worker.BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
