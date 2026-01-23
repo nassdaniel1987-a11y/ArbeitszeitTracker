@@ -235,15 +235,45 @@ class AutoStartAlarmReceiver : BroadcastReceiver() {
         var entry = existingEntry
         if (entry == null) {
             Log.d(TAG, "Erstelle neuen TimeEntry für heute")
+
+            val now = LocalDate.now()
+            val dayOfWeek = now.dayOfWeek.value // 1=Mo, 7=So
+
+            // Wochentag als Kurzform
+            val wochentag = when (dayOfWeek) {
+                1 -> "Mo"
+                2 -> "Di"
+                3 -> "Mi"
+                4 -> "Do"
+                5 -> "Fr"
+                6 -> "Sa"
+                7 -> "So"
+                else -> "Mo"
+            }
+
+            // Kalenderwoche und Jahr
+            val weekFields = java.time.temporal.WeekFields.of(java.util.Locale.GERMANY)
+            val kalenderwoche = now.get(weekFields.weekOfWeekBasedYear())
+            val jahr = now.get(weekFields.weekBasedYear())
+
+            // Soll-Minuten aus Settings berechnen (oder Standard 8h = 480 Minuten)
+            val sollMinuten = if (settings.isWorkingDay(dayOfWeek)) {
+                settings.wochenStundenMinuten / maxOf(1, settings.arbeitsTageProWoche)
+            } else {
+                0
+            }
+
             val newEntry = com.arbeitszeit.tracker.data.entity.TimeEntry(
                 datum = today,
+                wochentag = wochentag,
+                kalenderwoche = kalenderwoche,
+                jahr = jahr,
                 startZeit = null,
-                endeZeit = null,
+                endZeit = null,
                 pauseMinuten = 0,
-                notizen = null,
-                istUrlaubstag = false,
-                istKrankheitstag = false,
-                istFeiertag = false,
+                sollMinuten = sollMinuten,
+                typ = com.arbeitszeit.tracker.data.entity.TimeEntry.TYP_NORMAL,
+                notiz = "Auto-Start",
                 createdAt = System.currentTimeMillis(),
                 updatedAt = System.currentTimeMillis()
             )
