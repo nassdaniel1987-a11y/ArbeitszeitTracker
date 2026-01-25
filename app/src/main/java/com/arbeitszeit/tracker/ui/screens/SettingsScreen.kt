@@ -141,8 +141,8 @@ fun SettingsScreen(
                     icon = Icons.Default.Notifications,
                     title = "Benachrichtigungen & Ruhezeit",
                     subtitle = if (settings?.notificationQuietTimeEnabled == true) {
-                        val startHour = (settings.notificationQuietTimeStart ?: 1260) / 60
-                        val endHour = (settings.notificationQuietTimeEnd ?: 420) / 60
+                        val startHour = (settings?.notificationQuietTimeStart ?: 1260) / 60
+                        val endHour = (settings?.notificationQuietTimeEnd ?: 420) / 60
                         "Ruhezeit: ${startHour}:00 - ${endHour}:00 Uhr"
                     } else {
                         "Immer aktiv"
