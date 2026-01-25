@@ -1,89 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Kompaktes Arbeitszeit-Widget (2x1)
-    Zeigt aktuelle Arbeitszeit und bietet Quick-Actions
+    Arbeitszeit-Widget (3x1)
+    Nur erlaubte RemoteViews-Elemente!
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_background_modern"
+    android:background="#FFFFFF"
     android:padding="8dp">
 
-    <!-- Status-Indikator (links oben) -->
-    <View
-        android:id="@+id/widget_status_indicator"
-        android:layout_width="10dp"
-        android:layout_height="10dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginEnd="8dp"
-        android:background="@drawable/widget_status_inactive" />
-
-    <!-- Zeit-Anzeige (Mitte) -->
-    <TextView
-        android:id="@+id/widget_duration_small"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentTop="true"
-        android:text="0:00h"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="#6750A4" />
-
-    <!-- Live Chronometer (versteckt wenn nicht aktiv) -->
-    <Chronometer
-        android:id="@+id/widget_chronometer_small"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentTop="true"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="#4CAF50"
-        android:visibility="gone" />
-
-    <!-- Button-Leiste (unten) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginTop="4dp"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center">
 
-        <!-- Start Button -->
-        <ImageButton
-            android:id="@+id/widget_btn_start"
-            android:layout_width="40dp"
-            android:layout_height="32dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/widget_button_success"
-            android:contentDescription="Start"
-            android:scaleType="centerInside"
-            android:src="@android:drawable/ic_media_play" />
+        <!-- Status-Indikator (ImageView statt View!) -->
+        <ImageView
+            android:id="@+id/widget_status_indicator"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="#9E9E9E"
+            android:contentDescription="Status" />
 
-        <!-- Pause Button -->
-        <ImageButton
-            android:id="@+id/widget_btn_pause"
-            android:layout_width="40dp"
-            android:layout_height="32dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/widget_button_secondary"
-            android:contentDescription="Pause +30min"
-            android:scaleType="centerInside"
-            android:src="@android:drawable/ic_media_pause" />
+        <!-- Zeit-Anzeige -->
+        <TextView
+            android:id="@+id/widget_duration_small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="0:00h"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#6750A4" />
 
-        <!-- Stop/Open App Button -->
-        <ImageButton
-            android:id="@+id/widget_btn_stop"
-            android:layout_width="40dp"
-            android:layout_height="32dp"
-            android:background="@drawable/widget_button_primary"
-            android:contentDescription="Stop"
-            android:scaleType="centerInside"
-            android:src="@android:drawable/ic_menu_view" />
+        <!-- Chronometer (versteckt wenn nicht aktiv) -->
+        <Chronometer
+            android:id="@+id/widget_chronometer_small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#4CAF50"
+            android:visibility="gone" />
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <!-- Start Button -->
+            <Button
+                android:id="@+id/widget_btn_start"
+                android:layout_width="48dp"
+                android:layout_height="36dp"
+                android:background="#4CAF50"
+                android:text="▶"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+
+            <!-- Pause Button -->
+            <Button
+                android:id="@+id/widget_btn_pause"
+                android:layout_width="48dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:background="#FFC107"
+                android:text="+30"
+                android:textColor="#000000"
+                android:textSize="10sp" />
+
+            <!-- Stop/App Button -->
+            <Button
+                android:id="@+id/widget_btn_stop"
+                android:layout_width="48dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:background="#6750A4"
+                android:text="APP"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
-</RelativeLayout>
+</FrameLayout>
