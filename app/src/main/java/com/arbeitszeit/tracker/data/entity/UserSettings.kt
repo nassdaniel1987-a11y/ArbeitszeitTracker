@@ -57,6 +57,12 @@ data class UserSettings(
     val autoStartSamstagZeit: Int? = null,
     val autoStartSonntagZeit: Int? = null,
 
+    // Benachrichtigungs-Einstellungen (Ruhezeit)
+    val notificationQuietTimeEnabled: Boolean = false,     // Ruhezeit aktiviert
+    val notificationQuietTimeStart: Int = 1260,            // Ruhezeit Start in Minuten (21:00 = 21*60 = 1260)
+    val notificationQuietTimeEnd: Int = 420,               // Ruhezeit Ende in Minuten (7:00 = 7*60 = 420)
+    val notificationActiveDays: String = "12345",          // Tage an denen Benachrichtigungen erlaubt sind (Mo=1...So=7)
+
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
@@ -102,5 +108,38 @@ data class UserSettings(
             7 -> autoStartSonntagZeit
             else -> null
         }
+    }
+
+    /**
+     * Prüft ob Benachrichtigungen zu dieser Zeit erlaubt sind
+     * @param dayOfWeek 1=Montag, 2=Dienstag, ..., 7=Sonntag
+     * @param minuteOfDay Minuten seit Mitternacht (0-1439)
+     * @return true wenn Benachrichtigungen erlaubt sind
+     */
+    fun isNotificationAllowed(dayOfWeek: Int, minuteOfDay: Int): Boolean {
+        // Prüfe ob der Wochentag für Benachrichtigungen aktiviert ist
+        if (!notificationActiveDays.contains(dayOfWeek.toString())) {
+            return false
+        }
+
+        // Prüfe Ruhezeit (wenn aktiviert)
+        if (notificationQuietTimeEnabled) {
+            // Ruhezeit kann über Mitternacht gehen (z.B. 21:00 - 07:00)
+            if (notificationQuietTimeStart > notificationQuietTimeEnd) {
+                // Über Mitternacht: z.B. 21:00 (1260) bis 07:00 (420)
+                // Ruhezeit ist wenn: zeit >= start ODER zeit < end
+                if (minuteOfDay >= notificationQuietTimeStart || minuteOfDay < notificationQuietTimeEnd) {
+                    return false
+                }
+            } else {
+                // Normaler Zeitraum: z.B. 12:00 (720) bis 14:00 (840)
+                // Ruhezeit ist wenn: start <= zeit < end
+                if (minuteOfDay >= notificationQuietTimeStart && minuteOfDay < notificationQuietTimeEnd) {
+                    return false
+                }
+            }
+        }
+
+        return true
     }
 }

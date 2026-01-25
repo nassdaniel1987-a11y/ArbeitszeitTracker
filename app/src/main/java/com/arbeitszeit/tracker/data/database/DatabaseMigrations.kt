@@ -17,6 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - v22: Start-Zeiten in SollZeitVorlage für Auto-Start
  * - v23: Resturlaub-Unterstützung (urlaubsJahr in TimeEntry)
  * - v24: Auto-Start Zeiten in UserSettings (statt SollZeitVorlage)
+ * - v25: Benachrichtigungs-Ruhezeit (notificationQuietTime*, notificationActiveDays)
  *
  * WICHTIG: Ab v16 werden ALLE Migrations hier dokumentiert und implementiert!
  */
@@ -415,6 +416,46 @@ object DatabaseMigrations {
     }
 
     /**
+     * Migration v24 -> v25: Benachrichtigungs-Ruhezeit
+     *
+     * Fügt neue Felder in UserSettings hinzu:
+     * - notificationQuietTimeEnabled: Ruhezeit für Benachrichtigungen aktiviert
+     * - notificationQuietTimeStart: Ruhezeit Start in Minuten seit Mitternacht (Standard: 21:00 = 1260)
+     * - notificationQuietTimeEnd: Ruhezeit Ende in Minuten seit Mitternacht (Standard: 7:00 = 420)
+     * - notificationActiveDays: Tage an denen Benachrichtigungen erlaubt sind (Standard: "12345" = Mo-Fr)
+     *
+     * Ermöglicht es Nutzern, Benachrichtigungen an bestimmten Tagen (z.B. Sonntag)
+     * oder zu bestimmten Zeiten (z.B. abends/nachts) zu deaktivieren.
+     */
+    val MIGRATION_24_25 = object : Migration(24, 25) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Ruhezeit aktiviert (Standard: deaktiviert)
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN notificationQuietTimeEnabled INTEGER NOT NULL DEFAULT 0
+            """)
+
+            // Ruhezeit Start: 21:00 = 21*60 = 1260 Minuten
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN notificationQuietTimeStart INTEGER NOT NULL DEFAULT 1260
+            """)
+
+            // Ruhezeit Ende: 7:00 = 7*60 = 420 Minuten
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN notificationQuietTimeEnd INTEGER NOT NULL DEFAULT 420
+            """)
+
+            // Aktive Tage für Benachrichtigungen (Standard: Mo-Fr)
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN notificationActiveDays TEXT NOT NULL DEFAULT '12345'
+            """)
+        }
+    }
+
+    /**
      * Gibt alle verfügbaren Migrations zurück
      *
      * Wenn neue Migrations hinzugefügt werden, hier in der Liste eintragen!
@@ -428,9 +469,10 @@ object DatabaseMigrations {
             MIGRATION_20_21,
             MIGRATION_21_22,
             MIGRATION_22_23,
-            MIGRATION_23_24
+            MIGRATION_23_24,
+            MIGRATION_24_25
             // Zukünftige Migrations hier hinzufügen:
-            // MIGRATION_24_25,
+            // MIGRATION_25_26,
             // etc.
         )
     }

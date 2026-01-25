@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.arbeitszeit.tracker.MainActivity
 import com.arbeitszeit.tracker.R
+import java.time.LocalDateTime
 
 object NotificationHelper {
 
@@ -309,6 +310,32 @@ object NotificationHelper {
         } else {
             true
         }
+    }
+
+    /**
+     * Prüft ob Reminder-Benachrichtigungen aktuell erlaubt sind (basierend auf Ruhezeit-Einstellungen)
+     * @return true wenn Benachrichtigungen gesendet werden dürfen
+     */
+    suspend fun isReminderNotificationAllowed(context: Context): Boolean {
+        val database = com.arbeitszeit.tracker.data.database.AppDatabase.getDatabase(context)
+        val settings = database.userSettingsDao().getSettings() ?: return true
+
+        val now = LocalDateTime.now()
+        val dayOfWeek = now.dayOfWeek.value  // 1=Montag, 7=Sonntag
+        val minuteOfDay = now.hour * 60 + now.minute
+
+        val isAllowed = settings.isNotificationAllowed(dayOfWeek, minuteOfDay)
+
+        android.util.Log.d(
+            "NotificationHelper",
+            "isReminderNotificationAllowed - Tag: $dayOfWeek, Zeit: ${now.hour}:${now.minute} ($minuteOfDay min), " +
+            "Erlaubte Tage: ${settings.notificationActiveDays}, " +
+            "Ruhezeit aktiv: ${settings.notificationQuietTimeEnabled}, " +
+            "Ruhezeit: ${settings.notificationQuietTimeStart}-${settings.notificationQuietTimeEnd}, " +
+            "Erlaubt: $isAllowed"
+        )
+
+        return isAllowed
     }
 
     /**
