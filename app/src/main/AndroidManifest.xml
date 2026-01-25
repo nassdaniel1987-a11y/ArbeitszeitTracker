@@ -40,13 +40,18 @@
             </intent-filter>
         </activity>
 
-        <!-- Zeit-Stempel Widget Klein (2x1) -->
+        <!-- Zeit-Stempel Widget Klein (3x1) -->
         <receiver
             android:name="com.arbeitszeit.tracker.widget.TimeStampWidgetSmall"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_small_description">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.arbeitszeit.tracker.ACTION_QUICK_STAMP_SMALL" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_START_SMALL" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_PAUSE_SMALL" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_SMALL" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_MIDNIGHT_RESET_SMALL" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
