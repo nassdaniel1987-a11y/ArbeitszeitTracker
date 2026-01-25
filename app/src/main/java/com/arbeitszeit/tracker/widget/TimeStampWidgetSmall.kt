@@ -201,12 +201,9 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
             // Determine if work is running
             val isRunning = entry?.startZeit != null && entry.endZeit == null
 
-            // 1. Status Indicator
-            if (isRunning) {
-                views.setInt(R.id.widget_status_indicator, "setBackgroundResource", R.drawable.widget_status_active)
-            } else {
-                views.setInt(R.id.widget_status_indicator, "setBackgroundResource", R.drawable.widget_status_inactive)
-            }
+            // 1. Status Indicator (Farbe direkt setzen)
+            val statusColor = if (isRunning) 0xFF4CAF50.toInt() else 0xFF9E9E9E.toInt()
+            views.setInt(R.id.widget_status_indicator, "setBackgroundColor", statusColor)
 
             // 2. Chronometer vs Static Text
             if (isRunning) {
