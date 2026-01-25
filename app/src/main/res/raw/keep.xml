@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Resource Shrinking Keep Rules
+
+    Diese Datei verhindert, dass der Resource Shrinker wichtige Ressourcen entfernt,
+    die dynamisch referenziert werden (z.B. Widget-Layouts und Drawables).
+
+    Siehe: https://developer.android.com/build/shrink-code#keep-resources
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="
+        @layout/widget_*,
+        @drawable/widget_*,
+        @xml/widget_*,
+        @color/widget_*,
+        @id/widget_*,
+        @string/widget_*,
+        @dimen/widget_*
+    "
+    tools:shrinkMode="safe" />
