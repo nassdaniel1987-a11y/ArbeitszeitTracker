@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Minimales Arbeitszeit-Widget - Fehlersuche
+    Arbeitszeit-Widget (3x1)
+    Nur erlaubte RemoteViews-Elemente!
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -14,12 +15,13 @@
         android:orientation="vertical"
         android:gravity="center">
 
-        <!-- Status Punkt -->
-        <View
+        <!-- Status-Indikator (ImageView statt View!) -->
+        <ImageView
             android:id="@+id/widget_status_indicator"
             android:layout_width="12dp"
             android:layout_height="12dp"
-            android:background="#9E9E9E" />
+            android:background="#9E9E9E"
+            android:contentDescription="Status" />
 
         <!-- Zeit-Anzeige -->
         <TextView
@@ -28,16 +30,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="0:00h"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#000000" />
+            android:textColor="#6750A4" />
 
-        <!-- Chronometer (versteckt) -->
+        <!-- Chronometer (versteckt wenn nicht aktiv) -->
         <Chronometer
             android:id="@+id/widget_chronometer_small"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="#4CAF50"
             android:visibility="gone" />
@@ -49,37 +51,37 @@
             android:layout_marginTop="4dp"
             android:orientation="horizontal">
 
-            <TextView
+            <!-- Start Button -->
+            <Button
                 android:id="@+id/widget_btn_start"
                 android:layout_width="48dp"
-                android:layout_height="32dp"
+                android:layout_height="36dp"
                 android:background="#4CAF50"
-                android:gravity="center"
                 android:text="▶"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp" />
 
-            <TextView
+            <!-- Pause Button -->
+            <Button
                 android:id="@+id/widget_btn_pause"
                 android:layout_width="48dp"
-                android:layout_height="32dp"
+                android:layout_height="36dp"
                 android:layout_marginStart="4dp"
                 android:background="#FFC107"
-                android:gravity="center"
-                android:text="II"
+                android:text="+30"
                 android:textColor="#000000"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
-            <TextView
+            <!-- Stop/App Button -->
+            <Button
                 android:id="@+id/widget_btn_stop"
                 android:layout_width="48dp"
-                android:layout_height="32dp"
+                android:layout_height="36dp"
                 android:layout_marginStart="4dp"
-                android:background="#F44336"
-                android:gravity="center"
-                android:text="■"
+                android:background="#6750A4"
+                android:text="APP"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
         </LinearLayout>
 
