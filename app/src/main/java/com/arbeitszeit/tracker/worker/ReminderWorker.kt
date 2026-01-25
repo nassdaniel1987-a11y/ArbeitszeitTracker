@@ -30,23 +30,39 @@ class ReminderWorker(
     }
     
     private suspend fun handleMorningReminder() {
+        // Prüfe zuerst die Ruhezeit-Einstellungen
+        if (!NotificationHelper.isReminderNotificationAllowed(applicationContext)) {
+            android.util.Log.d("ReminderWorker", "Morgen-Erinnerung übersprungen (Ruhezeit aktiv)")
+            return
+        }
         NotificationHelper.showMorningReminder(applicationContext)
     }
-    
+
     private suspend fun handleEveningReminder() {
+        // Prüfe zuerst die Ruhezeit-Einstellungen
+        if (!NotificationHelper.isReminderNotificationAllowed(applicationContext)) {
+            android.util.Log.d("ReminderWorker", "Abend-Erinnerung übersprungen (Ruhezeit aktiv)")
+            return
+        }
         NotificationHelper.showEveningReminder(applicationContext)
     }
-    
+
     private suspend fun handleMissingEntriesCheck() {
+        // Prüfe zuerst die Ruhezeit-Einstellungen
+        if (!NotificationHelper.isReminderNotificationAllowed(applicationContext)) {
+            android.util.Log.d("ReminderWorker", "Fehlende-Einträge-Check übersprungen (Ruhezeit aktiv)")
+            return
+        }
+
         val today = DateUtils.today()
         val entry = database.timeEntryDao().getEntryByDate(today)
-        
+
         // Prüfe ob heute Eintrag fehlt oder unvollständig ist
         if (entry == null || !entry.isComplete()) {
             // Zähle alle unvollständigen Einträge der letzten 7 Tage
             val yesterday = DateUtils.yesterday()
             val incompleteEntries = database.timeEntryDao().getIncompleteEntries(yesterday)
-            
+
             if (incompleteEntries.isNotEmpty()) {
                 NotificationHelper.showMissingEntriesReminder(
                     applicationContext,

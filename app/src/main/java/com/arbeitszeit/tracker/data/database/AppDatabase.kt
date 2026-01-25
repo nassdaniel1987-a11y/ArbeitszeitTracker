@@ -42,7 +42,7 @@ import java.util.Locale
         SchoolHoliday::class,
         YearSettings::class
     ],
-    version = 24,  // v24: Auto-Start Zeiten in UserSettings (statt SollZeitVorlage)
+    version = 25,  // v25: Benachrichtigungs-Ruhezeit (notificationQuietTime*, notificationActiveDays)
     exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {

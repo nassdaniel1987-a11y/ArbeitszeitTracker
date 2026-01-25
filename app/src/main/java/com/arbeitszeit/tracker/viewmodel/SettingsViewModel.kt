@@ -352,4 +352,30 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+    /**
+     * Aktualisiert Benachrichtigungs-Einstellungen (Ruhezeit)
+     *
+     * @param quietTimeEnabled Ruhezeit aktivieren/deaktivieren
+     * @param quietTimeStart Ruhezeit Beginn in Minuten seit Mitternacht (z.B. 1260 = 21:00)
+     * @param quietTimeEnd Ruhezeit Ende in Minuten seit Mitternacht (z.B. 420 = 7:00)
+     * @param activeDays Tage an denen Benachrichtigungen erlaubt sind (z.B. "12345" = Mo-Fr)
+     */
+    fun updateNotificationSettings(
+        quietTimeEnabled: Boolean,
+        quietTimeStart: Int,
+        quietTimeEnd: Int,
+        activeDays: String
+    ) {
+        viewModelScope.launch {
+            val existing = settingsDao.getSettings() ?: return@launch
+            settingsDao.insertOrUpdate(existing.copy(
+                notificationQuietTimeEnabled = quietTimeEnabled,
+                notificationQuietTimeStart = quietTimeStart,
+                notificationQuietTimeEnd = quietTimeEnd,
+                notificationActiveDays = activeDays,
+                updatedAt = System.currentTimeMillis()
+            ))
+        }
+    }
 }

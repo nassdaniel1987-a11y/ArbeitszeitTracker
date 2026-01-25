@@ -132,6 +132,25 @@ fun SettingsScreen(
                 )
             }
 
+            // Benachrichtigungen
+            item {
+                SettingsMenuSection(title = "Benachrichtigungen")
+            }
+            item {
+                SettingsMenuItem(
+                    icon = Icons.Default.Notifications,
+                    title = "Benachrichtigungen & Ruhezeit",
+                    subtitle = if (settings?.notificationQuietTimeEnabled == true) {
+                        val startHour = (settings.notificationQuietTimeStart ?: 1260) / 60
+                        val endHour = (settings.notificationQuietTimeEnd ?: 420) / 60
+                        "Ruhezeit: ${startHour}:00 - ${endHour}:00 Uhr"
+                    } else {
+                        "Immer aktiv"
+                    },
+                    onClick = { selectedSection = SettingsSection.NOTIFICATIONS }
+                )
+            }
+
             // Automatisierung & Orte
             item {
                 SettingsMenuSection(title = "Automatisierung & Orte")
@@ -217,6 +236,7 @@ enum class SettingsSection {
     ARBEITSZEITVORLAGEN,
     AUTO_START,
     HOLIDAYS,
+    NOTIFICATIONS,
     GEOFENCING,
     YEAR_MANAGEMENT,
     BACKUP,
@@ -376,6 +396,7 @@ private fun SettingsDetailScreen(
                             SettingsSection.ARBEITSZEITVORLAGEN -> "Arbeitszeitvorlagen"
                             SettingsSection.AUTO_START -> "Auto-Start"
                             SettingsSection.HOLIDAYS -> "Feiertage"
+                            SettingsSection.NOTIFICATIONS -> "Benachrichtigungen"
                             SettingsSection.GEOFENCING -> "Geofencing & Orte"
                             SettingsSection.YEAR_MANAGEMENT -> "Jahres-Management"
                             SettingsSection.BACKUP -> "Cloud-Backup"
@@ -405,6 +426,7 @@ private fun SettingsDetailScreen(
                 SettingsSection.ARBEITSZEITVORLAGEN -> ArbeitszeitvorlagenSection(viewModel, snackbarHostState)
                 SettingsSection.AUTO_START -> AutoStartSection(viewModel, settings, snackbarHostState)
                 SettingsSection.HOLIDAYS -> HolidaysSection(viewModel, settings, snackbarHostState)
+                SettingsSection.NOTIFICATIONS -> NotificationsSection(viewModel, settings, snackbarHostState)
                 SettingsSection.GEOFENCING -> GeofencingSection(onNavigateToGeofencing)
                 SettingsSection.YEAR_MANAGEMENT -> YearManagementSection(viewModel, settings, snackbarHostState)
                 SettingsSection.BACKUP -> CloudBackupSection(viewModel, snackbarHostState)
@@ -2053,6 +2075,312 @@ private fun AutoStartSection(
             },
             dismissButton = {
                 TextButton(onClick = { showTimePicker = null }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
+}
+
+/**
+ * Benachrichtigungs-Einstellungen Section (Ruhezeit)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NotificationsSection(
+    viewModel: SettingsViewModel,
+    settings: com.arbeitszeit.tracker.data.entity.UserSettings?,
+    snackbarHostState: SnackbarHostState
+) {
+    var quietTimeEnabled by remember { mutableStateOf(settings?.notificationQuietTimeEnabled ?: false) }
+    var quietTimeStart by remember { mutableStateOf(settings?.notificationQuietTimeStart ?: 1260) }  // 21:00
+    var quietTimeEnd by remember { mutableStateOf(settings?.notificationQuietTimeEnd ?: 420) }      // 07:00
+    var selectedActiveDays by remember {
+        mutableStateOf((settings?.notificationActiveDays ?: "12345").map { it.toString().toInt() }.toSet())
+    }
+
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(settings) {
+        settings?.let {
+            quietTimeEnabled = it.notificationQuietTimeEnabled
+            quietTimeStart = it.notificationQuietTimeStart
+            quietTimeEnd = it.notificationQuietTimeEnd
+            selectedActiveDays = it.notificationActiveDays.map { c -> c.toString().toInt() }.toSet()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Info Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = "Information",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Column {
+                    Text(
+                        "Benachrichtigungs-Ruhezeit",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Konfiguriere, wann du Erinnerungen zum Einstempeln oder zur Zeiterfassung erhalten m\u00f6chtest. An freien Tagen oder sp\u00e4t abends kannst du die Benachrichtigungen deaktivieren.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+
+        // Aktive Tage
+        Card {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "An welchen Tagen Benachrichtigungen?",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "W\u00e4hle die Tage aus, an denen du Erinnerungen erhalten m\u00f6chtest.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                val daysOfWeek = listOf(
+                    1 to "Montag",
+                    2 to "Dienstag",
+                    3 to "Mittwoch",
+                    4 to "Donnerstag",
+                    5 to "Freitag",
+                    6 to "Samstag",
+                    7 to "Sonntag"
+                )
+
+                daysOfWeek.forEach { (dayNum, dayName) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = selectedActiveDays.contains(dayNum),
+                            onCheckedChange = { isChecked ->
+                                selectedActiveDays = if (isChecked) {
+                                    selectedActiveDays + dayNum
+                                } else {
+                                    selectedActiveDays - dayNum
+                                }
+                            }
+                        )
+                        Text(
+                            text = dayName,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Ruhezeit aktivieren
+        Card {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Ruhezeit aktivieren", style = MaterialTheme.typography.titleMedium)
+                    Text("Keine Benachrichtigungen in bestimmten Zeiten", style = MaterialTheme.typography.bodySmall)
+                }
+                Switch(checked = quietTimeEnabled, onCheckedChange = { quietTimeEnabled = it })
+            }
+        }
+
+        if (quietTimeEnabled) {
+            // Ruhezeit Zeitraum
+            Card {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Ruhezeit-Zeitraum",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "In diesem Zeitraum werden keine Erinnerungen gesendet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Start-Zeit
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showStartTimePicker = true }
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Ruhezeit Start", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "${String.format("%02d", quietTimeStart / 60)}:${String.format("%02d", quietTimeStart % 60)} Uhr",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    HorizontalDivider()
+
+                    // End-Zeit
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showEndTimePicker = true }
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Ruhezeit Ende", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "${String.format("%02d", quietTimeEnd / 60)}:${String.format("%02d", quietTimeEnd % 60)} Uhr",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Hinweis
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = "Hinweis",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "Die Ruhezeit kann \u00fcber Mitternacht gehen (z.B. 21:00 - 07:00)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.weight(1f))
+
+        Button(
+            onClick = {
+                val activeDaysString = selectedActiveDays.sorted().joinToString("")
+                viewModel.updateNotificationSettings(
+                    quietTimeEnabled = quietTimeEnabled,
+                    quietTimeStart = quietTimeStart,
+                    quietTimeEnd = quietTimeEnd,
+                    activeDays = activeDaysString
+                )
+                scope.launch { snackbarHostState.showSnackbar("Gespeichert") }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Save, null)
+            Spacer(Modifier.width(8.dp))
+            Text("Speichern")
+        }
+    }
+
+    // Start-Zeit Picker Dialog
+    if (showStartTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = quietTimeStart / 60,
+            initialMinute = quietTimeStart % 60,
+            is24Hour = true
+        )
+
+        AlertDialog(
+            onDismissRequest = { showStartTimePicker = false },
+            title = { Text("Ruhezeit Start") },
+            text = { TimePicker(state = timePickerState) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        quietTimeStart = timePickerState.hour * 60 + timePickerState.minute
+                        showStartTimePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStartTimePicker = false }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
+
+    // End-Zeit Picker Dialog
+    if (showEndTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = quietTimeEnd / 60,
+            initialMinute = quietTimeEnd % 60,
+            is24Hour = true
+        )
+
+        AlertDialog(
+            onDismissRequest = { showEndTimePicker = false },
+            title = { Text("Ruhezeit Ende") },
+            text = { TimePicker(state = timePickerState) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        quietTimeEnd = timePickerState.hour * 60 + timePickerState.minute
+                        showEndTimePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndTimePicker = false }) {
                     Text("Abbrechen")
                 }
             }
