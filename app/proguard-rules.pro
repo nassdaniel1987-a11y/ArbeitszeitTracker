@@ -122,3 +122,23 @@
     java.lang.Object writeReplace();
     java.lang.Object readResolve();
 }
+
+# === WIDGETS ===
+# AppWidget Provider Classes - Keep all widget classes
+-keep class * extends android.appwidget.AppWidgetProvider { *; }
+-keep class com.arbeitszeit.tracker.widget.** { *; }
+
+# RemoteViews - Required for widgets
+-keep class android.widget.RemoteViews { *; }
+-keepclassmembers class android.widget.RemoteViews {
+    *;
+}
+
+# Widget Resources - Prevent resource shrinking from removing widget resources
+# Note: Resource shrinking is controlled separately, these rules help R8 understand usage
+-keep class **.R$layout { int widget_*; }
+-keep class **.R$drawable { int widget_*; }
+-keep class **.R$xml { int widget_*; }
+-keep class **.R$color { int widget_*; }
+-keep class **.R$id { int widget_*; }
+-keep class **.R$string { int widget_*; }

@@ -7,8 +7,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
+import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
+import androidx.annotation.Keep
 import com.arbeitszeit.tracker.R
 import com.arbeitszeit.tracker.MainActivity
 import com.arbeitszeit.tracker.autostart.RunningTimeTracker
@@ -21,17 +23,36 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 
 /**
- * Kleines Widget (2x1) - Nur Quick-Stempel Button
+ * Kleines Widget (2x1) - Quick-Stempel mit Start/Pause/Stop Buttons
+ *
+ * Features:
+ * - Live-Timer wenn Arbeit läuft (Chronometer)
+ * - Status-Indikator (grün = läuft, grau = gestoppt)
+ * - Start-Button: Startet Zeiterfassung
+ * - Pause-Button: Fügt 30 Minuten Pause hinzu
+ * - Stop-Button: Öffnet App zum Beenden
  */
+@Keep
 class TimeStampWidgetSmall : AppWidgetProvider() {
 
     companion object {
+        private const val TAG = "TimeStampWidgetSmall"
         const val ACTION_QUICK_STAMP = "com.arbeitszeit.tracker.ACTION_QUICK_STAMP_SMALL"
         const val ACTION_START = "com.arbeitszeit.tracker.ACTION_START_SMALL"
         const val ACTION_PAUSE = "com.arbeitszeit.tracker.ACTION_PAUSE_SMALL"
-        const val ACTION_REFRESH = "com.arbeitszeit.tracker.ACTION_REFRESH_SMALL" // Replaces Midnight Reset as generic refresh
+        const val ACTION_REFRESH = "com.arbeitszeit.tracker.ACTION_REFRESH_SMALL"
         const val ACTION_MIDNIGHT_RESET = "com.arbeitszeit.tracker.ACTION_MIDNIGHT_RESET_SMALL"
         private const val MIDNIGHT_ALARM_REQUEST_CODE = 1002
+
+        /**
+         * Statische Hilfsmethode um alle Widgets zu aktualisieren
+         */
+        fun updateAllWidgets(context: Context) {
+            val intent = Intent(context, TimeStampWidgetSmall::class.java).apply {
+                action = ACTION_REFRESH
+            }
+            context.sendBroadcast(intent)
+        }
     }
 
     override fun onUpdate(
@@ -39,6 +60,7 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        Log.i(TAG, "onUpdate() called for ${appWidgetIds.size} widgets: ${appWidgetIds.toList()}")
         scheduleMidnightReset(context)
 
         // Use goAsync() to allow async operations
@@ -49,6 +71,8 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
                 for (appWidgetId in appWidgetIds) {
                     updateAppWidget(context, appWidgetManager, appWidgetId)
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in onUpdate coroutine", e)
             } finally {
                 pendingResult.finish()
             }
@@ -155,14 +179,18 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
+        Log.d(TAG, "updateAppWidget() called for widgetId: $appWidgetId")
+
         try {
             val database = AppDatabase.getDatabase(context)
             val timeEntryDao = database.timeEntryDao()
 
             val today = DateUtils.today()
             val entry = timeEntryDao.getEntryByDate(today)
+            Log.d(TAG, "Today: $today, Entry: $entry")
 
             val views = RemoteViews(context.packageName, R.layout.widget_time_stamp_small)
+            Log.d(TAG, "RemoteViews created successfully")
 
             // Calculate duration
             val istMinuten = entry?.getIstMinuten() ?: 0
@@ -226,11 +254,19 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
             }
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
+            Log.d(TAG, "Widget updated successfully")
         } catch (e: Exception) {
-            // Fallback: Zeige Fehler-Widget
-            val views = RemoteViews(context.packageName, R.layout.widget_time_stamp_small)
-            views.setTextViewText(R.id.widget_duration_small, "ERROR")
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+            Log.e(TAG, "Failed to update widget $appWidgetId", e)
+            // Fallback: Versuche Fehler-Widget anzuzeigen
+            try {
+                val views = RemoteViews(context.packageName, R.layout.widget_time_stamp_small)
+                views.setTextViewText(R.id.widget_duration_small, "Fehler")
+                views.setViewVisibility(R.id.widget_chronometer_small, View.GONE)
+                views.setViewVisibility(R.id.widget_duration_small, View.VISIBLE)
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            } catch (e2: Exception) {
+                Log.e(TAG, "Even fallback widget failed", e2)
+            }
         }
     }
 
