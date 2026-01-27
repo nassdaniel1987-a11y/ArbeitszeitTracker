@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.arbeitszeit.tracker.widget.TimeStampWidgetSmall
 import com.arbeitszeit.tracker.widget.QuickStampWidget
 import com.arbeitszeit.tracker.widget.StatistikWidget
@@ -23,13 +22,11 @@ import java.time.format.DateTimeFormatter
  * - Speichert laufende Arbeitszeit (auch über App-Neustart hinweg)
  * - Auto-Start vs. Manuell-Start Tracking
  * - StateFlow für UI-Updates
- * - Globaler Broadcast für Synchronisierung zwischen App, Widget und Benachrichtigungen
+ * - SharedPreferences Listener für Synchronisierung zwischen App, Widget und Benachrichtigungen
  */
 class RunningTimeTracker(private val context: Context) {
 
     companion object {
-        const val ACTION_TRACKING_STATE_CHANGED = "com.arbeitszeit.tracker.ACTION_TRACKING_STATE_CHANGED"
-        const val EXTRA_IS_TRACKING = "is_tracking"
         private const val PREFS_NAME = "running_time_tracker"
     }
 
@@ -85,9 +82,6 @@ class RunningTimeTracker(private val context: Context) {
         saveState(state)
         _runningState.value = state
 
-        // Broadcast senden für Synchronisierung
-        sendTrackingStateChangedBroadcast(true)
-
         // Widgets aktualisieren
         updateWidgets()
     }
@@ -98,9 +92,6 @@ class RunningTimeTracker(private val context: Context) {
     fun stopTracking(): RunningTimeState? {
         val currentState = _runningState.value
         clearState()
-
-        // Broadcast senden für Synchronisierung
-        sendTrackingStateChangedBroadcast(false)
 
         // Widgets aktualisieren
         updateWidgets()
@@ -187,16 +178,6 @@ class RunningTimeTracker(private val context: Context) {
             apply()
         }
         _runningState.value = null
-    }
-
-    /**
-     * Sendet einen lokalen Broadcast um alle Komponenten zu synchronisieren
-     */
-    private fun sendTrackingStateChangedBroadcast(isTracking: Boolean) {
-        val intent = Intent(ACTION_TRACKING_STATE_CHANGED).apply {
-            putExtra(EXTRA_IS_TRACKING, isTracking)
-        }
-        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
     }
 
     /**
