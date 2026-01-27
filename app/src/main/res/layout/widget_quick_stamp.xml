@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Schnell-Stempel Widget (1x1)
+    Nur erlaubte RemoteViews-Elemente!
+    Dark Mode wird programmatisch gesetzt
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <!-- Stempel Button -->
+        <Button
+            android:id="@+id/widget_btn_stamp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#4CAF50"
+            android:text="▶"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -58,6 +58,35 @@
                 android:resource="@xml/widget_time_stamp_small_info" />
         </receiver>
 
+        <!-- Schnell-Stempel Widget (1x1) -->
+        <receiver
+            android:name="com.arbeitszeit.tracker.widget.QuickStampWidget"
+            android:exported="true"
+            android:label="@string/widget_quick_stamp_description">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_QUICK_STAMP" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_QUICK" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_stamp_info" />
+        </receiver>
+
+        <!-- Statistik-Widget (4x2) -->
+        <receiver
+            android:name="com.arbeitszeit.tracker.widget.StatistikWidget"
+            android:exported="true"
+            android:label="@string/widget_statistik_description">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.arbeitszeit.tracker.ACTION_REFRESH_STATISTIK" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_statistik_info" />
+        </receiver>
+
 
         <!-- Geofencing Receiver -->
         <receiver
