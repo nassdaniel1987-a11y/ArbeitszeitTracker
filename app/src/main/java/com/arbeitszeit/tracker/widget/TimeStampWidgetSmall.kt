@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
@@ -43,6 +44,22 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
         const val ACTION_REFRESH = "com.arbeitszeit.tracker.ACTION_REFRESH_SMALL"
         const val ACTION_MIDNIGHT_RESET = "com.arbeitszeit.tracker.ACTION_MIDNIGHT_RESET_SMALL"
         private const val MIDNIGHT_ALARM_REQUEST_CODE = 1002
+
+        // Dark Mode Farben
+        private const val COLOR_BG_LIGHT = 0xFFFFFFFF.toInt()      // Weiß
+        private const val COLOR_BG_DARK = 0xFF1C1B1F.toInt()        // Dunkel (Material 3)
+        private const val COLOR_TEXT_LIGHT = 0xFF6750A4.toInt()    // Purple (Primary)
+        private const val COLOR_TEXT_DARK = 0xFFD0BCFF.toInt()     // Light Purple (Primary Dark)
+        private const val COLOR_CHRONOMETER_LIGHT = 0xFF4CAF50.toInt()  // Grün
+        private const val COLOR_CHRONOMETER_DARK = 0xFF81C784.toInt()   // Helles Grün
+
+        /**
+         * Prüft ob Dark Mode aktiv ist
+         */
+        fun isDarkMode(context: Context): Boolean {
+            val nightModeFlags = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            return nightModeFlags == Configuration.UI_MODE_NIGHT_YES
+        }
 
         /**
          * Statische Hilfsmethode um alle Widgets zu aktualisieren
@@ -191,6 +208,20 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
 
             val views = RemoteViews(context.packageName, R.layout.widget_time_stamp_small)
             Log.d(TAG, "RemoteViews created successfully")
+
+            // Dark Mode erkennen
+            val darkMode = isDarkMode(context)
+            Log.d(TAG, "Dark Mode: $darkMode")
+
+            // Hintergrundfarbe setzen
+            val bgColor = if (darkMode) COLOR_BG_DARK else COLOR_BG_LIGHT
+            views.setInt(R.id.widget_background, "setBackgroundColor", bgColor)
+
+            // Textfarben setzen
+            val textColor = if (darkMode) COLOR_TEXT_DARK else COLOR_TEXT_LIGHT
+            val chronometerColor = if (darkMode) COLOR_CHRONOMETER_DARK else COLOR_CHRONOMETER_LIGHT
+            views.setTextColor(R.id.widget_duration_small, textColor)
+            views.setTextColor(R.id.widget_chronometer_small, chronometerColor)
 
             // Calculate duration
             val istMinuten = entry?.getIstMinuten() ?: 0

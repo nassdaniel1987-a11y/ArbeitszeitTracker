@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Statistik-Widget (4x2)
+    Nur erlaubte RemoteViews-Elemente!
+    Dark Mode wird programmatisch gesetzt
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Titel -->
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Arbeitszeit"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#6750A4" />
+
+        <!-- Statistik Grid -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <!-- Heute -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/widget_today_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Heute"
+                    android:textSize="11sp"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:id="@+id/widget_today_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0:00h"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#6750A4" />
+
+                <!-- Status-Indikator -->
+                <ImageView
+                    android:id="@+id/widget_status_indicator"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#9E9E9E"
+                    android:contentDescription="Status" />
+            </LinearLayout>
+
+            <!-- Trennlinie -->
+            <ImageView
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginVertical="8dp"
+                android:background="#CCCCCC"
+                android:contentDescription="Trennlinie" />
+
+            <!-- Diese Woche -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/widget_week_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Woche"
+                    android:textSize="11sp"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:id="@+id/widget_week_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0:00h"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#6750A4" />
+
+                <TextView
+                    android:id="@+id/widget_week_target"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="/ 40:00h"
+                    android:textSize="10sp"
+                    android:textColor="#999999" />
+            </LinearLayout>
+
+            <!-- Trennlinie -->
+            <ImageView
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginVertical="8dp"
+                android:background="#CCCCCC"
+                android:contentDescription="Trennlinie" />
+
+            <!-- Überstunden -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/widget_overtime_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Überstunden"
+                    android:textSize="11sp"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:id="@+id/widget_overtime_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="+0:00h"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#4CAF50" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

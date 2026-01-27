@@ -2,8 +2,10 @@
 <!--
     Arbeitszeit-Widget (3x1)
     Nur erlaubte RemoteViews-Elemente!
+    Dark Mode wird programmatisch gesetzt
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
