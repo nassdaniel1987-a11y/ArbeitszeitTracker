@@ -127,7 +127,7 @@ class StatistikWidget : AppWidgetProvider() {
             val startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             val endOfWeek = now.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
 
-            val weekEntries = timeEntryDao.getEntriesInRange(
+            val weekEntries = timeEntryDao.getEntriesByDateRange(
                 startOfWeek.toString(),
                 endOfWeek.toString()
             )
@@ -137,11 +137,11 @@ class StatistikWidget : AppWidgetProvider() {
             val isRunning = todayEntry?.startZeit != null && todayEntry.endZeit == null
 
             // Diese Woche
-            val weekMinutes = weekEntries.sumOf { it.getIstMinuten() }
-            val weekTargetMinutes = (settings?.weeklyHours ?: 40f) * 60
+            val weekMinutes = weekEntries.sumOf { entry -> entry.getIstMinuten() }.toInt()
+            val weekTargetMinutes = settings?.wochenStundenMinuten ?: (40 * 60)
 
             // Überstunden berechnen (vereinfacht: Woche - Ziel)
-            val overtimeMinutes = weekMinutes - weekTargetMinutes.toInt()
+            val overtimeMinutes = weekMinutes - weekTargetMinutes
 
             val darkMode = isDarkMode(context)
             val views = RemoteViews(context.packageName, R.layout.widget_statistik)
@@ -172,7 +172,7 @@ class StatistikWidget : AppWidgetProvider() {
             views.setTextColor(R.id.widget_week_value, primaryColor)
             views.setTextColor(R.id.widget_week_target, subtextColor)
             views.setTextViewText(R.id.widget_week_value, formatTime(weekMinutes))
-            views.setTextViewText(R.id.widget_week_target, "/ ${formatTime(weekTargetMinutes.toInt())}")
+            views.setTextViewText(R.id.widget_week_target, "/ ${formatTime(weekTargetMinutes)}")
 
             // Überstunden
             views.setTextColor(R.id.widget_overtime_label, textColor)
