@@ -2,11 +2,16 @@ package com.arbeitszeit.tracker.viewmodel
 
 import android.Manifest
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Location
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.arbeitszeit.tracker.autostart.RunningTimeTracker
 import com.arbeitszeit.tracker.data.database.AppDatabase
 import com.arbeitszeit.tracker.data.entity.TimeEntry
@@ -40,6 +45,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     // Running Time Tracker für Auto-Start
     private val runningTimeTracker = RunningTimeTracker(application)
     val runningTimeState = runningTimeTracker.runningState
+
+    // BroadcastReceiver für Synchronisierung zwischen App, Widget und Benachrichtigungen
+    private val trackingStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == RunningTimeTracker.ACTION_TRACKING_STATE_CHANGED) {
+                // State aus SharedPreferences neu laden
+                runningTimeTracker.refreshState()
+            }
+        }
+    }
 
     // UI State
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -120,6 +135,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
     init {
+        // BroadcastReceiver für Tracking-Status-Änderungen registrieren
+        LocalBroadcastManager.getInstance(application).registerReceiver(
+            trackingStateReceiver,
+            IntentFilter(RunningTimeTracker.ACTION_TRACKING_STATE_CHANGED)
+        )
+
         // Erstelle heute-Eintrag falls nicht vorhanden
         viewModelScope.launch {
             ensureTodayEntryExists()
@@ -801,6 +822,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun resetStopDialog() {
         _showStopDialog.value = false
+    }
+
+    /**
+     * Wird aufgerufen wenn das ViewModel zerstört wird
+     */
+    override fun onCleared() {
+        super.onCleared()
+        // BroadcastReceiver abmelden
+        try {
+            LocalBroadcastManager.getInstance(getApplication()).unregisterReceiver(trackingStateReceiver)
+        } catch (e: Exception) {
+            // Ignore if not registered
+        }
     }
 }
 

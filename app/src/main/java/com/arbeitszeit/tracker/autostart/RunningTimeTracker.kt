@@ -5,7 +5,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.arbeitszeit.tracker.widget.TimeStampWidgetSmall
+import com.arbeitszeit.tracker.widget.QuickStampWidget
+import com.arbeitszeit.tracker.widget.StatistikWidget
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,11 +23,18 @@ import java.time.format.DateTimeFormatter
  * - Speichert laufende Arbeitszeit (auch über App-Neustart hinweg)
  * - Auto-Start vs. Manuell-Start Tracking
  * - StateFlow für UI-Updates
+ * - Globaler Broadcast für Synchronisierung zwischen App, Widget und Benachrichtigungen
  */
 class RunningTimeTracker(private val context: Context) {
 
+    companion object {
+        const val ACTION_TRACKING_STATE_CHANGED = "com.arbeitszeit.tracker.ACTION_TRACKING_STATE_CHANGED"
+        const val EXTRA_IS_TRACKING = "is_tracking"
+        private const val PREFS_NAME = "running_time_tracker"
+    }
+
     private val prefs: SharedPreferences = context.getSharedPreferences(
-        "running_time_tracker",
+        PREFS_NAME,
         Context.MODE_PRIVATE
     )
 
@@ -75,6 +85,9 @@ class RunningTimeTracker(private val context: Context) {
         saveState(state)
         _runningState.value = state
 
+        // Broadcast senden für Synchronisierung
+        sendTrackingStateChangedBroadcast(true)
+
         // Widgets aktualisieren
         updateWidgets()
     }
@@ -85,6 +98,9 @@ class RunningTimeTracker(private val context: Context) {
     fun stopTracking(): RunningTimeState? {
         val currentState = _runningState.value
         clearState()
+
+        // Broadcast senden für Synchronisierung
+        sendTrackingStateChangedBroadcast(false)
 
         // Widgets aktualisieren
         updateWidgets()
@@ -97,6 +113,14 @@ class RunningTimeTracker(private val context: Context) {
      */
     fun isTracking(): Boolean {
         return _runningState.value != null
+    }
+
+    /**
+     * Prüft statisch ob gerade eine Zeiterfassung läuft (ohne StateFlow)
+     */
+    fun isTrackingStatic(): Boolean {
+        val startedAt = prefs.getLong("startedAt", 0L)
+        return startedAt > 0
     }
 
     /**
@@ -138,15 +162,41 @@ class RunningTimeTracker(private val context: Context) {
                 isAutoStart = isAutoStart,
                 startedAt = startedAt
             )
+        } else {
+            _runningState.value = null
         }
+    }
+
+    /**
+     * Lädt den State neu aus SharedPreferences (öffentlich für externe Synchronisierung)
+     */
+    fun refreshState() {
+        loadState()
     }
 
     /**
      * Löscht den gespeicherten State
      */
     private fun clearState() {
-        prefs.edit().clear().apply()
+        // Explizit startedAt auf 0 setzen damit der Listener getriggert wird
+        prefs.edit().apply {
+            putLong("startedAt", 0L)
+            remove("date")
+            remove("startTime")
+            remove("isAutoStart")
+            apply()
+        }
         _runningState.value = null
+    }
+
+    /**
+     * Sendet einen lokalen Broadcast um alle Komponenten zu synchronisieren
+     */
+    private fun sendTrackingStateChangedBroadcast(isTracking: Boolean) {
+        val intent = Intent(ACTION_TRACKING_STATE_CHANGED).apply {
+            putExtra(EXTRA_IS_TRACKING, isTracking)
+        }
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
     }
 
     /**
@@ -160,8 +210,24 @@ class RunningTimeTracker(private val context: Context) {
             val smallIds = appWidgetManager.getAppWidgetIds(ComponentName(context, TimeStampWidgetSmall::class.java))
             if (smallIds.isNotEmpty()) {
                 val intent = Intent(context, TimeStampWidgetSmall::class.java)
-                intent.action = TimeStampWidgetSmall.ACTION_MIDNIGHT_RESET // Small nutzt diesen als Refresh
+                intent.action = TimeStampWidgetSmall.ACTION_REFRESH
                 intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, smallIds)
+                context.sendBroadcast(intent)
+            }
+
+            // Update Quick Stamp Widget
+            val quickIds = appWidgetManager.getAppWidgetIds(ComponentName(context, QuickStampWidget::class.java))
+            if (quickIds.isNotEmpty()) {
+                val intent = Intent(context, QuickStampWidget::class.java)
+                intent.action = QuickStampWidget.ACTION_REFRESH
+                context.sendBroadcast(intent)
+            }
+
+            // Update Statistik Widget
+            val statIds = appWidgetManager.getAppWidgetIds(ComponentName(context, StatistikWidget::class.java))
+            if (statIds.isNotEmpty()) {
+                val intent = Intent(context, StatistikWidget::class.java)
+                intent.action = StatistikWidget.ACTION_REFRESH
                 context.sendBroadcast(intent)
             }
         } catch (e: Exception) {

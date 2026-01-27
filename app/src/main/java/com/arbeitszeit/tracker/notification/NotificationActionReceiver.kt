@@ -46,17 +46,20 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 val today = DateUtils.today()
                 val entry = timeEntryDao.getEntryByDate(today)
                 val currentTime = TimeUtils.currentTimeInMinutes()
+                val currentLocalTime = java.time.LocalTime.now()
 
                 if (entry != null) {
+                    // Zuerst Datenbank aktualisieren
                     timeEntryDao.update(entry.copy(
                         startZeit = currentTime,
+                        endZeit = null, // Ende zurücksetzen falls vorhanden
                         updatedAt = System.currentTimeMillis()
                     ))
 
-                    // Running Tracker starten
+                    // Running Tracker starten (sendet auch Broadcast und aktualisiert Widgets)
                     val tracker = RunningTimeTracker(context)
                     tracker.startTracking(
-                        startTime = java.time.LocalTime.now(),
+                        startTime = currentLocalTime,
                         isAutoStart = false,
                         date = today
                     )
@@ -95,17 +98,19 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 val currentTime = TimeUtils.currentTimeInMinutes()
 
                 if (entry != null) {
-                    timeEntryDao.update(entry.copy(
+                    // Zuerst Datenbank aktualisieren
+                    val updatedEntry = entry.copy(
                         endZeit = currentTime,
                         updatedAt = System.currentTimeMillis()
-                    ))
+                    )
+                    timeEntryDao.update(updatedEntry)
 
-                    // Running Tracker stoppen
+                    // Running Tracker stoppen (sendet auch Broadcast und aktualisiert Widgets)
                     val tracker = RunningTimeTracker(context)
                     tracker.stopTracking()
 
-                    // Calculate and show worked time
-                    val workedMinutes = entry.getIstMinuten()
+                    // Calculate and show worked time (mit aktualisiertem Eintrag)
+                    val workedMinutes = updatedEntry.getIstMinuten()
                     val workedTime = TimeUtils.minutesToHoursMinutes(workedMinutes)
 
                     CoroutineScope(Dispatchers.Main).launch {
