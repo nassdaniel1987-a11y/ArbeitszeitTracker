@@ -136,11 +136,19 @@ class StatistikWidget : AppWidgetProvider() {
             val todayMinutes = todayEntry?.getIstMinuten() ?: 0
             val isRunning = todayEntry?.startZeit != null && todayEntry.endZeit == null
 
-            // Diese Woche
-            val weekMinutes = weekEntries.sumOf { entry -> entry.getIstMinuten() }.toInt()
-            val weekTargetMinutes = settings?.wochenStundenMinuten ?: (40 * 60)
+            // Diese Woche - NUR abgeschlossene Tage einbeziehen!
+            // Zukünftige Tage und der aktuelle Tag (wenn noch nicht abgeschlossen) werden ignoriert
+            val completedWeekEntries = weekEntries.filter { entry ->
+                val entryDate = LocalDate.parse(entry.datum)
+                // Vergangene Tage immer, heutiger Tag nur wenn abgeschlossen
+                entryDate.isBefore(now) || entry.isComplete()
+            }
+            val weekMinutes = completedWeekEntries.sumOf { entry -> entry.getIstMinuten() }.toInt()
 
-            // Überstunden berechnen (vereinfacht: Woche - Ziel)
+            // Soll nur für abgeschlossene Tage berechnen
+            val weekTargetMinutes = completedWeekEntries.sumOf { entry -> entry.sollMinuten }
+
+            // Überstunden = Ist - Soll der abgeschlossenen Tage
             val overtimeMinutes = weekMinutes - weekTargetMinutes
 
             val darkMode = isDarkMode(context)

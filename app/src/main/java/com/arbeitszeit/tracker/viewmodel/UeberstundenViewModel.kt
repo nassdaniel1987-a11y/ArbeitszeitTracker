@@ -90,8 +90,16 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
     )
 
     private fun calculateWeeklyData(entries: List<TimeEntry>): List<WeekData> {
+        val today = LocalDate.now()
+
+        // Nur abgeschlossene Einträge einbeziehen (keine unvollständigen oder zukünftigen)
+        val completedEntries = entries.filter { entry ->
+            val date = LocalDate.parse(entry.datum)
+            !date.isAfter(today) && (date.isBefore(today) || entry.isComplete())
+        }
+
         // Gruppiere nach KW und Jahr
-        val weekGroups = entries
+        val weekGroups = completedEntries
             .groupBy { "${it.jahr}-${it.kalenderwoche}" }
             .mapNotNull { (key, weekEntries) ->
                 val year = weekEntries.firstOrNull()?.jahr ?: return@mapNotNull null
@@ -121,11 +129,22 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
 
         // Filtere Einträge für das aktive Jahr (basierend auf Custom-Jahr)
         // Nutze jahr-Feld (wurde bei Erstellung/Neuberechnung korrekt gesetzt)
-        // UND nur bis heute (keine zukünftigen Einträge)
+        //
+        // WICHTIG: Nur ABGESCHLOSSENE Tage einbeziehen!
+        // - Keine zukünftigen Tage (würden als Minus-Stunden zählen)
+        // - Aktueller Tag nur wenn abgeschlossen (Start UND Ende gesetzt)
+        //   oder spezieller Typ (Urlaub, Krank, Feiertag, Abwesend)
         val today = LocalDate.now()
         val activeYearEntries = entries.filter { entry ->
             val date = LocalDate.parse(entry.datum)
-            entry.jahr == yearSettings.year && !date.isAfter(today)
+
+            // Muss im aktiven Jahr sein
+            entry.jahr == yearSettings.year &&
+            // Keine zukünftigen Einträge
+            !date.isAfter(today) &&
+            // Vergangene Tage: immer einbeziehen
+            // Heutiger Tag: nur wenn abgeschlossen (endZeit gesetzt oder spezieller Typ)
+            (date.isBefore(today) || entry.isComplete())
         }
 
         // Gruppiere Einträge nach Monat
