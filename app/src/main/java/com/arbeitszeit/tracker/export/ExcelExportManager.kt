@@ -61,7 +61,8 @@ class ExcelExportManager(private val context: Context) {
             fillStammangaben(workbook, userSettings, ueberstundenVorjahr, letzterUebertrag)
 
             // 4. Fülle ALLE KW-Sheets (01-04 bis 49-52)
-            fillAllSheets(workbook, entries)
+            // WICHTIG: Übergebe ersterMontagImJahr für korrekte KW-Berechnung
+            fillAllSheets(workbook, entries, userSettings.ersterMontagImJahr)
 
             // 5. Formeln zur Neuberechnung markieren
             workbook.setForceFormulaRecalculation(true)
@@ -269,13 +270,33 @@ class ExcelExportManager(private val context: Context) {
 
     /**
      * Füllt alle KW-Sheets mit Zeiteinträgen
+     *
+     * WICHTIG: Die KW wird aus dem Datum neu berechnet (nicht aus der gespeicherten kalenderwoche),
+     * um Konsistenz mit der App-Anzeige zu gewährleisten.
+     *
+     * @param ersterMontagImJahr Der erste Montag des Jahres für Custom-KW-Berechnung
      */
-    private fun fillAllSheets(workbook: Workbook, entries: List<TimeEntry>) {
-        android.util.Log.d("ExcelExportManager", "fillAllSheets: ${entries.size} Einträge gefunden")
+    private fun fillAllSheets(workbook: Workbook, entries: List<TimeEntry>, ersterMontagImJahr: String?) {
+        android.util.Log.d("ExcelExportManager", "fillAllSheets: ${entries.size} Einträge gefunden, ersterMontag=$ersterMontagImJahr")
+
+        // Berechne für jeden Eintrag die KW aus dem Datum NEU
+        // Das stellt sicher, dass die KW konsistent mit der App-Anzeige ist
+        val entriesWithCalculatedKW = entries.map { entry ->
+            val date = LocalDate.parse(entry.datum)
+            val calculatedKW = DateUtils.getCustomWeekOfYear(date, ersterMontagImJahr)
+
+            // Log wenn gespeicherte KW abweicht von berechneter KW
+            if (entry.kalenderwoche != calculatedKW) {
+                android.util.Log.w("ExcelExportManager",
+                    "KW-Korrektur für ${entry.datum}: gespeichert=${entry.kalenderwoche}, berechnet=$calculatedKW")
+            }
+
+            entry to calculatedKW
+        }
 
         // Log erste paar Einträge zur Kontrolle
-        entries.take(5).forEach { entry ->
-            android.util.Log.d("ExcelExportManager", "Eintrag: ${entry.datum}, KW=${entry.kalenderwoche}, Jahr=${entry.jahr}")
+        entriesWithCalculatedKW.take(5).forEach { (entry, kw) ->
+            android.util.Log.d("ExcelExportManager", "Eintrag: ${entry.datum}, KW=$kw (gespeichert=${entry.kalenderwoche})")
         }
 
         // Alle 4-Wochen-Blöcke: KW 01-04, 05-08, ..., 49-52
@@ -300,12 +321,12 @@ class ExcelExportManager(private val context: Context) {
             val sheet = workbook.getSheet(sheetName)
 
             if (sheet != null) {
-                // Filtere Einträge für diesen Block
-                val blockEntries = entries.filter { it.kalenderwoche in startKW..endKW }
+                // Filtere Einträge für diesen Block nach NEU BERECHNETER KW
+                val blockEntries = entriesWithCalculatedKW.filter { (_, kw) -> kw in startKW..endKW }
                 if (blockEntries.isNotEmpty()) {
                     android.util.Log.d("ExcelExportManager", "Block $sheetName: ${blockEntries.size} Einträge")
                 }
-                fillTimeEntries(sheet, blockEntries, startKW, endKW)
+                fillTimeEntriesWithKW(sheet, blockEntries, startKW, endKW)
             } else {
                 android.util.Log.w("ExcelExportManager", "Sheet '$sheetName' nicht gefunden in Vorlage!")
             }
@@ -313,23 +334,26 @@ class ExcelExportManager(private val context: Context) {
     }
 
     /**
-     * Füllt die Zeiteinträge in ein KW-Sheet
+     * Füllt die Zeiteinträge in ein KW-Sheet mit vorberechneten KWs
      *
      * WICHTIG: Excel-Struktur pro Woche (7 Zeilen):
      * - Zeile 0-4: Mo-Fr (Arbeitstage)
      * - Zeile 5: "Sonst" (für Samstag/Sonntagarbeit)
      * - Zeile 6: Summenzeile (mit KW-Nummer in Spalte A)
+     *
+     * @param entriesWithKW Liste von Paaren (TimeEntry, berechneteKW)
      */
-    private fun fillTimeEntries(
+    private fun fillTimeEntriesWithKW(
         sheet: Sheet,
-        entries: List<TimeEntry>,
+        entriesWithKW: List<Pair<TimeEntry, Int>>,
         startKW: Int,
         endKW: Int
     ) {
-        // Gruppiere Einträge nach Kalenderwoche
-        val entriesByWeek = entries
-            .filter { it.kalenderwoche in startKW..endKW }
-            .groupBy { it.kalenderwoche }
+        // Gruppiere Einträge nach der NEU BERECHNETEN Kalenderwoche
+        val entriesByWeek = entriesWithKW
+            .filter { (_, kw) -> kw in startKW..endKW }
+            .groupBy { (_, kw) -> kw }
+            .mapValues { (_, pairs) -> pairs.map { it.first } }
             .toSortedMap()
 
         android.util.Log.d("ExcelExportManager", "fillTimeEntries für KW $startKW-$endKW: ${entriesByWeek.size} Wochen mit Daten")
@@ -496,7 +520,8 @@ class ExcelExportManager(private val context: Context) {
                 fillStammangaben(workbook, userSettings, ueberstundenVorjahr, letzterUebertrag)
 
                 // 4. Fülle ALLE KW-Sheets
-                fillAllSheets(workbook, entries)
+                // WICHTIG: Übergebe ersterMontagImJahr für korrekte KW-Berechnung
+                fillAllSheets(workbook, entries, userSettings.ersterMontagImJahr)
 
                 // 5. Formeln zur Neuberechnung markieren
                 workbook.setForceFormulaRecalculation(true)
