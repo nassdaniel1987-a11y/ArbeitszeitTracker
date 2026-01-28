@@ -82,6 +82,10 @@ object DateUtils {
      * @param date Das zu prüfende Datum
      * @param firstMondayString Der erste Montag des Jahres (yyyy-MM-dd), null = ISO 8601
      * @return Kalenderwoche (1-52/53)
+     *
+     * WICHTIG: Wenn der erste Montag im Dezember liegt (ab Tag 25), wird er als
+     * erster Montag für das NÄCHSTE Kalenderjahr interpretiert.
+     * Beispiel: "2025-12-29" als erster Montag bedeutet KW 1 von Jahr 2026.
      */
     fun getCustomWeekOfYear(date: LocalDate, firstMondayString: String?): Int {
         if (firstMondayString == null) {
@@ -89,13 +93,20 @@ object DateUtils {
         }
 
         val firstMonday = stringToDate(firstMondayString)
-        val firstMondayYear = firstMonday.year
+
+        // Bestimme das "intendierte Jahr" für diesen ersten Montag
+        // Wenn der Montag im Dezember liegt (ab Tag 25), ist er für das nächste Jahr gedacht
+        val intendedYear = if (firstMonday.monthValue == 12 && firstMonday.dayOfMonth >= 25) {
+            firstMonday.year + 1
+        } else {
+            firstMonday.year
+        }
 
         // Wenn das Datum vor dem ersten Montag liegt, gehört es zum vorherigen Jahr
         if (date.isBefore(firstMonday)) {
             // Rekursiv das vorherige Jahr prüfen
-            // WICHTIG: Wir müssen den echten ersten Montag des Vorjahres finden!
-            val previousYearFirstMonday = findFirstMonday(firstMondayYear - 1)
+            // WICHTIG: Wir müssen den ersten Montag des VORHERIGEN intendierten Jahres finden!
+            val previousYearFirstMonday = findFirstMonday(intendedYear - 1)
             return getCustomWeekOfYear(date, dateToString(previousYearFirstMonday))
         }
 
@@ -108,6 +119,10 @@ object DateUtils {
 
     /**
      * Berechnet das Jahr basierend auf einem benutzerdefinierten ersten Montag
+     *
+     * WICHTIG: Wenn der erste Montag im Dezember liegt (ab Tag 25), wird er als
+     * erster Montag für das NÄCHSTE Kalenderjahr interpretiert.
+     * Beispiel: "2025-12-29" als erster Montag bedeutet Jahr 2026.
      */
     fun getCustomWeekBasedYear(date: LocalDate, firstMondayString: String?): Int {
         if (firstMondayString == null) {
@@ -116,20 +131,24 @@ object DateUtils {
 
         val firstMonday = stringToDate(firstMondayString)
 
-        // Wenn das Datum vor dem ersten Montag liegt, gehört es zum vorherigen Jahr
-        // ABER: Es muss rekursiv geprüft werden, ob es nicht sogar noch ein Jahr davor ist (theoretisch)
-        // Vereinfachung: Wenn vor erstem Montag -> Vorjahr (Rekursion via getCustomWeekOfYear handled das implizit für die KW, aber hier fürs Jahr brauchen wir es explizit)
+        // Bestimme das "intendierte Jahr" für diesen ersten Montag
+        // Wenn der Montag im Dezember liegt (ab Tag 25), ist er für das nächste Jahr gedacht
+        // z.B. "2025-12-29" -> Jahr 2026
+        val intendedYear = if (firstMonday.monthValue == 12 && firstMonday.dayOfMonth >= 25) {
+            firstMonday.year + 1
+        } else {
+            firstMonday.year
+        }
 
+        // Wenn das Datum vor dem ersten Montag liegt, gehört es zum vorherigen Jahr
         if (date.isBefore(firstMonday)) {
             // Prüfe rekursiv gegen Vorjahr
-            val previousYearFirstMonday = findFirstMonday(firstMonday.year - 1)
+            // WICHTIG: Wir müssen den ersten Montag des VORHERIGEN intendierten Jahres finden!
+            val previousYearFirstMonday = findFirstMonday(intendedYear - 1)
             return getCustomWeekBasedYear(date, dateToString(previousYearFirstMonday))
         } else {
-            // Prüfe ob es schon zum nächsten Jahr gehört (wenn das Jahr schon Settings hat?)
-            // Hier gehen wir davon aus, dass firstMondayString das "aktuelle" Jahr definiert.
-            // Alles danach gehört dazu, bis zum nächsten definierten Jahr.
-            // Da wir hier stateless sind, geben wir einfach das Jahr des firstMonday zurück.
-            return firstMonday.year
+            // Das Datum liegt nach dem ersten Montag -> gehört zum intendierten Jahr
+            return intendedYear
         }
     }
     
