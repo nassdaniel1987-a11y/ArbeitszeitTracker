@@ -40,6 +40,7 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
         private const val TAG = "TimeStampWidgetSmall"
         const val ACTION_QUICK_STAMP = "com.arbeitszeit.tracker.ACTION_QUICK_STAMP_SMALL"
         const val ACTION_START = "com.arbeitszeit.tracker.ACTION_START_SMALL"
+        const val ACTION_STOP = "com.arbeitszeit.tracker.ACTION_STOP_SMALL"
         const val ACTION_PAUSE = "com.arbeitszeit.tracker.ACTION_PAUSE_SMALL"
         const val ACTION_REFRESH = "com.arbeitszeit.tracker.ACTION_REFRESH_SMALL"
         const val ACTION_MIDNIGHT_RESET = "com.arbeitszeit.tracker.ACTION_MIDNIGHT_RESET_SMALL"
@@ -117,6 +118,9 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
             ACTION_START -> {
                 handleStart(context)
             }
+            ACTION_STOP -> {
+                handleStop(context)
+            }
             ACTION_PAUSE -> {
                 handlePause(context)
             }
@@ -156,6 +160,29 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
                         date = today
                     )
                 }
+            }
+            refreshWidget(context)
+        }
+    }
+
+    private fun handleStop(context: Context) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val database = AppDatabase.getDatabase(context)
+            val timeEntryDao = database.timeEntryDao()
+            val today = DateUtils.today()
+            val entry = timeEntryDao.getEntryByDate(today)
+            val currentTime = TimeUtils.currentTimeInMinutes()
+            val tracker = RunningTimeTracker(context)
+
+            if (entry != null && entry.startZeit != null && entry.endZeit == null) {
+                // Nur stoppen wenn Arbeit läuft (Start gesetzt, Ende nicht)
+                timeEntryDao.update(entry.copy(
+                    endZeit = currentTime,
+                    updatedAt = System.currentTimeMillis()
+                ))
+
+                // RunningTimeTracker stoppen
+                tracker.stopTracking()
             }
             refreshWidget(context)
         }
@@ -264,22 +291,11 @@ class TimeStampWidgetSmall : AppWidgetProvider() {
                 context, 1, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             ))
 
-            // Stop (Open App Dialog)
-            if (isRunning) {
-                val stopIntent = Intent(context, MainActivity::class.java).apply {
-                    action = "com.arbeitszeit.tracker.ACTION_STOP_FROM_WIDGET"
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                }
-                views.setOnClickPendingIntent(R.id.widget_btn_stop, PendingIntent.getActivity(
-                    context, 2, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                ))
-            } else {
-                // If not running, stop button just opens app normally
-                val openIntent = Intent(context, MainActivity::class.java)
-                views.setOnClickPendingIntent(R.id.widget_btn_stop, PendingIntent.getActivity(
-                    context, 3, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                ))
-            }
+            // Stop - Setzt End-Zeit direkt (ohne App zu öffnen)
+            val stopIntent = Intent(context, TimeStampWidgetSmall::class.java).apply { action = ACTION_STOP }
+            views.setOnClickPendingIntent(R.id.widget_btn_stop, PendingIntent.getBroadcast(
+                context, 2, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ))
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
             Log.d(TAG, "Widget updated successfully")
