@@ -74,16 +74,16 @@
                 android:textColor="#000000"
                 android:textSize="10sp" />
 
-            <!-- Stop/App Button -->
+            <!-- Stop Button -->
             <Button
                 android:id="@+id/widget_btn_stop"
                 android:layout_width="48dp"
                 android:layout_height="36dp"
                 android:layout_marginStart="4dp"
-                android:background="#6750A4"
-                android:text="APP"
+                android:background="#F44336"
+                android:text="■"
                 android:textColor="#FFFFFF"
-                android:textSize="10sp" />
+                android:textSize="14sp" />
 
         </LinearLayout>
 
