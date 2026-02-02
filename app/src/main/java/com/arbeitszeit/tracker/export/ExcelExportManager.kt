@@ -12,6 +12,7 @@ import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.TimeUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.poi.ss.usermodel.CellStyle
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.ss.usermodel.WorkbookFactory
@@ -279,6 +280,12 @@ class ExcelExportManager(private val context: Context) {
     private fun fillAllSheets(workbook: Workbook, entries: List<TimeEntry>, ersterMontagImJahr: String?) {
         android.util.Log.d("ExcelExportManager", "fillAllSheets: ${entries.size} Einträge gefunden, ersterMontag=$ersterMontagImJahr")
 
+        // Erstelle einen Zeit-CellStyle für konsistente Formatierung
+        // Format "h:mm" zeigt Stunden:Minuten an (z.B. 8:30)
+        val timeStyle = workbook.createCellStyle().apply {
+            dataFormat = workbook.createDataFormat().getFormat("h:mm")
+        }
+
         // Berechne für jeden Eintrag die KW aus dem Datum NEU
         // Das stellt sicher, dass die KW konsistent mit der App-Anzeige ist
         val entriesWithCalculatedKW = entries.map { entry ->
@@ -326,7 +333,21 @@ class ExcelExportManager(private val context: Context) {
                 if (blockEntries.isNotEmpty()) {
                     android.util.Log.d("ExcelExportManager", "Block $sheetName: ${blockEntries.size} Einträge")
                 }
-                fillTimeEntriesWithKW(sheet, blockEntries, startKW, endKW)
+                fillTimeEntriesWithKW(sheet, blockEntries, startKW, endKW, timeStyle)
+
+                // Setze Spaltenbreiten für Zeit-Spalten (in 1/256 Zeichen)
+                // Spalte C-F (Index 2-5): Soll, Von, Bis, Pause
+                sheet.setColumnWidth(2, 8 * 256)  // Soll: 8 Zeichen
+                sheet.setColumnWidth(3, 8 * 256)  // Von: 8 Zeichen
+                sheet.setColumnWidth(4, 8 * 256)  // Bis: 8 Zeichen
+                sheet.setColumnWidth(5, 8 * 256)  // Pause: 8 Zeichen
+
+                // Druckeinstellungen: Seite auf 1 Seite breit anpassen
+                sheet.printSetup.apply {
+                    fitWidth = 1  // Auf 1 Seite Breite anpassen
+                    fitHeight = 0 // Höhe automatisch (0 = keine Begrenzung)
+                }
+                sheet.fitToPage = true
             } else {
                 android.util.Log.w("ExcelExportManager", "Sheet '$sheetName' nicht gefunden in Vorlage!")
             }
@@ -342,12 +363,14 @@ class ExcelExportManager(private val context: Context) {
      * - Zeile 6: Summenzeile (mit KW-Nummer in Spalte A)
      *
      * @param entriesWithKW Liste von Paaren (TimeEntry, berechneteKW)
+     * @param timeStyle CellStyle für Zeit-Formatierung (h:mm)
      */
     private fun fillTimeEntriesWithKW(
         sheet: Sheet,
         entriesWithKW: List<Pair<TimeEntry, Int>>,
         startKW: Int,
-        endKW: Int
+        endKW: Int,
+        timeStyle: CellStyle
     ) {
         // Gruppiere Einträge nach der NEU BERECHNETEN Kalenderwoche
         val entriesByWeek = entriesWithKW
@@ -415,24 +438,28 @@ class ExcelExportManager(private val context: Context) {
                 if (entry.sollMinuten > 0) {
                     val cell = row.getCell(2) ?: row.createCell(2)
                     cell.setCellValue(TimeUtils.minutesToExcelTime(entry.sollMinuten))
+                    cell.cellStyle = timeStyle
                 }
 
                 // Spalte D (Index 3): Von (Start)
                 if (entry.startZeit != null) {
                     val cell = row.getCell(3) ?: row.createCell(3)
                     cell.setCellValue(TimeUtils.minutesToExcelTime(entry.startZeit))
+                    cell.cellStyle = timeStyle
                 }
 
                 // Spalte E (Index 4): Bis (Ende)
                 if (entry.endZeit != null) {
                     val cell = row.getCell(4) ?: row.createCell(4)
                     cell.setCellValue(TimeUtils.minutesToExcelTime(entry.endZeit))
+                    cell.cellStyle = timeStyle
                 }
 
                 // Spalte F (Index 5): Pause
                 if (entry.pauseMinuten > 0) {
                     val cell = row.getCell(5) ?: row.createCell(5)
                     cell.setCellValue(TimeUtils.minutesToExcelTime(entry.pauseMinuten))
+                    cell.cellStyle = timeStyle
                 }
 
                 // Spalte G (Index 6): Ist - wird von Excel-Formel berechnet!
@@ -451,6 +478,7 @@ class ExcelExportManager(private val context: Context) {
                 if (entry.arbeitszeitBereitschaft > 0) {
                     val cell = row.getCell(9) ?: row.createCell(9)
                     cell.setCellValue(TimeUtils.minutesToExcelTime(entry.arbeitszeitBereitschaft))
+                    cell.cellStyle = timeStyle
                 }
 
                 // Spalte P (Index 15): Notizen/Kommentare
