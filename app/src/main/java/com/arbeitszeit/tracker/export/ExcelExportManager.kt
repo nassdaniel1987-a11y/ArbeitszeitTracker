@@ -21,6 +21,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.time.LocalDate
 
+// VERSION: 2026-02-02 - Ohne Excel-Druck-Fix (### bleibt bestehen)
 class ExcelExportManager(private val context: Context) {
 
     private val templateManager = TemplateManager(context)
