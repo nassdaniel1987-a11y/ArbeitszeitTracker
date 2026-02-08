@@ -150,8 +150,13 @@ class YearManager(private val context: Context) {
      * @return Überstunden in Minuten (positiv = Plus, negativ = Minus)
      */
     suspend fun calculateYearOvertime(year: Int): Int = withContext(Dispatchers.IO) {
+        val today = LocalDate.now()
         val entries = timeEntryDao.getEntriesByYear(year)
-        entries.sumOf { it.getDifferenzMinuten() }
+        // Nur abgeschlossene Einträge bis heute (keine zukünftigen Tage)
+        entries.filter { entry ->
+            val date = LocalDate.parse(entry.datum)
+            !date.isAfter(today) && (date.isBefore(today) || entry.isComplete())
+        }.sumOf { it.getDifferenzMinuten() }
     }
 
     /**
