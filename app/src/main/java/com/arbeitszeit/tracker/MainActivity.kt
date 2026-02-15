@@ -31,6 +31,7 @@ import com.arbeitszeit.tracker.ui.components.YearSelector
 import com.arbeitszeit.tracker.ui.navigation.NavGraph
 import com.arbeitszeit.tracker.ui.navigation.Screen
 import com.arbeitszeit.tracker.ui.screens.OnboardingOverlay
+import com.arbeitszeit.tracker.ui.screens.OnboardingTarget
 import com.arbeitszeit.tracker.ui.theme.ArbeitszeitTrackerTheme
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.NotificationHelper
@@ -375,6 +376,45 @@ class MainActivity : ComponentActivity() {
                                 onboardingDismissed = true
                                 CoroutineScope(Dispatchers.IO).launch {
                                     database.userSettingsDao().markOnboardingCompleted()
+                                }
+                            },
+                            onNavigate = { target ->
+                                // Overlay ausblenden und zum Ziel navigieren
+                                onboardingDismissed = true
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    database.userSettingsDao().markOnboardingCompleted()
+                                }
+                                when (target) {
+                                    OnboardingTarget.SOLLZEIT_VORLAGEN ->
+                                        navController.navigate(Screen.Arbeitszeitvorlagen.route) {
+                                            launchSingleTop = true
+                                        }
+                                    OnboardingTarget.SETTINGS ->
+                                        navController.navigate(Screen.Settings.route) {
+                                            launchSingleTop = true
+                                        }
+                                    OnboardingTarget.GEOFENCING ->
+                                        navController.navigate(Screen.Geofencing.route) {
+                                            launchSingleTop = true
+                                        }
+                                    OnboardingTarget.DATA_MANAGEMENT ->
+                                        navController.navigate(Screen.DataManagement.route) {
+                                            launchSingleTop = true
+                                        }
+                                    OnboardingTarget.VACATION_PLANNER ->
+                                        navController.navigate(Screen.VacationPlanner.route) {
+                                            launchSingleTop = true
+                                        }
+                                    OnboardingTarget.CLOSING_DAYS ->
+                                        navController.navigate(Screen.ClosingDays.route) {
+                                            launchSingleTop = true
+                                        }
+                                    OnboardingTarget.HOME ->
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(navController.graph.startDestinationId)
+                                            launchSingleTop = true
+                                        }
+                                    OnboardingTarget.NONE -> { /* Nichts tun */ }
                                 }
                             }
                         )

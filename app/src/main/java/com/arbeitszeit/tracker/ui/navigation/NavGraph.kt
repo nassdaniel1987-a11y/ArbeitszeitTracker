@@ -173,7 +173,31 @@ fun NavGraph(
 
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
-                onComplete = { navController.popBackStack() }
+                onComplete = { navController.popBackStack() },
+                onNavigate = { target ->
+                    // Zuerst zurück navigieren, dann zum Ziel
+                    navController.popBackStack()
+                    when (target) {
+                        OnboardingTarget.SOLLZEIT_VORLAGEN ->
+                            navController.navigate(Screen.Arbeitszeitvorlagen.route) { launchSingleTop = true }
+                        OnboardingTarget.SETTINGS ->
+                            navController.navigate(Screen.Settings.route) { launchSingleTop = true }
+                        OnboardingTarget.GEOFENCING ->
+                            navController.navigate(Screen.Geofencing.route) { launchSingleTop = true }
+                        OnboardingTarget.DATA_MANAGEMENT ->
+                            navController.navigate(Screen.DataManagement.route) { launchSingleTop = true }
+                        OnboardingTarget.VACATION_PLANNER ->
+                            navController.navigate(Screen.VacationPlanner.route) { launchSingleTop = true }
+                        OnboardingTarget.CLOSING_DAYS ->
+                            navController.navigate(Screen.ClosingDays.route) { launchSingleTop = true }
+                        OnboardingTarget.HOME ->
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        OnboardingTarget.NONE -> { }
+                    }
+                }
             )
         }
     }
