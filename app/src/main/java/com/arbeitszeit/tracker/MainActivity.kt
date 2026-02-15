@@ -30,6 +30,7 @@ import com.arbeitszeit.tracker.ui.components.NewYearDialog
 import com.arbeitszeit.tracker.ui.components.YearSelector
 import com.arbeitszeit.tracker.ui.navigation.NavGraph
 import com.arbeitszeit.tracker.ui.navigation.Screen
+import com.arbeitszeit.tracker.ui.screens.OnboardingScreen
 import com.arbeitszeit.tracker.ui.theme.ArbeitszeitTrackerTheme
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.NotificationHelper
@@ -96,12 +97,17 @@ class MainActivity : ComponentActivity() {
                 else -> isSystemInDarkTheme() // "system" or null
             }
 
-            // Setup Detection
+            // Setup & Onboarding Detection
             var setupCompleted by remember { mutableStateOf(false) }
+            var onboardingDismissed by remember { mutableStateOf(false) }
             val currentSettings = settings
             val needsSetup = currentSettings != null &&
                              !setupCompleted &&
                              (currentSettings.name.isBlank() || currentSettings.einrichtung.isBlank())
+            val needsOnboarding = currentSettings != null &&
+                                  !needsSetup &&
+                                  !onboardingDismissed &&
+                                  !currentSettings.onboardingCompleted
 
             ArbeitszeitTrackerTheme(darkTheme = darkTheme) {
                 if (needsSetup) {
@@ -109,6 +115,17 @@ class MainActivity : ComponentActivity() {
                     com.arbeitszeit.tracker.ui.screens.SetupScreen(
                         onSetupComplete = {
                             setupCompleted = true
+                        }
+                    )
+                } else if (needsOnboarding) {
+                    // Feature-Tour für Nutzer die das Onboarding noch nicht gemacht haben
+                    OnboardingScreen(
+                        onComplete = {
+                            onboardingDismissed = true
+                            // Onboarding als abgeschlossen in DB markieren
+                            CoroutineScope(Dispatchers.IO).launch {
+                                database.userSettingsDao().markOnboardingCompleted()
+                            }
                         }
                     )
                 } else {

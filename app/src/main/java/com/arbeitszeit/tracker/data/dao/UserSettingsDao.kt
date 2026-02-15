@@ -21,4 +21,10 @@ interface UserSettingsDao {
     
     @Query("UPDATE user_settings SET updatedAt = :timestamp WHERE id = 1")
     suspend fun updateTimestamp(timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE user_settings SET onboardingCompleted = 1, updatedAt = :timestamp WHERE id = 1")
+    suspend fun markOnboardingCompleted(timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE user_settings SET onboardingCompleted = 0, updatedAt = :timestamp WHERE id = 1")
+    suspend fun resetOnboarding(timestamp: Long = System.currentTimeMillis())
 }

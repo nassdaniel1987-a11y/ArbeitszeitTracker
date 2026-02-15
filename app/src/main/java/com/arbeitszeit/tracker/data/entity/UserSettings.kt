@@ -57,6 +57,9 @@ data class UserSettings(
     val autoStartSamstagZeit: Int? = null,
     val autoStartSonntagZeit: Int? = null,
 
+    // Onboarding
+    val onboardingCompleted: Boolean = false,              // Feature-Tour abgeschlossen
+
     // Benachrichtigungs-Einstellungen (Ruhezeit)
     val notificationQuietTimeEnabled: Boolean = false,     // Ruhezeit aktiviert
     val notificationQuietTimeStart: Int = 1260,            // Ruhezeit Start in Minuten (21:00 = 21*60 = 1260)
