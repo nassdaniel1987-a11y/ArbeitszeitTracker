@@ -173,8 +173,8 @@ class UeberstundenViewModel(application: Application) : AndroidViewModel(applica
         // Berechne Gesamtüberstunden für aktives Jahr (Custom-Jahr)
         val laufendesJahrUeberstunden = activeYearEntries.sumOf { it.getDifferenzMinuten() }
 
-        // Vorjahresübertrag aus YearSettings (jahresspezifisch, nicht global aus UserSettings)
-        val vorjahrUebertrag = yearSettings.vorjahresUebertragMinuten
+        // Vorjahresübertrag aus UserSettings (manuell eingetragen in Einstellungen)
+        val vorjahrUebertrag = settings.ueberstundenVorjahrMinuten
 
         // Gesamtüberstunden = laufendes Jahr + Vorjahresübertrag
         val gesamtUeberstunden = laufendesJahrUeberstunden + vorjahrUebertrag
