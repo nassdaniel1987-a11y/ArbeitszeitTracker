@@ -456,6 +456,24 @@ object DatabaseMigrations {
     }
 
     /**
+     * Migration v25 -> v26: Onboarding Feature-Tour
+     *
+     * Fügt ein neues Feld in UserSettings hinzu:
+     * - onboardingCompleted: Ob der Nutzer die Feature-Tour abgeschlossen hat
+     *
+     * Standardmäßig false für neue Nutzer, wird nach Abschluss der Tour auf true gesetzt.
+     * Bestehende Nutzer bekommen die Tour beim nächsten App-Start angezeigt.
+     */
+    val MIGRATION_25_26 = object : Migration(25, 26) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+                ALTER TABLE user_settings
+                ADD COLUMN onboardingCompleted INTEGER NOT NULL DEFAULT 0
+            """)
+        }
+    }
+
+    /**
      * Gibt alle verfügbaren Migrations zurück
      *
      * Wenn neue Migrations hinzugefügt werden, hier in der Liste eintragen!
@@ -470,10 +488,8 @@ object DatabaseMigrations {
             MIGRATION_21_22,
             MIGRATION_22_23,
             MIGRATION_23_24,
-            MIGRATION_24_25
-            // Zukünftige Migrations hier hinzufügen:
-            // MIGRATION_25_26,
-            // etc.
+            MIGRATION_24_25,
+            MIGRATION_25_26
         )
     }
 }

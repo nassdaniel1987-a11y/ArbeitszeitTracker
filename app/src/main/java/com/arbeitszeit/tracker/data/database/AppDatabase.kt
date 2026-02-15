@@ -42,7 +42,7 @@ import java.util.Locale
         SchoolHoliday::class,
         YearSettings::class
     ],
-    version = 25,  // v25: Benachrichtigungs-Ruhezeit (notificationQuietTime*, notificationActiveDays)
+    version = 26,  // v26: Onboarding Feature-Tour (onboardingCompleted)
     exportSchema = true  // Schema-Export aktiviert → Dokumentation in app/schemas/
 )
 abstract class AppDatabase : RoomDatabase() {
