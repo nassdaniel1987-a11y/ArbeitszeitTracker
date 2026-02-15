@@ -30,7 +30,7 @@ import com.arbeitszeit.tracker.ui.components.NewYearDialog
 import com.arbeitszeit.tracker.ui.components.YearSelector
 import com.arbeitszeit.tracker.ui.navigation.NavGraph
 import com.arbeitszeit.tracker.ui.navigation.Screen
-import com.arbeitszeit.tracker.ui.screens.OnboardingScreen
+import com.arbeitszeit.tracker.ui.screens.OnboardingOverlay
 import com.arbeitszeit.tracker.ui.theme.ArbeitszeitTrackerTheme
 import com.arbeitszeit.tracker.utils.DateUtils
 import com.arbeitszeit.tracker.utils.NotificationHelper
@@ -117,18 +117,9 @@ class MainActivity : ComponentActivity() {
                             setupCompleted = true
                         }
                     )
-                } else if (needsOnboarding) {
-                    // Feature-Tour für Nutzer die das Onboarding noch nicht gemacht haben
-                    OnboardingScreen(
-                        onComplete = {
-                            onboardingDismissed = true
-                            // Onboarding als abgeschlossen in DB markieren
-                            CoroutineScope(Dispatchers.IO).launch {
-                                database.userSettingsDao().markOnboardingCompleted()
-                            }
-                        }
-                    )
                 } else {
+                    // App anzeigen (immer) + Onboarding-Overlay darüber (wenn nötig)
+                    Box(modifier = Modifier.fillMaxSize()) {
                     // Normale App
                     val navController = rememberNavController()
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -377,6 +368,18 @@ class MainActivity : ComponentActivity() {
                         Text(message)
                     }
                 }
+                    // Onboarding-Overlay über der App anzeigen
+                    if (needsOnboarding) {
+                        OnboardingOverlay(
+                            onComplete = {
+                                onboardingDismissed = true
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    database.userSettingsDao().markOnboardingCompleted()
+                                }
+                            }
+                        )
+                    }
+                } // Ende Box (App + Overlay)
                 } // Ende else (Normale App)
             }
         }
