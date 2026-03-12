@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.arbeitszeit.tracker.autostart.RunningTimeState
+import com.arbeitszeit.tracker.utils.TimeUtils
 import java.time.format.DateTimeFormatter
 
 /**
@@ -156,7 +157,9 @@ fun EndWorkDialog(
                 }
 
                 // Pause-Checkbox und Eingabe
-                Column {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -182,6 +185,85 @@ fun EndWorkDialog(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+
+                        // Gesetzlicher Hinweis - Info-Button
+                        var showLegalInfo by remember { mutableStateOf(false) }
+                        val legalInfo = TimeUtils.getBreakLegalInfo(totalMinutes)
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            IconButton(
+                                onClick = { showLegalInfo = !showLegalInfo },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = "Gesetzliche Info",
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Text(
+                                "Warum diese Pause?",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        if (showLegalInfo) {
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Gavel,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Text(
+                                        legalInfo,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
+                            }
+                        }
+
+                        // Warnung wenn Pause unter gesetzlichem Minimum
+                        val warning = TimeUtils.getBreakWarning(totalMinutes, pauseMin)
+                        if (warning != null) {
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Warning,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Text(
+                                        warning,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

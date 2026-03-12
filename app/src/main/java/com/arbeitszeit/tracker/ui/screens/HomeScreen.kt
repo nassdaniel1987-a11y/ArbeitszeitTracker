@@ -414,8 +414,14 @@ fun HomeScreen(
     if (showPauseDialog) {
         val currentEntry = todayEntry
         if (currentEntry != null) {
+            val workDurationForPause = if (currentEntry.startZeit != null && currentEntry.endZeit != null) {
+                currentEntry.endZeit - currentEntry.startZeit
+            } else {
+                null
+            }
             PauseSliderDialog(
                 currentPauseMinutes = currentEntry.pauseMinuten,
+                workDurationMinutes = workDurationForPause,
                 onDismiss = { showPauseDialog = false },
                 onConfirm = { minutes ->
                     viewModel.setPause(minutes)
@@ -520,10 +526,12 @@ fun HomeScreen(
 @Composable
 private fun PauseSliderDialog(
     currentPauseMinutes: Int,
+    workDurationMinutes: Int? = null,
     onDismiss: () -> Unit,
     onConfirm: (Int) -> Unit
 ) {
     var pauseMinutes by remember { mutableFloatStateOf(currentPauseMinutes.toFloat()) }
+    var showLegalInfo by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -583,6 +591,86 @@ private fun PauseSliderDialog(
                                 Text(
                                     text = "Min",
                                     style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Gesetzlicher Hinweis - nur anzeigen wenn Arbeitszeit bekannt
+                if (workDurationMinutes != null) {
+                    val legalInfo = TimeUtils.getBreakLegalInfo(workDurationMinutes)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        IconButton(
+                            onClick = { showLegalInfo = !showLegalInfo },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = "Gesetzliche Info",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            "Gesetzliche Pausenregelung",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    if (showLegalInfo) {
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Gavel,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Text(
+                                    legalInfo,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                    }
+
+                    // Warnung wenn Pause unter gesetzlichem Minimum
+                    val warning = TimeUtils.getBreakWarning(workDurationMinutes, pauseMinutes.toInt())
+                    if (warning != null) {
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Warning,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    warning,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
                                 )
                             }
                         }
