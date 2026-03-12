@@ -181,4 +181,40 @@ object TimeUtils {
         val minimum = calculateMinimumBreak(workMinutes)
         return maxOf(minimum, userDefault)
     }
+
+    /**
+     * Gibt einen Erklärungstext zurück, warum eine bestimmte Pause vorgeschlagen wird.
+     * Basierend auf dem deutschen Arbeitszeitgesetz (ArbZG §4).
+     *
+     * @param totalDurationMinutes Gesamtdauer (Anwesenheit) in Minuten
+     * @return Erklärungstext zur gesetzlichen Pausenregelung
+     */
+    fun getBreakLegalInfo(totalDurationMinutes: Int): String {
+        return when {
+            totalDurationMinutes > 9 * 60 ->
+                "Gesetzliche Mindestpause: 45 Min\n" +
+                "Bei mehr als 9 Stunden Arbeitszeit ist eine Pause von mindestens 45 Minuten vorgeschrieben (ArbZG §4)."
+            totalDurationMinutes > 6 * 60 ->
+                "Gesetzliche Mindestpause: 30 Min\n" +
+                "Bei mehr als 6 Stunden Arbeitszeit ist eine Pause von mindestens 30 Minuten vorgeschrieben (ArbZG §4)."
+            else ->
+                "Keine gesetzliche Pausenpflicht\n" +
+                "Bei bis zu 6 Stunden Arbeitszeit besteht keine gesetzliche Pausenpflicht (ArbZG §4)."
+        }
+    }
+
+    /**
+     * Prüft ob die eingestellte Pause unter der gesetzlichen Mindestpause liegt.
+     *
+     * @param totalDurationMinutes Gesamtdauer (Anwesenheit) in Minuten
+     * @param pauseMinutes Eingestellte Pause in Minuten
+     * @return Warntext oder null wenn Pause ausreichend
+     */
+    fun getBreakWarning(totalDurationMinutes: Int, pauseMinutes: Int): String? {
+        val minimum = calculateMinimumBreak(totalDurationMinutes)
+        if (minimum > 0 && pauseMinutes < minimum) {
+            return "Die eingestellte Pause ($pauseMinutes Min) liegt unter der gesetzlichen Mindestpause von $minimum Minuten (ArbZG §4)."
+        }
+        return null
+    }
 }
