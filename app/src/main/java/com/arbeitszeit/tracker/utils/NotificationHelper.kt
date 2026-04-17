@@ -77,6 +77,20 @@ object NotificationHelper {
             return
         }
 
+        // Nicht benachrichtigen an Urlaub/Krank/Feiertag/Abwesend-Tagen
+        if (entry != null && entry.typ != com.arbeitszeit.tracker.data.entity.TimeEntry.TYP_NORMAL) {
+            android.util.Log.d("NotificationHelper", "showMorningReminder - Abbruch: Kein Arbeitstag (typ=${entry.typ})")
+            return
+        }
+
+        // Nicht benachrichtigen wenn heute kein konfigurierter Arbeitstag
+        val settings = database.userSettingsDao().getSettings()
+        val todayDayOfWeek = java.time.LocalDate.now().dayOfWeek.value
+        if (settings != null && !settings.isWorkingDay(todayDayOfWeek)) {
+            android.util.Log.d("NotificationHelper", "showMorningReminder - Abbruch: Kein Arbeitstag laut workingDays (${settings.workingDays})")
+            return
+        }
+
         android.util.Log.i("NotificationHelper", "showMorningReminder - Sende Benachrichtigung!")
 
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -160,6 +174,20 @@ object NotificationHelper {
 
         if (entry.endZeit != null) {
             android.util.Log.d("NotificationHelper", "showEveningReminder - Abbruch: Bereits ausgestempelt (endZeit = ${entry.endZeit})")
+            return
+        }
+
+        // Nicht benachrichtigen an Urlaub/Krank/Feiertag/Abwesend-Tagen
+        if (entry.typ != com.arbeitszeit.tracker.data.entity.TimeEntry.TYP_NORMAL) {
+            android.util.Log.d("NotificationHelper", "showEveningReminder - Abbruch: Kein Arbeitstag (typ=${entry.typ})")
+            return
+        }
+
+        // Nicht benachrichtigen wenn heute kein konfigurierter Arbeitstag
+        val settings = database.userSettingsDao().getSettings()
+        val todayDayOfWeek = java.time.LocalDate.now().dayOfWeek.value
+        if (settings != null && !settings.isWorkingDay(todayDayOfWeek)) {
+            android.util.Log.d("NotificationHelper", "showEveningReminder - Abbruch: Kein Arbeitstag laut workingDays (${settings.workingDays})")
             return
         }
 

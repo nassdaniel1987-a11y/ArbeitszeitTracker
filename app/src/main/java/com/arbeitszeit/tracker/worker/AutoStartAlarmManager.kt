@@ -365,8 +365,9 @@ class AutoStartAlarmReceiver : BroadcastReceiver() {
 class BootCompletedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            Log.i("BootCompletedReceiver", "Boot completed - plane Auto-Start Alarm")
+            Log.i("BootCompletedReceiver", "Boot completed - stelle Alarme wieder her")
             AutoStartAlarmManager.scheduleNextAlarm(context)
+            ReminderAlarmManager.scheduleAll(context)
         }
     }
 }

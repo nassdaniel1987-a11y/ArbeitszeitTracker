@@ -127,7 +127,19 @@
             </intent-filter>
         </receiver>
 
-        <!-- Boot Completed Receiver - Stellt Auto-Start Alarme nach Neustart wieder her -->
+        <!-- Reminder Alarm Receiver -->
+        <receiver
+            android:name=".worker.ReminderAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.arbeitszeit.tracker.REMINDER_MORNING" />
+                <action android:name="com.arbeitszeit.tracker.REMINDER_EVENING" />
+                <action android:name="com.arbeitszeit.tracker.REMINDER_MISSING" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Boot Completed Receiver - Stellt Auto-Start und Reminder-Alarme nach Neustart wieder her -->
         <receiver
             android:name=".worker.BootCompletedReceiver"
             android:enabled="true"
